@@ -119,7 +119,7 @@ WarningsAsErrors: "*"
 HeaderFilterRegex: "(google/cloud/|generator/).*\\.h$"
 
 CheckOptions:
-  - { key: readability-identifier-naming.NamespaceCase, value: CamelCase }
+  - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
   - { key: readability-identifier-naming.ClassCase, value: CamelCase }
   - { key: readability-identifier-naming.StructCase, value: CamelCase }
   - {
@@ -129,9 +129,9 @@ CheckOptions:
   - { key: readability-identifier-naming.FunctionCase, value: aNy_CasE }
   - { key: readability-identifier-naming.VariableCase, value: lower_case }
   - { key: readability-identifier-naming.ClassMemberCase, value: lower_case }
-  - { key: readability-identifier-naming.ClassMemberPrefix, value: m_ }
-  - { key: readability-identifier-naming.PrivateMemberPrefix, value: m_ }
-  - { key: readability-identifier-naming.ProtectedMemberPrefix, value: m_ }
+  - { key: readability-identifier-naming.ClassMemberSuffix, value: _ }
+  - { key: readability-identifier-naming.PrivateMemberSuffix, value: _ }
+  - { key: readability-identifier-naming.ProtectedMemberSuffix, value: _ }
   - { key: readability-identifier-naming.EnumConstantCase, value: CamelCase }
   #  - { key: readability-identifier-naming.EnumConstantPrefix, value: k }
   - {

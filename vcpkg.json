@@ -3,6 +3,7 @@
     "entt",
     "glfw3",
     "glm",
-    "spdlog"
+    "spdlog",
+    "glad"
   ]
 }

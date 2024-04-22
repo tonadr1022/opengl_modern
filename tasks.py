@@ -6,6 +6,7 @@ import shutil
 
 BUILD_DIR_NAME = "build"
 PROJECT_NAME = "opengl_modern"
+EXECUTABLE_NAME = "opengl_renderer"
 COMPILE_DB_NAME = "compile_commands.json"
 BUILD_MODES = ["Debug", "Release", "RelWithDebInfo"]
 
@@ -29,7 +30,7 @@ def find_executable_path(directory, executable_name):
 
 
 def run(build_dir):
-    executable_name = PROJECT_NAME
+    executable_name = EXECUTABLE_NAME
     if platform.system() == "Windows":
         executable_name += ".exe"
 
@@ -117,6 +118,7 @@ def main():
         os.symlink(os.path.join(build_dir, COMPILE_DB_NAME), COMPILE_DB_NAME)
 
     if args.run:
+        print("Running", build_dir)
         run(build_dir)
 
 
