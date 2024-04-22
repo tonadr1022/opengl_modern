@@ -12,7 +12,7 @@ BUILD_MODES = ["Debug", "Release", "RelWithDebInfo"]
 
 def cmake_generate(mode):
     print(f"Running CMake in {mode} mode")
-    cmake_command = ["cmake", f"-DCMAKE_BUILD_TYPE={mode}", ".."]
+    cmake_command = ["cmake", f"-DCMAKE_BUILD_TYPE={mode}", "../.."]
     cmake_process = subprocess.Popen(cmake_command)
     cmake_process.wait()
 
@@ -84,11 +84,13 @@ def main():
         metavar="BUILD_MODE",
         default="Debug",
     )
-    parser.add_argument(
-        "-c", "--clean", help="Remove all build files", action="store_true"
-    )
+
+    parser.add_argument("-c", help="Configure", action="store_true")
+
+    parser.add_argument("--clean", help="Remove all build files", action="store_true")
+
     args = parser.parse_args()
-    if not (args.clean or args.mode or args.run):
+    if not (args.c or args.clean or args.mode or args.run):
         parser.print_usage()
         return
 
@@ -96,13 +98,18 @@ def main():
         clean()
 
     build_dir = None
-    if args.build or args.run:
+
+    if args.c:
         build_dir = f"{BUILD_DIR_NAME}/{args.mode}"
         os.makedirs(build_dir, exist_ok=True)
         os.chdir(build_dir)
         cmake_generate(args.mode)
-        cmake_build(args.mode)
+        os.chdir("../..")
 
+    if args.build or args.run:
+        build_dir = f"{BUILD_DIR_NAME}/{args.mode}"
+        os.chdir(build_dir)
+        cmake_build(args.mode)
         # symlink
         os.chdir("../..")
         if os.path.exists(COMPILE_DB_NAME) or os.path.islink(COMPILE_DB_NAME):

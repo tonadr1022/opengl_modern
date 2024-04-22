@@ -1,7 +1,8 @@
 {
   "dependencies": [
+    "entt",
     "glfw3",
     "glm",
-    "entt"
+    "spdlog"
   ]
 }

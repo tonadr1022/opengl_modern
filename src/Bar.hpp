@@ -1,5 +1,6 @@
 #pragma once
+
 class Bar {
  public:
-  static void bar();
+  static void B();
 };
