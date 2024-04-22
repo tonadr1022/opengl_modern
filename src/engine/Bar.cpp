@@ -1,4 +1,4 @@
-#include "Bar.hpp"
+#include "Bar.h"
 
 #include <iostream>
 
