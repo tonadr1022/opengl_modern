@@ -1,9 +1,3 @@
 {
-  "dependencies": [
-    "entt",
-    "glfw3",
-    "glm",
-    "spdlog",
-    "glad"
-  ]
+  "dependencies": ["entt", "glfw3", "glm", "spdlog", "glew"]
 }

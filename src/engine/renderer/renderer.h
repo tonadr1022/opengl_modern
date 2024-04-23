@@ -3,7 +3,5 @@
 struct GLFWwindow;
 
 namespace renderer {
-
-extern GLFWwindow* InitContext();
-
+extern void StartFrame();
 }  // namespace renderer

@@ -1,9 +1,14 @@
-#include <GLFW/glfw3.h>
+#pragma once
+
+#include "../../window.h"
+
 class GraphicsSystem {
  public:
   void Init();
   void Shutdown();
+  void StartFrame();
+  void EndFrame();
 
  private:
-  GLFWwindow* window_;
+  Window window_;
 };

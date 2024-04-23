@@ -1,29 +1,25 @@
 #pragma once
-#include <functional>
-#include <utility>
 
-#include "timestep.h"
+#include "engine.h"
+
+struct Timestep;
 
 class Application {
  public:
-  inline static void SetInitCallback(std::function<void()> function) {
-    init_callback_ = std::move(function);
+  inline static void SetInitCallback(void (*init_callback)()) { init_callback_ = init_callback; }
+  inline static void SetUpdateCallback(void (*update_callback)(Timestep)) {
+    update_callback_ = update_callback;
   }
-  inline static void SetUpdateCallback(std::function<void(Timestep)> function) {
-    update_callback_ = std::move(function);
-  }
-  inline static void SetDrawCallback(std::function<void()> function) {
-    draw_callback_ = std::move(function);
-  }
+  inline static void SetDrawCallback(void (*draw_callback)()) { draw_callback_ = draw_callback; }
 
-  static void Init();
-  static void Run();
+  static void Start();
   static void Quit();
   static void Shutdown();
 
  private:
-  inline static bool running_{false};
-  inline static std::function<void()> init_callback_{nullptr};
-  inline static std::function<void(Timestep)> update_callback_{nullptr};
-  inline static std::function<void()> draw_callback_{nullptr};
+  inline static Engine* engine_{nullptr};
+
+  inline static void (*init_callback_)(){nullptr};
+  inline static void (*update_callback_)(Timestep){nullptr};
+  inline static void (*draw_callback_)(){nullptr};
 };

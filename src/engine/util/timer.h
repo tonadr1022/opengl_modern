@@ -17,6 +17,8 @@ class Timer {
     return duration.count();
   }
 
+  void Reset() { start_time_ = std::chrono::high_resolution_clock::now(); }
+
  private:
   std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
   std::chrono::time_point<std::chrono::high_resolution_clock> end_time_;
