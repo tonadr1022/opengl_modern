@@ -20,7 +20,8 @@ struct ShaderCreateInfo {
 class ShaderManager {
  public:
   static std::optional<Shader> GetShader(HashedString name);
-  static std::optional<Shader> LoadShader(HashedString name);
+  static std::optional<Shader> AddShader(HashedString name,
+                                         const std::vector<ShaderCreateInfo>& create_info_vec);
   static std::optional<Shader> RecompileShader(HashedString name);
   static void RecompileShaders();
 
@@ -28,11 +29,13 @@ class ShaderManager {
   struct ShaderProgramData {
     std::string name;
     GLuint id;
-    std::unordered_map<uint32_t, uint32_t>& uniform_locations;
+    std::unordered_map<uint32_t, uint32_t> uniform_locations;
     std::vector<ShaderCreateInfo> shader_create_info_vec;
   };
 
-  static std::optional<Shader> CompileProgram();
+  static std::optional<ShaderProgramData> CompileProgram(
+      HashedString name, const std::vector<ShaderCreateInfo>& create_info_vec);
+  static void InitializeUniforms(ShaderProgramData& shader_program_data);
 
   inline static std::unordered_map<uint32_t, ShaderProgramData> shader_data_;
 };
