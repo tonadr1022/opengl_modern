@@ -7,7 +7,6 @@
 
 #include <spdlog/spdlog.h>
 
-namespace {}
 namespace renderer {
 
 GLFWwindow* InitContext() {
