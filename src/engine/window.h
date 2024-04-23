@@ -10,7 +10,7 @@ class Window {
   void SetVsync(bool state);
   void Shutdown();
   [[nodiscard]] bool GetVsync() const { return is_vsync_; };
-  GLFWwindow const* GetContext() { return glfw_window_; }
+  [[nodiscard]] GLFWwindow* GetContext() const { return glfw_window_; }
 
  private:
   bool is_vsync_;

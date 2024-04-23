@@ -8,7 +8,7 @@ void GraphicsSystem::Init() {
   window_.SetVsync(true);
 }
 
-void GraphicsSystem::Shutdown() {}
+void GraphicsSystem::Shutdown() { window_.Shutdown(); }
 void GraphicsSystem::StartFrame() { renderer::StartFrame(); }
 
 void GraphicsSystem::EndFrame() { window_.SwapBuffers(); }

@@ -23,16 +23,15 @@ void Window::Init() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-  // glfwWindowHint(GLFW_SAMPLES, 4);
+  glfwWindowHint(GLFW_SAMPLES, 4);
 
-  const char* glsl_version = "#version 410";
+  // const char* glsl_version = "#version 410";
 
   //  const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
   //  m_windowWidth = videoMode->width / 2;
   //  m_windowHeight = videoMode->height / 2;
 
-  glfw_window_ = glfwCreateWindow(1600, 900, "OpenGL Modern", nullptr, nullptr);
-  // m_window = glfwCreateWindow(800, 600, "OpenGL Renderer", nullptr, nullptr);
+  glfw_window_ = glfwCreateWindow(800, 600, "OpenGL Modern", nullptr, nullptr);
 
   if (!glfw_window_) {
     spdlog::critical("Failed to create GLFW window");
@@ -55,17 +54,9 @@ void Window::Init() {
 
   GLenum err = glewInit();
   if (err != GLEW_OK) {
-    spdlog::critical("Failed to initialize GLEW");
+    spdlog::critical("Failed to initialize glew");
     glfwTerminate();
   }
-
-  // bool c = glfwWindowShouldClose(glfw_window_);
-  //
-  // if (c) {
-  //   std::cout << "yes";
-  // } else {
-  //   std::cout << "no";
-  // }
 
   // query all available extensions
   std::vector<std::string> opengl_extensions;

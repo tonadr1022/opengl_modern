@@ -1,8 +1,12 @@
 #pragma once
 
+#include <memory>
+#include <string_view>
+
 #include "engine.h"
 
 struct Timestep;
+class Scene;
 
 class Application {
  public:
@@ -12,12 +16,27 @@ class Application {
   }
   inline static void SetDrawCallback(void (*draw_callback)()) { draw_callback_ = draw_callback; }
 
-  static void Start();
+  /** @brief GLFW key, action, and mods */
+  inline static void SetKeyEventCallback(void (*key_event_callback)(int key, int action,
+                                                                    int mods)) {
+    key_event_callback_ = key_event_callback;
+  }
+
+  static void Init();
+  /** @brief start the application after setting callback functions. */
+  static void Run();
+  /** @brief quit the application */
   static void Quit();
+  /** @brief Must call at end of main loop. */
   static void Shutdown();
 
+  static void LoadScene(const std::string& name);
+  static void AddScene(std::unique_ptr<Scene> scene);
+
  private:
+  friend class Input;
   inline static Engine* engine_{nullptr};
+  inline static void (*key_event_callback_)(int key, int action, int mods){nullptr};
 
   inline static void (*init_callback_)(){nullptr};
   inline static void (*update_callback_)(Timestep){nullptr};

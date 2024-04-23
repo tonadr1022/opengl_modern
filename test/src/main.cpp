@@ -1,12 +1,15 @@
+#include <GLFW/glfw3.h>
 #include <engine/application.h>
+#include <engine/input.h>
 #include <engine/timestep.h>
 
-#include <iomanip>
-#include <iostream>
+#include <memory>
+
+#include "engine/scene.h"
 
 int count = 0;
 
-void OnInit() { std::cout << "init\n"; }
+void OnInit() {}
 
 void OnUpdate(Timestep timestep) {
   count++;
@@ -18,14 +21,30 @@ void OnUpdate(Timestep timestep) {
   // }
 }
 
+void OnKeyEvent(int key, int action, int mods) {
+  bool pressed = action == GLFW_PRESS;
+  if (pressed) {
+    if (key == GLFW_KEY_BACKSPACE && mods == GLFW_MOD_SHIFT) {
+      Application::Quit();
+    }
+  }
+}
+
 void OnDraw() {}
 
 int main() {
+  Application::Init();
   Application::SetInitCallback(OnInit);
   Application::SetUpdateCallback(OnUpdate);
   Application::SetDrawCallback(OnDraw);
+  Application::SetKeyEventCallback(OnKeyEvent);
 
-  Application::Start();
+  Application::AddScene(std::make_unique<Scene>("test"));
+  Application::AddScene(std::make_unique<Scene>("test2"));
+  Application::LoadScene("test2");
+
+  Application::Run();
+
   Application::Shutdown();
 
   return 0;

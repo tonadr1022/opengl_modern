@@ -13,7 +13,6 @@ find_package(OpenGL REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
 
-# target_compile_features(opengl_modern PUBLIC cxx_std_20)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

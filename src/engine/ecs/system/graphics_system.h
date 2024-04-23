@@ -8,6 +8,7 @@ class GraphicsSystem {
   void Shutdown();
   void StartFrame();
   void EndFrame();
+  [[nodiscard]] const Window& GetWindow() const { return window_; }
 
  private:
   Window window_;

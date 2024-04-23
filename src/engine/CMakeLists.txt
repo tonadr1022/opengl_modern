@@ -8,7 +8,12 @@ set(SOURCES
     ecs/system/graphics_system.cpp
     e_assert.cpp
     engine.cpp
-    application.cpp)
+    application.cpp
+    input.cpp
+    resource/mesh_manager.cpp
+    resource/texture_manager.cpp
+    resource/shader_manager.cpp)
+
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_link_libraries(opengl_modern PRIVATE GLEW::GLEW spdlog::spdlog glm::glm
