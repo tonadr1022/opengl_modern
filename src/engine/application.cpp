@@ -20,7 +20,6 @@ void Application::Run() {
       engine_->scenes_.emplace("default", std::make_unique<Scene>("default"));
     }
   }
-
   engine_->Run();
 }
 

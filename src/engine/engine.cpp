@@ -53,12 +53,12 @@ void Engine::Stop() { running_ = false; }
 
 void Engine::AddScene(std::unique_ptr<Scene> scene) {
   auto it = scenes_.find(scene->GetName());
-  EASSERT_MSG(it != scenes_.end(), "Scene Added Already");
-  scenes_.emplace(scene->GetName(), scene);
+  EASSERT_MSG(it == scenes_.end(), "Scene Added Already");
+  scenes_.emplace(scene->name_, std::move(scene));
 }
 
 void Engine::LoadScene(const std::string& name) {
   auto it = scenes_.find(name);
-  EASSERT_MSG(it != scenes_.end(), "Scene Added Already");
+  EASSERT_MSG(it != scenes_.end(), "Scene Not Found");
   active_scene_ = it->second.get();
 }

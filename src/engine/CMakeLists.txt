@@ -10,6 +10,8 @@ set(SOURCES
     engine.cpp
     application.cpp
     input.cpp
+    scene.cpp
+    renderer/gl/shader.cpp
     resource/mesh_manager.cpp
     resource/texture_manager.cpp
     resource/shader_manager.cpp)

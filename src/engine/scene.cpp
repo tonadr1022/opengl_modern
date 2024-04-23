@@ -1,3 +1,5 @@
 #include "scene.h"
 
-Scene::Scene(const std::string& name) : name_(name) {}
+#include <utility>
+
+Scene::Scene(std::string name) : name_(std::move(name)) {}

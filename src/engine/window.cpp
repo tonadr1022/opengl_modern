@@ -20,7 +20,7 @@ void Window::Init() {
   }
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
   glfwWindowHint(GLFW_SAMPLES, 4);
@@ -49,7 +49,6 @@ void Window::Init() {
     this_window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
     this_window->framebuffer_height_ = height;
     this_window->framebuffer_width_ = width;
-    std::cout << this_window->framebuffer_height_ << this_window->framebuffer_width_ << "\n";
   });
 
   GLenum err = glewInit();
