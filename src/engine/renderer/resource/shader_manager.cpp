@@ -9,8 +9,9 @@
 #include <sstream>
 #include <string>
 
-#include "../e_assert.h"
+#include "../../e_assert.h"
 
+namespace gfx {
 std::optional<std::string> LoadFromFile(const std::string& path) {
   std::ifstream file_stream(path);
   std::string line;
@@ -100,7 +101,7 @@ std::optional<Shader> ShaderManager::AddShader(
   if (!result.has_value()) {
     return std::nullopt;
   }
-  shader_data_.emplace(result.value());
+  shader_data_.emplace(name, result.value());
   return Shader{result.value().id, result.value().uniform_locations};
 }
 
@@ -122,3 +123,4 @@ void ShaderManager::InitializeUniforms(ShaderProgramData& program_data) {
     program_data.uniform_locations.emplace(HashedString(uniform_name), program_data.id);
   }
 }
+}  // namespace gfx

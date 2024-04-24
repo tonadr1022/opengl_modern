@@ -8,4 +8,6 @@ add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC opengl_modern)
 
-target_link_libraries(${PROJECT_NAME} opengl_modern glfw glm::glm)
+target_link_libraries(${PROJECT_NAME} opengl_modern OpenGL::GL GLEW::GLEW glfw glm::glm)
+
+

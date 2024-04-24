@@ -9,6 +9,6 @@ void GraphicsSystem::Init() {
 }
 
 void GraphicsSystem::Shutdown() { window_.Shutdown(); }
-void GraphicsSystem::StartFrame() { renderer::StartFrame(); }
+void GraphicsSystem::StartFrame() { gfx::renderer::StartFrame(); }
 
 void GraphicsSystem::EndFrame() { window_.SwapBuffers(); }
