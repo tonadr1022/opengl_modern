@@ -3,7 +3,6 @@
 #include <glm/gtc/quaternion.hpp>
 
 namespace component {
-
 glm::mat4 Transform::CalculateModel() {
   return glm::translate(glm::mat4(1), translation_) * glm::mat4_cast(rotation_) *
          glm::scale(glm::mat4(1), scale_);

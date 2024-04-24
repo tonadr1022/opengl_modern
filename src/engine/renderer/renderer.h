@@ -2,6 +2,6 @@
 
 struct GLFWwindow;
 
-namespace renderer {
+namespace gfx {
 extern void StartFrame();
-}  // namespace renderer
+}  // namespace gfx

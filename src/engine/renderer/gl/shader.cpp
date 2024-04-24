@@ -8,6 +8,7 @@
 
 #define CHECK 1
 
+namespace gfx {
 void Shader::Bind() const {
   DEBUG_ASSERT_MSG(id_ != 0, "Shader is invalid");
   glUseProgram(id_);
@@ -80,3 +81,5 @@ void Shader::SetBool(HashedString name, bool value) {
 
 Shader::Shader(uint32_t id, std::unordered_map<uint32_t, uint32_t>& uniform_locations)
     : id_(id), uniform_locations_(uniform_locations) {}
+
+}  // namespace gfx

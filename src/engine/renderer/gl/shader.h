@@ -1,9 +1,12 @@
 #pragma once
 
+#include <unistd.h>
+
 #include <cstdint>
 #include <glm/fwd.hpp>
 
 #include "../../util/hashed_string.h"
+namespace gfx {
 class Shader {
  public:
   void Bind() const;
@@ -27,3 +30,5 @@ class Shader {
   uint32_t id_{0};
   std::unordered_map<uint32_t, uint32_t>& uniform_locations_;
 };
+
+}  // namespace gfx

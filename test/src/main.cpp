@@ -5,13 +5,14 @@
 
 #include <memory>
 
+#include "engine/ecs/entity/entity.h"
 #include "engine/scene.h"
 
 int count = 0;
 
 void OnInit() {}
 
-void OnUpdate(Timestep timestep) {
+void OnUpdate(Timestep /*timestep*/) {
   count++;
   // std::cout << count << " " << std::fixed << std::setprecision(6) << timestep.delta_time << " "
   //           << timestep.elapsed_time << "\n";

@@ -31,6 +31,7 @@ class Application {
 
   static void LoadScene(const std::string& name);
   static void AddScene(std::unique_ptr<Scene> scene);
+  static void GetScene(const std::string& name);
 
  private:
   friend class Input;
