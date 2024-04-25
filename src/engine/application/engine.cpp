@@ -5,26 +5,29 @@
 #include "../util/timer.h"
 #include "input.h"
 
+Engine* Engine::instance_ = nullptr;
+
 Engine::Engine() {
   graphics_system_ = std::make_unique<GraphicsSystem>();
-
   graphics_system_->Init();
   Input::init_glfw_input_callbacks(graphics_system_->GetWindow().GetContext());
+}
 
-  running_ = true;
+Engine& Engine::Get() {
+  if (instance_ == nullptr) {
+    instance_ = new Engine;
+  }
+  EASSERT(instance_);
+  return *instance_;
 }
 
 void Engine::Run() {
-  EASSERT_MSG(update_callback_ != nullptr, "Update callback");
-  EASSERT_MSG(draw_callback_ != nullptr, "Draw callback");
-  EASSERT_MSG(init_callback_ != nullptr, "Init callback");
-  EASSERT_MSG(key_event_callback_ != nullptr, "Key callback");
+  running_ = true;
 
   Timestep timestep;
   util::Timer timer;
   timer.Start();
   double last_time = timer.GetElapsedSeconds();
-
   while (running_) {
     Input::Update();
 
@@ -33,12 +36,9 @@ void Engine::Run() {
     last_time = current_time;
     timestep.elapsed_time = current_time;
 
+    active_scene_->OnUpdate(timestep);
+
     graphics_system_->StartFrame();
-
-    update_callback_(timestep);
-
-    draw_callback_();
-
     graphics_system_->EndFrame();
   }
 }

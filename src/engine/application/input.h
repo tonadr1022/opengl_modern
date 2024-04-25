@@ -8,6 +8,12 @@ constexpr int MouseButtonStates = GLFW_MOUSE_BUTTON_LAST;
 using Key = int;
 using MouseButton = int;
 
+struct KeyEvent {
+  Key key;
+  int action;
+  int mods;
+};
+
 class Input {
  public:
   enum KeyState : uint8_t {

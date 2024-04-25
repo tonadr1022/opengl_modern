@@ -1,6 +1,6 @@
 #include "input.h"
 
-#include "application.h"
+#include "engine/application/engine.h"
 
 void Input::Update() {
   for (auto& mouse_button_state : mouse_button_states_) {
@@ -69,8 +69,8 @@ void Input::keypress_cb(GLFWwindow* /*window*/, int key, int /*scancode*/, int a
   //  io.KeysDown[GLFW_KEY_RIGHT_ALT]; io.KeySuper =
   //  io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
-  EASSERT(Application::engine_->key_event_callback_ != nullptr);
-  Application::engine_->key_event_callback_(key, action, mods);
+  KeyEvent e{.key = key, .action = action, .mods = mods};
+  Engine::Get().OnKeyEvent(e);
 
   if (action == GLFW_PRESS) {
     key_states_[key] = Pressed;

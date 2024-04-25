@@ -1,4 +1,4 @@
-#include <engine/application/application.h>
+#include <engine/application/engine.h>
 #include <engine/application/input.h>
 #include <engine/timestep.h>
 
@@ -9,41 +9,63 @@ int count = 0;
 
 void OnInit() {}
 
-void OnUpdate(Timestep /*timestep*/) {
-  count++;
-  // std::cout << count << " " << std::fixed << std::setprecision(6) << timestep.delta_time << " "
-  //           << timestep.elapsed_time << "\n";
+class Scene1 : public Scene {
+ public:
+  Scene1() : Scene("test1") {}
+  void OnUpdate(Timestep timestep) override {
+    std::cout << "scene1 update: " << timestep.delta_time << "\n";
+  };
 
-  // if (count > 10) {
-  //   Application::Quit();
-  // }
-}
-
-void OnKeyEvent(int key, int action, int mods) {
-  bool pressed = action == GLFW_PRESS;
-  if (pressed) {
-    if (key == GLFW_KEY_BACKSPACE && mods == GLFW_MOD_SHIFT) {
-      Application::Quit();
+  void OnKeyEvent(const KeyEvent& e) {
+    bool pressed = e.action == GLFW_PRESS;
+    if (pressed) {
+      if (e.key == GLFW_KEY_BACKSPACE && e.mods == GLFW_MOD_SHIFT) {
+        Engine::Get().Stop();
+      }
+      if (e.key == GLFW_KEY_B) {
+        Engine::Get().LoadScene("test2");
+      }
     }
+    std::cout << "key event\n";
   }
-}
+};
+
+class Scene2 : public Scene {
+ public:
+  Scene2() : Scene("test2") {}
+  void OnUpdate(Timestep timestep) override {
+    std::cout << "scene2 update: " << timestep.delta_time << "\n";
+  };
+  void OnKeyEvent(const KeyEvent& e) {
+    bool pressed = e.action == GLFW_PRESS;
+    if (pressed) {
+      if (e.key == GLFW_KEY_BACKSPACE && e.mods == GLFW_MOD_SHIFT) {
+        Engine::Get().Stop();
+      }
+      if (e.key == GLFW_KEY_B) {
+        Engine::Get().LoadScene("test1");
+      }
+    }
+    std::cout << "key event\n";
+  }
+};
+
+void OnKeyEvent(int key, int action, int mods) {}
 
 void OnDraw() {}
 
+void LoadScenes(Engine& engine) {
+  auto scene = std::make_unique<Scene1>();
+  auto scene2 = std::make_unique<Scene2>();
+  engine.AddScene(std::move(scene));
+  engine.AddScene(std::move(scene2));
+  engine.LoadScene("test1");
+}
+
 int main() {
-  Application::Init();
-  Application::SetInitCallback(OnInit);
-  Application::SetUpdateCallback(OnUpdate);
-  Application::SetDrawCallback(OnDraw);
-  Application::SetKeyEventCallback(OnKeyEvent);
-
-  Application::AddScene(std::make_unique<Scene>("test"));
-  Application::AddScene(std::make_unique<Scene>("test2"));
-  Application::LoadScene("test2");
-
-  Application::Run();
-
-  Application::Shutdown();
-
+  auto* engine = new Engine;
+  LoadScenes(*engine);
+  engine->Run();
+  delete engine;
   return 0;
 }
