@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../window.h"
+#include "../../application/window.h"
 
 class GraphicsSystem {
  public:

@@ -9,6 +9,7 @@ class Scene {
   Scene() = default;
   explicit Scene(std::string name);
   [[nodiscard]] const std::string& GetName() const { return name_; }
+  Entity CreateEntity();
   Entity CreateEntity(std::string_view tag);
   Entity GetEntity(std::string_view tag);
 

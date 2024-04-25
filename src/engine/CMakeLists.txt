@@ -1,20 +1,20 @@
 project(opengl_modern)
 
 set(SOURCES
-    window.cpp
+    application/window.cpp
     scene.cpp
-    engine.cpp
+    application/engine.cpp
     renderer/renderer.cpp
     renderer/resource/shader_manager.cpp
     renderer/resource/mesh_manager.cpp
     renderer/resource/texture_manager.cpp
     renderer/gl/shader.cpp
-    input.cpp
-    application.cpp
+    application/input.cpp
+    application/application.cpp
     ecs/system/graphics_system.cpp
     ecs/entity/entity.cpp
     ecs/component/transform.cpp
-    e_assert.cpp
+    core/e_assert.cpp
     pch.cpp
     util/timer.cpp)
 

@@ -1,8 +1,5 @@
 #include "renderer.h"
 
-#include <GL/glew.h>
-#include <spdlog/spdlog.h>
-
 namespace gfx {
 
 namespace renderer {

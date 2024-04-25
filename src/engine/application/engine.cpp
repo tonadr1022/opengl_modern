@@ -1,13 +1,9 @@
 #include "engine.h"
 
-#include <memory>
-
-#include "e_assert.h"
-#include "ecs/system/graphics_system.h"
+#include "../scene.h"
+#include "../timestep.h"
+#include "../util/timer.h"
 #include "input.h"
-#include "scene.h"
-#include "timestep.h"
-#include "util/timer.h"
 
 Engine::Engine() {
   graphics_system_ = std::make_unique<GraphicsSystem>();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pch.h"
+#include "../pch.h"
 
 constexpr int ButtonCount = GLFW_KEY_LAST;
 constexpr int MouseButtonStates = GLFW_MOUSE_BUTTON_LAST;

@@ -1,11 +1,5 @@
 #include "shader.h"
 
-#include <GL/glew.h>
-
-#include <glm/gtc/type_ptr.hpp>
-
-#include "../../e_assert.h"
-
 namespace gfx {
 void Shader::Bind() const {
   EASSERT_MSG(id_ != 0, "Shader is invalid");

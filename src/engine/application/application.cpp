@@ -1,10 +1,6 @@
 #include "application.h"
 
-#include <spdlog/spdlog.h>
-
-#include <iostream>
-
-#include "scene.h"
+#include "../scene.h"
 
 void Application::Run() {
   engine_->update_callback_ = update_callback_;

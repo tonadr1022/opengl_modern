@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ecs/system/graphics_system.h"
-#include "pch.h"
+#include "../ecs/system/graphics_system.h"
+#include "../pch.h"
 
 struct Timestep;
 class Scene;

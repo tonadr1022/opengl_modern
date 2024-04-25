@@ -2,15 +2,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include <cstddef>
-#include <cstdint>
-#include <fstream>
-#include <optional>
-#include <sstream>
-#include <string>
-
-#include "../../e_assert.h"
-
 namespace gfx {
 std::optional<std::string> LoadFromFile(const std::string& path) {
   std::ifstream file_stream(path);

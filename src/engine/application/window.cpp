@@ -1,14 +1,5 @@
 #include "window.h"
 
-// clang-format off
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-// clang-format on
-
-#include <spdlog/spdlog.h>
-
-#include <iostream>
-
 void Window::Init() {
   // TODO(tony): opengl error callback
   glfwSetErrorCallback([](int error, const char* description) {

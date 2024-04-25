@@ -1,7 +1,7 @@
 #include "graphics_system.h"
 
+#include "../../application/window.h"
 #include "../../renderer/renderer.h"
-#include "../../window.h"
 
 void GraphicsSystem::Init() {
   window_.Init();

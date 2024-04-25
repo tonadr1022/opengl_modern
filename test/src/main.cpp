@@ -1,8 +1,6 @@
-#include <engine/application.h>
-#include <engine/input.h>
+#include <engine/application/application.h>
+#include <engine/application/input.h>
 #include <engine/timestep.h>
-
-#include <memory>
 
 #include "engine/ecs/entity/entity.h"
 #include "engine/scene.h"
