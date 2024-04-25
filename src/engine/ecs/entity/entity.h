@@ -6,7 +6,7 @@ class Scene;
 
 class Entity {
  public:
-  explicit Entity(Scene& scene);
+  Entity();
 
   template <typename T, typename... Args>
   T& AddComponent(Args&&... args) {}
@@ -15,5 +15,4 @@ class Entity {
   T GetComponent();
 
  private:
-  Scene& scene_;
 };

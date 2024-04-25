@@ -1,12 +1,12 @@
 #pragma once
-#include <entt/entt.hpp>
-#include <string>
-#include <string_view>
+
+#include <entt/entity/registry.hpp>
 
 class Entity;
 
 class Scene {
  public:
+  Scene() = default;
   explicit Scene(std::string name);
   [[nodiscard]] const std::string& GetName() const { return name_; }
   Entity CreateEntity(std::string_view tag);

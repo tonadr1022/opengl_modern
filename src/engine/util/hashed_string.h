@@ -204,26 +204,23 @@ template <typename Char>
 using HashedString = basic_hashed_string<char>;
 using HashedWString = basic_hashed_string<wchar_t>;
 
-///**
-// * @brief User defined literal for hashed strings.
-// * @param str The literal without its suffix.
-// * @return A properly initialized hashed string.
-// */
-//[[nodiscard]] constexpr HashedString operator"" hs(const char* str, std::size_t) noexcept
-//{
-//  return HashedString{ str };
-//}
+// /**
+//  * @brief User defined literal for hashed strings.
+//  * @param str The literal without its suffix.
+//  * @return A properly initialized hashed string.
+//  */
+// [[nodiscard]] constexpr HashedString operator"" hs(const char* str, std::size_t) noexcept {
+//   return HashedString{str};
+// }
 //
-//
-///**
-// * @brief User defined literal for hashed wstrings.
-// * @param str The literal without its suffix.
-// * @return A properly initialized hashed wstring.
-// */
-//[[nodiscard]] constexpr HashedWString operator"" hws(const wchar_t* str, std::size_t) noexcept
-//{
-//  return HashedWString{ str };
-//}
+// /**
+//  * @brief User defined literal for hashed wstrings.
+//  * @param str The literal without its suffix.
+//  * @return A properly initialized hashed wstring.
+//  */
+// [[nodiscard]] constexpr HashedWString operator"" hws(const wchar_t* str, std::size_t) noexcept {
+//   return HashedWString{str};
+// }
 
 namespace std {
 template <>

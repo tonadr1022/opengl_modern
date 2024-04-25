@@ -1,9 +1,6 @@
 #include "input.h"
 
-#include <GLFW/glfw3.h>
-
 #include "application.h"
-#include "e_assert.h"
 
 void Input::Update() {
   for (auto& mouse_button_state : mouse_button_states_) {
@@ -39,7 +36,7 @@ bool Input::IsMousePressed(MouseButton key) { return mouse_button_states_[key] =
 bool Input::IsMouseReleased(MouseButton key) { return mouse_button_states_[key] == Released; }
 
 void Input::init_glfw_input_callbacks(GLFWwindow* window) {
-  DEBUG_EASSERT(window != nullptr);
+  EASSERT(window != nullptr);
   glfwSetKeyCallback(window, keypress_cb);
   glfwSetCursorPosCallback(window, mouse_pos_cb);
   glfwSetMouseButtonCallback(window, mouse_button_cb);
@@ -72,7 +69,7 @@ void Input::keypress_cb(GLFWwindow* /*window*/, int key, int /*scancode*/, int a
   //  io.KeysDown[GLFW_KEY_RIGHT_ALT]; io.KeySuper =
   //  io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
-  DEBUG_EASSERT(Application::engine_->key_event_callback_ != nullptr);
+  EASSERT(Application::engine_->key_event_callback_ != nullptr);
   Application::engine_->key_event_callback_(key, action, mods);
 
   if (action == GLFW_PRESS) {

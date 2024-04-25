@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cstdint>
-struct GLFWwindow;
+#include "pch.h"
 
 class Window {
  public:

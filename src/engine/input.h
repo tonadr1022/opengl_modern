@@ -1,8 +1,6 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
-
-#include <glm/vec2.hpp>
+#include "pch.h"
 
 constexpr int ButtonCount = GLFW_KEY_LAST;
 constexpr int MouseButtonStates = GLFW_MOUSE_BUTTON_LAST;

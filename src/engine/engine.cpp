@@ -25,7 +25,7 @@ void Engine::Run() {
   EASSERT_MSG(key_event_callback_ != nullptr, "Key callback");
 
   Timestep timestep;
-  Timer timer;
+  util::Timer timer;
   timer.Start();
   double last_time = timer.GetElapsedSeconds();
 

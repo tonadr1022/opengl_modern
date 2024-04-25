@@ -1,11 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
-
-#include <cstdint>
-#include <optional>
-#include <string>
-
+#include "../../pch.h"
 #include "../gl/shader.h"
 
 namespace gfx {

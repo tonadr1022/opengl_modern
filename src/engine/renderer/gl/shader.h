@@ -1,11 +1,7 @@
 #pragma once
 
-#include <unistd.h>
+#include "../../pch.h"
 
-#include <cstdint>
-#include <glm/fwd.hpp>
-
-#include "../../util/hashed_string.h"
 namespace gfx {
 class Shader {
  public:

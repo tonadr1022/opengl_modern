@@ -70,6 +70,7 @@ std::optional<ShaderManager::ShaderProgramData> ShaderManager::CompileProgram(
     auto src = LoadFromFile(create_info.shaderPath);
     if (!src.has_value()) {
       spdlog::error("Failed to load from file {}", create_info.shaderPath);
+      return std::nullopt;
     }
     uint32_t shader_id = CompileShader(create_info.shaderType, src.value().c_str());
     if (!CheckShaderModuleCompilationSuccess(shader_id, create_info.shaderPath.c_str())) {
@@ -106,7 +107,7 @@ std::optional<Shader> ShaderManager::AddShader(
 }
 
 void ShaderManager::InitializeUniforms(ShaderProgramData& program_data) {
-  DEBUG_ASSERT_MSG(program_data.id != 0, "Can't initialize uniforms on invalid shader");
+  EASSERT_MSG(program_data.id != 0, "Can't initialize uniforms on invalid shader");
   GLint active_uniform_max_length;
   glGetProgramiv(program_data.id, GL_ACTIVE_UNIFORM_MAX_LENGTH, &active_uniform_max_length);
   GLint num_uniforms;

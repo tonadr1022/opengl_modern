@@ -1,9 +1,6 @@
 #pragma once
-#include <cstdint>
-#include <functional>
-#include <glm/vec3.hpp>
 
-#include "../util/hashed_string.h"
+#include "../pch.h"
 #include "gl/shader.h"
 
 namespace gfx {

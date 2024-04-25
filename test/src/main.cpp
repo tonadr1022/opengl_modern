@@ -1,4 +1,3 @@
-#include <GLFW/glfw3.h>
 #include <engine/application.h>
 #include <engine/input.h>
 #include <engine/timestep.h>
