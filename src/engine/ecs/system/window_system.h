@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../pch.h"
+struct GLFWwindow;
 
-class Window {
- public:
+struct WindowSystem {
   void Init();
   void SwapBuffers();
   void SetVsync(bool state);
   void Shutdown();
+  bool ShouldClose();
   [[nodiscard]] bool GetVsync() const { return is_vsync_; };
   [[nodiscard]] GLFWwindow* GetContext() const { return glfw_window_; }
 

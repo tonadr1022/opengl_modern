@@ -1,3 +1,13 @@
 {
-  "dependencies": ["entt", "glfw3", "glm", "spdlog", "glew"]
+  "dependencies": [
+    "entt",
+    "glew",
+    "glfw3",
+    "glm",
+    "spdlog",
+    {
+      "name": "imgui",
+      "features": ["glfw-binding", "opengl3-binding"]
+    }
+  ]
 }

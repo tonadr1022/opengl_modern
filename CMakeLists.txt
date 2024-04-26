@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(opengl_modern VERSION 1.0)
 
 find_package(glfw3 CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(EnTT CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)

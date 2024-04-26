@@ -1,10 +1,10 @@
 #pragma once
 
+#include <engine/application/input.h>
+#include <engine/pch.h>
+
 #include <entt/entity/registry.hpp>
 
-#include "engine/pch.h"
-
-class Entity;
 struct Timestep;
 
 class Scene {
@@ -13,7 +13,7 @@ class Scene {
   explicit Scene(std::string name);
   [[nodiscard]] const std::string& GetName() const { return name_; }
   virtual void OnUpdate(Timestep timestep);
-  virtual void OnKeyEvent(int key, int action, int mods);
+  virtual void OnKeyEvent(const KeyEvent& e);
 
   // [[nodiscard]] Entity CreateEntity();
   // [[nodiscard]] Entity CreateEntity(std::string_view tag);

@@ -1,17 +1,18 @@
-#include "window.h"
+#include "window_system.h"
 
-void Window::Init() {
+void WindowSystem::Init() {
   // TODO(tony): opengl error callback
   glfwSetErrorCallback([](int error, const char* description) {
     spdlog::critical("GFLW error {}: {}\n", error, description);
   });
 
-  if (!glfwInit()) {
-    spdlog::critical("GLFW initialization failed");
-  }
+  EASSERT(glfwInit() != false);
+  // if (!glfwInit()) {
+  //   spdlog::critical("GLFW initialization failed");
+  // }
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
   glfwWindowHint(GLFW_SAMPLES, 4);
@@ -36,8 +37,8 @@ void Window::Init() {
   glfwSetWindowUserPointer(glfw_window_, static_cast<void*>(this));
 
   glfwSetFramebufferSizeCallback(glfw_window_, [](GLFWwindow* glfw_window, int width, int height) {
-    Window* this_window;
-    this_window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
+    WindowSystem* this_window;
+    this_window = static_cast<WindowSystem*>(glfwGetWindowUserPointer(glfw_window));
     this_window->framebuffer_height_ = height;
     this_window->framebuffer_width_ = width;
   });
@@ -59,11 +60,13 @@ void Window::Init() {
   std::cout << opengl_extensions.size() << "\n";
 }
 
-void Window::SwapBuffers() { glfwSwapBuffers(glfw_window_); }
+void WindowSystem::SwapBuffers() { glfwSwapBuffers(glfw_window_); }
 
-void Window::SetVsync(bool state) {
+void WindowSystem::SetVsync(bool state) {
   is_vsync_ = state;
   glfwSwapInterval(state);
 };
 
-void Window::Shutdown() { glfwSetWindowShouldClose(glfw_window_, true); }
+void WindowSystem::Shutdown() { glfwSetWindowShouldClose(glfw_window_, true); }
+
+bool WindowSystem::ShouldClose() { return glfwWindowShouldClose(glfw_window_); }
