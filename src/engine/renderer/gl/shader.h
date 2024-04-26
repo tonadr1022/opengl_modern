@@ -3,6 +3,8 @@
 #include "../../pch.h"
 
 namespace gfx {
+
+// lightweight, meant to be created and destroyed every frame, contains an int and a reference.
 class Shader {
  public:
   void Bind() const;
@@ -19,7 +21,7 @@ class Shader {
   void SetBool(HashedString name, bool value);
 
   Shader(uint32_t id, std::unordered_map<uint32_t, uint32_t>& uniform_locations);
-  ~Shader();
+  ~Shader() = default;
   [[nodiscard]] inline uint32_t Id() const { return id_; }
 
  private:

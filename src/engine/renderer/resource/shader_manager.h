@@ -1,5 +1,7 @@
 #pragma once
 
+#include <initializer_list>
+
 #include "../../pch.h"
 #include "../gl/shader.h"
 

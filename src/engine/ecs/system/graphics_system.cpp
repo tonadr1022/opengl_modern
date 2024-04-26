@@ -5,4 +5,4 @@
 void GraphicsSystem::Init() {}
 void GraphicsSystem::Shutdown() {}
 void GraphicsSystem::StartFrame() { gfx::renderer::StartFrame(); }
-void GraphicsSystem::EndFrame() {}
+void GraphicsSystem::EndFrame() { gfx::renderer::EndFrame(); }

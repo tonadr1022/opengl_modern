@@ -120,6 +120,20 @@ void ImGuiSystem::DebugMenu(Timestep timestep) {
   ImGui::PlotVar("Frametime (ms)", timestep.dt_actual * 1000.0f, 0.f, .05f * 1000.f, 240,
                  ImVec2(300, 100));
 
+  constexpr const double AvgFramesToCount = 30;
+
+  static double accumulated = 0;
+  static int acc_count = 0;
+  acc_count++;
+  static double avg_frame_rate = 999999;
+  accumulated += timestep.dt_actual;
+  if (acc_count >= AvgFramesToCount) {
+    avg_frame_rate = accumulated / acc_count;
+    acc_count = 0;
+    accumulated = 0;
+  }
+  ImGui::Text("acc FPS: %.1f (%.2f ms)", 1.f / avg_frame_rate, avg_frame_rate * 1000);
+
   static int fake_lag = 0;
   static double frame_time_exp = 0;
   static double alpha = .01;

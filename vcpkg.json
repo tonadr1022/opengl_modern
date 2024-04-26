@@ -4,10 +4,14 @@
     "glew",
     "glfw3",
     "glm",
-    "spdlog",
     {
       "name": "imgui",
-      "features": ["glfw-binding", "opengl3-binding"]
-    }
+      "features": [
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    "spdlog",
+    "assimp"
   ]
 }

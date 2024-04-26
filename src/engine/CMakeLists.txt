@@ -6,6 +6,7 @@ set(SOURCES
     renderer/renderer.cpp
     renderer/resource/shader_manager.cpp
     renderer/resource/mesh_manager.cpp
+    renderer/resource/material_manager.cpp
     renderer/resource/texture_manager.cpp
     renderer/gl/shader.cpp
     application/input.cpp
@@ -14,6 +15,7 @@ set(SOURCES
     ecs/entity/entity.cpp
     ecs/component/transform.cpp
     ecs/system/imgui_system.cpp
+    util/load_file.cpp
     util/imgui_extensions.cpp
     core/e_assert.cpp
     pch.cpp
@@ -25,5 +27,11 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)
 
 target_link_libraries(
-  ${PROJECT_NAME} PRIVATE imgui::imgui GLEW::GLEW spdlog::spdlog glm::glm glfw
-                          EnTT::EnTT)
+  ${PROJECT_NAME}
+  PRIVATE assimp::assimp
+          imgui::imgui
+          GLEW::GLEW
+          spdlog::spdlog
+          glm::glm
+          glfw
+          EnTT::EnTT)

@@ -12,10 +12,14 @@ find_package(glm CONFIG REQUIRED)
 find_package(EnTT CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(assimp CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_compile_definitions(SHADER_PATH="${CMAKE_SOURCE_DIR}/resources/shaders/")
+add_compile_definitions(TEXTURE_PATH="${CMAKE_SOURCE_DIR}resources/textures/")
 
 include_directories(src)
 add_subdirectory(src)

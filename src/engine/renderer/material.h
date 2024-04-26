@@ -1,5 +1,7 @@
 #pragma once
 
+#include <initializer_list>
+
 #include "../pch.h"
 #include "gl/shader.h"
 
@@ -16,6 +18,10 @@ struct MaterialCreateInfo {
   HashedString shader_id;
   // need texture info
   std::vector<PerMaterialUniformData> uniform_data;
+};
+
+struct ColorMaterial {
+  glm::vec3 color;
 };
 
 }  // namespace gfx

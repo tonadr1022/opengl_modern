@@ -1,18 +1,11 @@
 #include "shader_manager.h"
 
 #include <spdlog/spdlog.h>
+#include <sys/resource.h>
+
+#include "engine/util/load_file.h"
 
 namespace gfx {
-std::optional<std::string> LoadFromFile(const std::string& path) {
-  std::ifstream file_stream(path);
-  std::string line;
-  std::stringstream s_stream;
-  if (!file_stream.is_open()) return std::nullopt;
-  while (std::getline(file_stream, line)) {
-    s_stream << line;
-  }
-  return s_stream.str();
-}
 
 std::optional<Shader> ShaderManager::GetShader(HashedString name) {
   auto it = shader_data_.find(name);
@@ -58,7 +51,7 @@ std::optional<ShaderManager::ShaderProgramData> ShaderManager::CompileProgram(
     HashedString name, const std::vector<ShaderCreateInfo>& create_info_vec) {
   std::vector<uint32_t> shader_ids;
   for (const auto& create_info : create_info_vec) {
-    auto src = LoadFromFile(create_info.shaderPath);
+    auto src = util::LoadFromFile(create_info.shaderPath);
     if (!src.has_value()) {
       spdlog::error("Failed to load from file {}", create_info.shaderPath);
       return std::nullopt;
@@ -93,6 +86,7 @@ std::optional<Shader> ShaderManager::AddShader(
   if (!result.has_value()) {
     return std::nullopt;
   }
+  spdlog::info("Compiled shader: {}", name.data());
   shader_data_.emplace(name, result.value());
   return Shader{result.value().id, result.value().uniform_locations};
 }
@@ -115,4 +109,32 @@ void ShaderManager::InitializeUniforms(ShaderProgramData& program_data) {
     program_data.uniform_locations.emplace(HashedString(uniform_name), program_data.id);
   }
 }
+
+std::optional<Shader> ShaderManager::RecompileShader(HashedString name) {
+  auto it = shader_data_.find(name);
+  if (it == shader_data_.end()) {
+    spdlog::warn("Shader not found, cannot recompile: {}", name.data());
+    return std::nullopt;
+  }
+  auto recompile_result = CompileProgram(name, it->second.shader_create_info_vec);
+  if (!recompile_result.has_value()) {
+    return std::nullopt;
+  }
+  shader_data_.erase(it);
+  auto new_it = shader_data_.emplace(name, recompile_result.value());
+  return Shader{new_it.first->second.id, new_it.first->second.uniform_locations};
+}
+
+void ShaderManager::RecompileShaders() {
+  // have to avoid iterator invalidation
+  std::vector<HashedString> shader_names;
+  shader_names.reserve(shader_data_.size());
+  for (auto& shader_data : shader_data_) {
+    shader_names.emplace_back(shader_data.second.name.data());
+  }
+  for (const auto& shader_name : shader_names) {
+    RecompileShader(shader_name);
+  }
+}
+
 }  // namespace gfx
