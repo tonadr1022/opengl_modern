@@ -19,9 +19,12 @@ set(SOURCES
     util/imgui_extensions.cpp
     core/e_assert.cpp
     pch.cpp
-    util/timer.cpp)
+    util/timer.cpp
+    test/main.cpp
+    test/scene_main.cpp )
 
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
+
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)

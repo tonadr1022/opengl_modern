@@ -24,4 +24,3 @@ add_compile_definitions(TEXTURE_PATH="${CMAKE_SOURCE_DIR}resources/textures/")
 include_directories(src)
 add_subdirectory(src)
 
-add_subdirectory(test)
