@@ -10,7 +10,7 @@ struct ImGuiSystem {
   void Shutdown();
   void StartFrame();
   void EndFrame();
-  void DebugMenu(Timestep timestep);
+  void FramerateSubMenu(Timestep timestep);
 
   bool debug_menu_enabled{true};
   bool enabled{true};

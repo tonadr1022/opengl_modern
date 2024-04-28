@@ -1,8 +1,11 @@
 #include "engine.h"
 
+#include <imgui.h>
+
 #include "../scene.h"
 #include "../timestep.h"
 #include "../util/timer.h"
+#include "engine/ecs/system/graphics_system.h"
 #include "engine/ecs/system/imgui_system.h"
 #include "engine/ecs/system/window_system.h"
 #include "input.h"
@@ -12,9 +15,9 @@ Engine* Engine::instance_ = nullptr;
 Engine::Engine() {
   enabled_systems_.set();
 
-  window_system_ = std::make_unique<WindowSystem>();
-  imgui_system_ = std::make_unique<ImGuiSystem>();
-  graphics_system_ = std::make_unique<GraphicsSystem>();
+  window_system_ = new WindowSystem;
+  imgui_system_ = new ImGuiSystem;
+  graphics_system_ = new GraphicsSystem;
 
   window_system_->Init();
   window_system_->SetVsync(true);
@@ -61,18 +64,37 @@ void Engine::Run() {
     graphics_system_->StartFrame();
     graphics_system_->EndFrame();
 
-    imgui_system_->DebugMenu(timestep);
+    ImGuiSystemPerFrame(timestep);
+
     imgui_system_->EndFrame();
 
     window_system_->SwapBuffers();
   }
 
-  delete instance_;
+  Shutdown();
+}
+void Engine::ImGuiSystemPerFrame(Timestep timestep) {
+  ImGui::Begin("Settings");
+  bool vsync = window_system_->GetVsync();
+  if (ImGui::Checkbox("Vsync", &vsync)) {
+    window_system_->SetVsync(vsync);
+  }
+
+  imgui_system_->FramerateSubMenu(timestep);
+
+  ImGui::End();
 }
 
 void Engine::Shutdown() {
   imgui_system_->Shutdown();
   graphics_system_->Shutdown();
+  window_system_->Shutdown();
+
+  delete imgui_system_;
+  delete graphics_system_;
+  delete window_system_;
+
+  delete instance_;
 }
 
 Engine::~Engine() = default;

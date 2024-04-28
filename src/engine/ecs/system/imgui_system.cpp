@@ -114,8 +114,7 @@ void ImGuiSystem::EndFrame() {
   // ImGui::UpdatePlatformWindows();
 }
 
-void ImGuiSystem::DebugMenu(Timestep timestep) {
-  ImGui::Begin("Debug");
+void ImGuiSystem::FramerateSubMenu(Timestep timestep) {
   ImGui::BeginChild("Framerate");
   ImGui::PlotVar("Frametime (ms)", timestep.dt_actual * 1000.0f, 0.f, .05f * 1000.f, 240,
                  ImVec2(300, 100));
@@ -150,5 +149,4 @@ void ImGuiSystem::DebugMenu(Timestep timestep) {
   }
 
   ImGui::EndChild();
-  ImGui::End();
 }
