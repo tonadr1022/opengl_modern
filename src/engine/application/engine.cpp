@@ -31,6 +31,10 @@ Engine::Engine() {
 
 void Engine::OnKeyEvent(KeyEvent& e) {
   // TODO(tony): imgui handle first
+  if (e.key == KeyCode::Q && e.mods == KeyMod::Control) {
+    Stop();
+    return;
+  }
   EASSERT(active_scene_ != nullptr);
   active_scene_->OnKeyEvent(e);
 }
@@ -51,21 +55,32 @@ void Engine::Run() {
   util::Timer timer;
   timer.Start();
   double last_time = timer.GetElapsedSeconds();
+  // const double sim_time = 1.0 / 60.0;
   while (running_ && !window_system_->ShouldClose()) {
     Input::Update();
 
-    auto current_time = timer.GetElapsedSeconds();
-    timestep.dt_actual = current_time - last_time;
-    last_time = current_time;
-
     imgui_system_->StartFrame();
 
+    auto current_time = timer.GetElapsedSeconds();
+    double delta_time = current_time - last_time;
+    last_time = current_time;
+    // for now, give scene simulated time. eventually, have two functions, update and fixed update,
+    // or do all fixed update in physics system that doesn't exist.
+    double frame_time = delta_time;
+    // while (frame_time >= 0) {
+    //   double dt = std::min(frame_time, sim_time);
+    //   timestep.dt_actual = dt;
+    //   frame_time -= dt;
+    //   active_scene_->OnUpdate(timestep);
+    // }
     active_scene_->OnUpdate(timestep);
+    timestep.dt_actual = delta_time;
+
     graphics_system_->StartFrame();
+
     graphics_system_->EndFrame();
 
     ImGuiSystemPerFrame(timestep);
-
     imgui_system_->EndFrame();
 
     window_system_->SwapBuffers();
@@ -110,6 +125,8 @@ void Engine::AddScene(std::unique_ptr<Scene> scene) {
 void Engine::LoadScene(const std::string& name) {
   auto it = scenes_.find(name);
   EASSERT_MSG(it != scenes_.end(), "Scene Not Found");
-  active_scene_ = it->second.get();
   std::cout << "Loading scene: " << name << "\n";
+  if (active_scene_) active_scene_->Shutdown();
+  active_scene_ = it->second.get();
+  active_scene_->Load();
 }

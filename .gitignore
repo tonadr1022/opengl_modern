@@ -2,7 +2,8 @@ build-*
 .cache
 build
 cmake-*
-
+out
+.idea
 compile_commands.json
 
 imgui.ini

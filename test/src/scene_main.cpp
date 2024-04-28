@@ -9,7 +9,20 @@
 #include "engine/renderer/resource/material_manager.h"
 #include "engine/renderer/resource/shader_manager.h"
 
-SceneMain::SceneMain() : Scene("main") {
+SceneMain::SceneMain() : Scene("main") {}
+
+void SceneMain::OnKeyEvent(const KeyEvent& e) {
+  bool pressed = e.action == InputAction::Press;
+  if (pressed) {
+    if (e.key == KeyCode::B) {
+      Engine::Get().LoadScene("test2");
+    }
+  }
+}
+
+void SceneMain::OnUpdate(Timestep timestep) {}
+
+void SceneMain::Load() {
   auto tri = registry_.create();
   int a = 5;
   component::Transform t;
@@ -33,18 +46,5 @@ SceneMain::SceneMain() : Scene("main") {
   auto color_only_mat = gfx::material_manager::AddMaterial(gfx::ColorMaterial{{1.f, 1.f, 1.f}});
   registry_.remove<component::Material>(tri);
   registry_.emplace<component::Material>(tri, color_only_mat);
+  auto view = registry_.view<component::Material>();
 }
-
-void SceneMain::OnKeyEvent(const KeyEvent& e) {
-  bool pressed = e.action == InputAction::Press;
-  if (pressed) {
-    if (e.key == KeyCode::Backspace && e.mods == KeyMod::Shift) {
-      Engine::Get().Stop();
-    }
-    if (e.key == KeyCode::B) {
-      Engine::Get().LoadScene("test2");
-    }
-  }
-}
-
-void SceneMain::OnUpdate(Timestep timestep) {}

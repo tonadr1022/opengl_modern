@@ -11,9 +11,12 @@ class Scene {
  public:
   Scene() = default;
   explicit Scene(std::string name);
+  virtual ~Scene() = default;
   [[nodiscard]] const std::string& GetName() const { return name_; }
   virtual void OnUpdate(Timestep timestep);
   virtual void OnKeyEvent(const KeyEvent& e);
+  virtual void Load() = 0;
+  void Shutdown();
 
   // [[nodiscard]] Entity CreateEntity();
   // [[nodiscard]] Entity CreateEntity(std::string_view tag);

@@ -10,6 +10,8 @@ class SceneMain : public Scene {
  public:
   SceneMain();
 
+  void Load() override;
+
   void OnUpdate(Timestep timestep) override;
 
   void OnKeyEvent(const KeyEvent& e) override;
