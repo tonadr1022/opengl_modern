@@ -4,93 +4,11 @@
 namespace gfx {
 
 // adapted from https://learnopengl.com/In-Practice/Debugging
-
 void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
-                                GLsizei /*length*/, const GLchar* message,
-                                const void* /*userParam*/) {
+                                [[maybe_unused]] GLsizei length, const GLchar* message,
+                                [[maybe_unused]] const void* userParam) {
   // ignore insignificant error/warning codes
   if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
-  if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
-
-  const char* type_str = "";
-  switch (type) {
-    case GL_DEBUG_TYPE_ERROR:
-      type_str = "Error";
-      break;
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-      type_str = "Deprecated Behavior";
-      break;
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-      type_str = "Undefined Behavior";
-      break;
-    case GL_DEBUG_TYPE_PORTABILITY:
-      type_str = "Portability";
-      break;
-    case GL_DEBUG_TYPE_PERFORMANCE:
-      type_str = "Performance";
-      break;
-    case GL_DEBUG_TYPE_MARKER:
-      type_str = "Marker";
-      break;
-    case GL_DEBUG_TYPE_PUSH_GROUP:
-      type_str = "Push Group";
-      break;
-    case GL_DEBUG_TYPE_POP_GROUP:
-      type_str = "Pop Group";
-      break;
-  }
-
-  const char* severity_str = "";
-  switch (severity) {
-    case GL_DEBUG_SEVERITY_HIGH:
-      type_str = "High";
-      break;
-    case GL_DEBUG_SEVERITY_MEDIUM:
-      type_str = "Medium";
-      break;
-    case GL_DEBUG_SEVERITY_LOW:
-      type_str = "Low";
-      break;
-    case GL_DEBUG_SEVERITY_NOTIFICATION:
-      type_str = "Notification";
-      break;
-  }
-  const char* source_str = "";
-  switch (source) {
-    case GL_DEBUG_SOURCE_API:
-      source_str = "API";
-      break;
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-      source_str = "Window System";
-      break;
-    case GL_DEBUG_SOURCE_SHADER_COMPILER:
-      source_str = "Shader Compiler";
-      break;
-    case GL_DEBUG_SOURCE_THIRD_PARTY:
-      source_str = "Third Party";
-      break;
-    case GL_DEBUG_SOURCE_APPLICATION:
-      source_str = "Application";
-      break;
-    case GL_DEBUG_SOURCE_OTHER:
-      source_str = "Other";
-      break;
-  }
-  std::cerr << "Source: " << source_str << "  " << "Severity: " << severity_str
-            << "  Type: " << type_str << ", Message: " << message << "\n";
-
-  // spdlog::error("Source: {}, Id: {}, Type: {}, Severity: {}, Message: {}", source_str, id,
-  // type_str,
-  //               severity_str, message);
-}
-
-void GLAPIENTRY GLMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
-                                  [[maybe_unused]] GLsizei length, const GLchar* message,
-                                  [[maybe_unused]] const void* userParam) {
-  // ignore insignificant error/warning codes
-  if (id == 131169 || id == 131185 || id == 131218 || id == 131204 ||
-      id == 0)  //|| id == 131188 || id == 131186)
-    return;
 
   std::stringstream err_stream;
   err_stream << "OpenGL Debug message (" << id << "): " << message << '\n';
@@ -113,6 +31,8 @@ void GLAPIENTRY GLMessageCallback(GLenum source, GLenum type, GLuint id, GLenum 
       break;
     case GL_DEBUG_SOURCE_OTHER:
       err_stream << "Source: Other";
+      break;
+    default:
       break;
   }
 
@@ -146,6 +66,8 @@ void GLAPIENTRY GLMessageCallback(GLenum source, GLenum type, GLuint id, GLenum 
     case GL_DEBUG_TYPE_OTHER:
       err_stream << "Type: Other";
       break;
+    default:
+      break;
   }
 
   err_stream << '\n';
@@ -166,6 +88,8 @@ void GLAPIENTRY GLMessageCallback(GLenum source, GLenum type, GLuint id, GLenum 
     case GL_DEBUG_SEVERITY_NOTIFICATION:
       err_stream << "Severity: notification";
       spdlog::debug("{}", err_stream.str());
+      break;
+    default:
       break;
   }
 }

@@ -64,7 +64,7 @@ void InitVaos() {
 
 void Init() {
   glEnable(GL_DEBUG_OUTPUT);
-  glDebugMessageCallback(GLMessageCallback, nullptr);
+  glDebugMessageCallback(MessageCallback, nullptr);
 
   InitVaos();
 }
