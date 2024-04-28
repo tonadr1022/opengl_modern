@@ -13,6 +13,7 @@ set(SOURCES
     ecs/system/graphics_system.cpp
     ecs/system/window_system.cpp
     ecs/entity/entity.cpp
+    renderer/gl/debug.cpp
     ecs/component/transform.cpp
     ecs/system/imgui_system.cpp
     util/load_file.cpp

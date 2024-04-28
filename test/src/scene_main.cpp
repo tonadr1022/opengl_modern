@@ -11,6 +11,7 @@
 
 SceneMain::SceneMain() : Scene("main") {
   auto tri = registry_.create();
+  int a = 5;
   component::Transform t;
   t.SetTranslation({0.1, 0.1, 0});
   registry_.emplace<component::Transform>(tri, t);

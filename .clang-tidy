@@ -111,7 +111,8 @@ Checks: >
   -bugprone-narrowing-conversions,
   -readability-implicit-bool-conversion,
   -readability-function-cognitive-complexity,
-  -performance-no-int-to-ptr
+  -performance-no-int-to-ptr,
+  -readability-convert-member-functions-to-static
 # Turn all the warnings from the checks above into errors.
 WarningsAsErrors: "*"
 

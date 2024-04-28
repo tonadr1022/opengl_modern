@@ -6,9 +6,12 @@ namespace gfx {
 
 using MeshID = uint32_t;
 
+enum class ShapeType { Cube };
+
 namespace mesh_manager {
 
-extern MeshID LoadModel(const std::string& path);
+[[nodiscard]] extern std::optional<MeshID> LoadModel(const std::string& path);
+[[nodiscard]] extern MeshID LoadShape(ShapeType type);
 
 }  // namespace mesh_manager
 

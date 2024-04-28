@@ -120,6 +120,7 @@ std::optional<Shader> ShaderManager::RecompileShader(HashedString name) {
   if (!recompile_result.has_value()) {
     return std::nullopt;
   }
+  spdlog::info("Shader recompiled: {}", name.data());
   shader_data_.erase(it);
   auto new_it = shader_data_.emplace(name, recompile_result.value());
   return Shader{new_it.first->second.id, new_it.first->second.uniform_locations};

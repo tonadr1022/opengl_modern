@@ -5,6 +5,7 @@
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <bitset>
 #include <chrono>
 #include <cstddef>
@@ -21,6 +22,7 @@
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <string_view>
 #include <unordered_map>
