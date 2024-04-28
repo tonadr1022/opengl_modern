@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/pch.h"
 #include "engine/renderer/material.h"
 
 namespace gfx {

@@ -30,6 +30,7 @@ SceneMain::SceneMain() : Scene("main") {
 
   // Color only, no shader
   auto color_only_mat = gfx::material_manager::AddMaterial(gfx::ColorMaterial{{1.f, 1.f, 1.f}});
+  registry_.remove<component::Material>(tri);
   registry_.emplace<component::Material>(tri, color_only_mat);
 }
 

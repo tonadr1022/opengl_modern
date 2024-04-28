@@ -5,6 +5,7 @@
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 
+#include <bitset>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -23,6 +24,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "core/e_assert.h"

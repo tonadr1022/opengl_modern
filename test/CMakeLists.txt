@@ -15,4 +15,5 @@ target_link_libraries(
   OpenGL::GL
   GLEW::GLEW
   glfw
+  fmt::fmt
   glm::glm)
