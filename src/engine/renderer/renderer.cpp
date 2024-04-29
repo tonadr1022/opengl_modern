@@ -14,15 +14,13 @@ namespace gfx {
 
 namespace renderer {
 
-namespace {
-void ImGuiMenu() {
-  ImGui::Begin("Renderer");
-  if (ImGui::Button("Recompile Shaders")) {
-    ShaderManager::RecompileShaders();
-  }
+struct UserDrawCommand {
+  MeshID mesh_id;
+  MaterialID material_id;
+  glm::mat4 model_matrix;
+};
 
-  ImGui::End();
-}
+namespace {
 
 struct DrawElementsIndirectCommand {
   uint count;
@@ -32,28 +30,27 @@ struct DrawElementsIndirectCommand {
   uint base_instance;
 };
 
-uint32_t batch_vao{};
-uint32_t batch_vertex_buffer{};
-uint32_t batch_element_buffer{};
+constexpr uint32_t VertexBufferArrayMaxLength{10'000'000};
+constexpr uint32_t IndexBufferArrayMaxLength{10'000'000};
 
-}  // namespace
-
-struct UserDrawCommand {
-  MeshID mesh_id;
-  MaterialID material_id;
-  glm::mat4 model_matrix;
+struct Buffer {
+  uint32_t id{0};
+  uint32_t offset{0};
 };
 
-void LoadShaders() {}
+uint32_t batch_vao{};
+Buffer batch_vertex_buffer;
+Buffer batch_element_buffer;
+
+std::vector<UserDrawCommand> user_draw_cmds;
+std::map<MeshID, DrawElementsIndirectCommand> mesh_draw_cmds;
 
 void InitBuffers() {
-  uint32_t vertex_buffer_size{10'000'000};
-  uint32_t element_buffer_size{10'000'000};
-  glCreateBuffers(1, &batch_vertex_buffer);
-  glCreateBuffers(1, &batch_element_buffer);
-  glNamedBufferStorage(batch_vertex_buffer, sizeof(Vertex) * vertex_buffer_size, nullptr,
+  glCreateBuffers(1, &batch_vertex_buffer.id);
+  glCreateBuffers(1, &batch_element_buffer.id);
+  glNamedBufferStorage(batch_vertex_buffer.id, sizeof(Vertex) * VertexBufferArrayMaxLength, nullptr,
                        GL_DYNAMIC_STORAGE_BIT);
-  glNamedBufferStorage(batch_element_buffer, sizeof(Index) * element_buffer_size, nullptr,
+  glNamedBufferStorage(batch_element_buffer.id, sizeof(Index) * IndexBufferArrayMaxLength, nullptr,
                        GL_DYNAMIC_STORAGE_BIT);
 }
 
@@ -74,22 +71,60 @@ void InitVaos() {
   glVertexArrayAttribBinding(batch_vao, 2, 0);
 
   // attach buffers
-  glVertexArrayVertexBuffer(batch_vao, 0, batch_vertex_buffer, 0, sizeof(Vertex));
-  glVertexArrayElementBuffer(batch_vao, batch_element_buffer);
+  glVertexArrayVertexBuffer(batch_vao, 0, batch_vertex_buffer.id, 0, sizeof(Vertex));
+  glVertexArrayElementBuffer(batch_vao, batch_element_buffer.id);
 }
+
+void ImGuiMenu() {
+  ImGui::Begin("Renderer");
+  if (ImGui::Button("Recompile Shaders")) {
+    ShaderManager::RecompileShaders();
+  }
+  ImGui::Text("Buffer Offsets: Vertex: %i, Index: %i", batch_vertex_buffer.offset,
+              batch_element_buffer.offset);
+
+  ImGui::End();
+}
+
+}  // namespace
+
+void LoadShaders() {}
 
 void Init() {
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
+
   InitBuffers();
   InitVaos();
   LoadShaders();
 }
 
-std::vector<UserDrawCommand> draw_commands;
+void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>& indices) {
+  glNamedBufferSubData(batch_vertex_buffer.id, batch_vertex_buffer.offset,
+                       sizeof(Vertex) * vertices.size(), vertices.data());
+  glNamedBufferSubData(batch_element_buffer.id, batch_element_buffer.offset,
+                       sizeof(Index) * indices.size(), indices.data());
+  // buffer is void* type
+  batch_vertex_buffer.offset += vertices.size() * sizeof(Vertex);
+  batch_element_buffer.offset += indices.size() * sizeof(Index);
+
+  DrawElementsIndirectCommand cmd{};
+  // number of elements
+  cmd.count = static_cast<uint32_t>(indices.size());
+  // location in the buffer of the first vertex of the mesh
+  cmd.base_vertex = batch_vertex_buffer.offset / sizeof(Vertex);
+  // first instance is of the sub buffer is used
+  cmd.base_instance = 0;
+  // location in the buffer of first index of the mesh
+  cmd.first_index = batch_element_buffer.offset / sizeof(Index);
+  // no instancing
+  cmd.instance_count = 0;
+
+  mesh_draw_cmds[id] = cmd;
+}
 
 void SubmitUserDrawCommand(UserDrawCommand& draw_command) {
-  draw_commands.emplace_back(draw_command);
+  user_draw_cmds.emplace_back(draw_command);
 }
 
 void StartFrame() {
@@ -99,7 +134,24 @@ void StartFrame() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void EndFrame() { ImGuiMenu(); }
+void EndFrame() {
+  ImGuiMenu();
+
+  Buffer draw_cmd_buffer;
+  glCreateBuffers(1, &draw_cmd_buffer.id);
+  glNamedBufferStorage(draw_cmd_buffer.id,
+                       sizeof(DrawElementsIndirectCommand) * user_draw_cmds.size(), nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
+
+  for (auto& [mesh_id, material_id, model_matrix] : user_draw_cmds) {
+  }
+
+  // glBindVertexArray(batch_vao);
+  // // mode, type, offest ptr, command count, stride (0 since tightly packed)
+  // glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, user_draw_cmds.size(), 0);
+
+  glDeleteBuffers(1, &draw_cmd_buffer.id);
+}
 
 void ClearAllData() {}
 
