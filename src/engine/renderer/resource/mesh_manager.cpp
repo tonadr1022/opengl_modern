@@ -7,6 +7,7 @@
 #include <assimp/Importer.hpp>
 
 #include "engine/renderer/gl/data_types.h"
+#include "engine/renderer/renderer.h"
 #include "engine/renderer/resource/shapes/shapes.h"
 
 namespace gfx::mesh_manager {
@@ -70,12 +71,17 @@ std::optional<MeshID> ProcessNodes(const aiScene& scene) {
 }
 
 MeshID LoadCube() {
-  Vertex v;
-  // for (uint32_t i = 0; i < gfx::shape::CubeNormTex; i++) {
-  // }
-  spdlog::error("Unimplemented");
-
-  return -1;
+  std::vector<Vertex> vertices;
+  for (const auto& vertex : gfx::shape::CubeVertices) {
+    vertices.emplace_back(vertex);
+  }
+  std::vector<Index> indices;
+  for (const auto& index : gfx::shape::CubeIndices) {
+    indices.emplace_back(index);
+  }
+  auto id = HashedString("cube");
+  gfx::renderer::AddBatchedMesh(id, vertices, indices);
+  return id;
 };
 
 }  // namespace
