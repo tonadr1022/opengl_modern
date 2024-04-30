@@ -4,7 +4,6 @@
 
 #include "engine/application/engine.h"
 #include "engine/application/event.h"
-#include "engine/application/event_system.h"
 
 void Input::Update() {
   for (auto& mouse_button_state : mouse_button_states_) {

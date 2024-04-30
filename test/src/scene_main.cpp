@@ -12,7 +12,7 @@
 
 SceneMain::SceneMain() : Scene("main") {}
 
-void SceneMain::OnEvent(Event& e) {
+void SceneMain::OnEvent(const Event& e) {
   switch (e.type) {
     case Event::KeyPressed:
       if (e.key.code == KeyCode::B) {

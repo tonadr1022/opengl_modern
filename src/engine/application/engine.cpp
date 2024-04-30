@@ -6,7 +6,6 @@
 #include "../timestep.h"
 #include "../util/timer.h"
 #include "engine/application/event.h"
-#include "engine/application/event_system.h"
 #include "engine/ecs/system/graphics_system.h"
 #include "engine/ecs/system/imgui_system.h"
 #include "engine/ecs/system/window_system.h"
@@ -30,7 +29,7 @@ Engine::Engine() {
   Input::init_glfw_input_callbacks(window_system_->GetContext());
 }
 
-void Engine::OnEvent(Event& e) {
+void Engine::OnEvent(const Event& e) {
   switch (e.type) {
     case Event::EventType::KeyPressed:
       if (e.key.code == KeyCode::Q && e.key.system) {

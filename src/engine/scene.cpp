@@ -6,7 +6,7 @@
 
 Scene::Scene(std::string name) : name_(std::move(name)) {}
 
-void Scene::OnKeyEvent(const KeyEvent& e) {}
+void Scene::OnEvent(const Event& e) {}
 
 void Scene::OnUpdate(Timestep timestep) {}
 

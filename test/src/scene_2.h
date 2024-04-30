@@ -15,7 +15,7 @@ class Scene2 : public Scene {
       // std::cout << "scene2 update: " << timestep.delta_time << "\n";
   };
 
-  void OnEvent(Event& e) override {
+  void OnEvent(const Event& e) override {
     switch (e.type) {
       case Event::KeyPressed:
         if (e.key.code == KeyCode::B) {

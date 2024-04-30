@@ -18,7 +18,7 @@ class Scene {
   virtual ~Scene() = default;
   [[nodiscard]] const std::string& GetName() const { return name_; }
   virtual void OnUpdate(Timestep timestep);
-  virtual void OnEvent(Event& e);
+  virtual void OnEvent(const Event& e);
   virtual void Load() = 0;
   void Shutdown();
 

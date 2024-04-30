@@ -17,7 +17,7 @@ class Engine {
   void Stop();
   void AddScene(std::unique_ptr<Scene> scene);
   void LoadScene(const std::string& name);
-  void OnEvent(Event& e);
+  void OnEvent(const Event& e);
   void ImGuiSystemPerFrame(Timestep timestep);
 
   static Engine& Get();
