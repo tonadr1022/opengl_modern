@@ -4,6 +4,7 @@
 #include <engine/ecs/component/transform.h>
 #include <engine/scene.h>
 
+#include "camera_system.h"
 #include "engine/timestep.h"
 
 class SceneMain : public Scene {
@@ -14,4 +15,5 @@ class SceneMain : public Scene {
 
   void OnUpdate(Timestep timestep) override;
   void OnEvent(const Event& e) override;
+  CameraSystem fps_camera_system;
 };

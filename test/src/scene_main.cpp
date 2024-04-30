@@ -14,16 +14,17 @@ SceneMain::SceneMain() : Scene("main") {}
 
 void SceneMain::OnEvent(const Event& e) {
   switch (e.type) {
-    case Event::KeyPressed:
+    case Event::Type::KeyPressed:
       if (e.key.code == KeyCode::B) {
         engine_->LoadScene("test2");
       }
+
     default:
       break;
   }
 }
 
-void SceneMain::OnUpdate(Timestep timestep) {}
+void SceneMain::OnUpdate(Timestep timestep) { fps_camera_system.Update(timestep); }
 
 void SceneMain::Load() {
   auto tri = registry.create();

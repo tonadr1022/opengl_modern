@@ -25,6 +25,11 @@ struct Event {
     float offset;
   };
 
+  struct MouseMove {
+    float x;
+    float y;
+  };
+
   enum Type {
     WindowClose,
     WindowResize,
@@ -46,5 +51,6 @@ struct Event {
     KeyEvent key;
     WindowSize size;
     MouseScroll scroll;
+    MouseMove mouse_pos;
   };
 };
