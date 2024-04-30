@@ -25,7 +25,7 @@ struct Event {
     float offset;
   };
 
-  enum EventType {
+  enum Type {
     WindowClose,
     WindowResize,
     FrameBufferResize,
@@ -40,7 +40,7 @@ struct Event {
     MouseScrolled
   };
 
-  EventType type{};
+  Type type{};
 
   union {
     KeyEvent key;

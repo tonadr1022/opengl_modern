@@ -42,6 +42,8 @@ void ProcessMesh(const aiMesh& mesh) {
     }
   }
 
+  renderer::AddBatchedMesh(HashedString(mesh.mName.data), vertices, indices);
+
   // if (mesh.mMaterialIndex >= 0) {
   //   aiMaterial* ai_mat = scene.mMaterials[mesh.mMaterialIndex];
   // }

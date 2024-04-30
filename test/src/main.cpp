@@ -14,7 +14,9 @@ void LoadScenes(Engine& engine) {
 }
 
 int main() {
-  LoadScenes(Engine::Get());
-  Engine::Get().Run();
+  auto* engine = new Engine;
+  LoadScenes(*engine);
+  engine->Run();
+
   return 0;
 }

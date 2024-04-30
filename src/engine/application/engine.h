@@ -20,11 +20,11 @@ class Engine {
   void OnEvent(const Event& e);
   void ImGuiSystemPerFrame(Timestep timestep);
 
-  static Engine& Get();
+  // static Engine& Get();
 
  private:
   void Shutdown();
-  static Engine* instance_;
+  // static Engine* instance_;
   // TODO(tony): serialize scenes instead of this?
   std::unordered_map<std::string, std::unique_ptr<Scene>> scenes_;
   GraphicsSystem* graphics_system_{nullptr};

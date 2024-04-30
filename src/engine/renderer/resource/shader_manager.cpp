@@ -10,6 +10,7 @@ namespace gfx {
 std::optional<Shader> ShaderManager::GetShader(HashedString name) {
   auto it = shader_data_.find(name);
   if (it == shader_data_.end()) {
+    spdlog::error("Shader not found {}", name.data());
     return std::nullopt;
   }
   return Shader{it->second.id, it->second.uniform_locations};

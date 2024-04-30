@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <execution>
 #include <fstream>
 #include <functional>
 #include <glm/fwd.hpp>

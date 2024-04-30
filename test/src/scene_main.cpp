@@ -26,13 +26,14 @@ void SceneMain::OnEvent(const Event& e) {
 void SceneMain::OnUpdate(Timestep timestep) {}
 
 void SceneMain::Load() {
-  auto tri = registry_.create();
+  auto tri = registry.create();
   int a = 5;
   component::Transform t;
   t.SetTranslation({0.1, 0.1, 0});
-  registry_.emplace<component::Transform>(tri, t);
+  registry.emplace<component::Transform>(tri, t);
+  registry.emplace<component::Model>(tri);
   gfx::MeshID mesh_id = gfx::mesh_manager::LoadShape(gfx::ShapeType::Cube);
-  registry_.emplace<component::Mesh>(tri, mesh_id);
+  registry.emplace<component::Mesh>(tri, mesh_id);
 
   // gfx::MaterialCreateInfo color_mat_create_info;
   //
@@ -48,8 +49,7 @@ void SceneMain::Load() {
   // registry_.emplace<component::Material>(tri, color_mat);
   //
   // // Color only, no shader
-  // auto color_only_mat = gfx::material_manager::AddMaterial(gfx::ColorMaterial{{1.f, 1.f, 1.f}});
+  auto color_only_mat = gfx::material_manager::AddMaterial(gfx::ColorMaterial{{1.f, 1.f, 1.f}});
   // registry_.remove<component::Material>(tri);
-  // registry_.emplace<component::Material>(tri, color_only_mat);
-  // auto view = registry_.view<component::Material>();
+  registry.emplace<component::Material>(tri, color_only_mat);
 }

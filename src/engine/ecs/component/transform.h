@@ -26,4 +26,8 @@ struct Transform {
   bool dirty_{true};
 };
 
+struct Model {
+  glm::mat4 matrix{};
+};
+
 }  // namespace component

@@ -8,6 +8,7 @@
 #include "engine/renderer/gl/debug.h"
 #include "engine/renderer/material.h"
 #include "engine/renderer/resource/mesh_manager.h"
+#include "engine/renderer/resource/paths.h"
 #include "engine/renderer/resource/shader_manager.h"
 
 namespace gfx {
@@ -43,7 +44,9 @@ Buffer batch_vertex_buffer;
 Buffer batch_element_buffer;
 
 std::vector<UserDrawCommand> user_draw_cmds;
-std::map<MeshID, DrawElementsIndirectCommand> mesh_draw_cmds;
+uint32_t user_draw_cmds_index{0};
+
+std::map<MeshID, DrawElementsIndirectCommand> mesh_buffer_info;
 
 void InitBuffers() {
   glCreateBuffers(1, &batch_vertex_buffer.id);
@@ -86,17 +89,28 @@ void ImGuiMenu() {
   ImGui::End();
 }
 
+void LoadShaders() {
+  ShaderManager::AddShader("batch", {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
+                                     {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
+}
+
 }  // namespace
 
-void LoadShaders() {}
+void SetBatchedObjectCount(uint32_t count) { user_draw_cmds.resize(count); }
+
+void SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id) {
+  std::cout << "draw cmd " << user_draw_cmds_index << "\n";
+  user_draw_cmds[user_draw_cmds_index++] =
+      UserDrawCommand{.mesh_id = mesh_id, .material_id = material_id, .model_matrix = model};
+}
 
 void Init() {
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
+  LoadShaders();
 
   InitBuffers();
   InitVaos();
-  LoadShaders();
 }
 
 void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>& indices) {
@@ -120,11 +134,7 @@ void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>
   // no instancing
   cmd.instance_count = 0;
 
-  mesh_draw_cmds[id] = cmd;
-}
-
-void SubmitUserDrawCommand(UserDrawCommand& draw_command) {
-  user_draw_cmds.emplace_back(draw_command);
+  mesh_buffer_info[id] = cmd;
 }
 
 void StartFrame() {
@@ -134,24 +144,98 @@ void StartFrame() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void EndFrame() {
-  ImGuiMenu();
+void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& uniforms) {
+  // for each mesh that has an instance count with this material,
+  // set base instance and increment it by the number of instances
+  // of the mesh that have this material, then add the command
+  std::vector<DrawElementsIndirectCommand> commands;
+  GLuint base_instance = 0;
+  std::for_each(mesh_buffer_info.begin(), mesh_buffer_info.end(),
+                [&commands, &base_instance](auto& cmd) {
+                  if (cmd.second.instance_count != 0) {
+                    cmd.second.base_instance = base_instance;
+                    commands.push_back(cmd.second);
+                    base_instance += cmd.second.instance_count;
+                  }
+                });
 
+  // create draw indirect buffer
   Buffer draw_cmd_buffer;
   glCreateBuffers(1, &draw_cmd_buffer.id);
-  glNamedBufferStorage(draw_cmd_buffer.id,
-                       sizeof(DrawElementsIndirectCommand) * user_draw_cmds.size(), nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
+  // glNamedBufferStorage(draw_cmd_buffer.id,
+  //                      sizeof(DrawElementsIndirectCommand) * user_draw_cmds.size(), nullptr,
+  //                      GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferData(draw_cmd_buffer.id, sizeof(DrawElementsIndirectCommand) * commands.size(),
+                    commands.data(), 0);
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw_cmd_buffer.id);
+
+  // clear instance count for future draw calls with diff materials
+  for (auto& info : mesh_buffer_info) {
+    info.second.instance_count = 0;
+  }
+
+  // create ssbo for uniforms (model matrices for each)
+  Buffer ssbo_buffer;
+  glCreateBuffers(1, &ssbo_buffer.id);
+  glNamedBufferData(ssbo_buffer.id, sizeof(glm::mat4) * uniforms.size(), uniforms.data(),
+                    GL_DYNAMIC_STORAGE_BIT);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_buffer.id);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_buffer.id);
+
+  auto batch_shader = ShaderManager::GetShader("batch");
+  batch_shader->Bind();
 
   for (auto& [mesh_id, material_id, model_matrix] : user_draw_cmds) {
   }
 
-  // glBindVertexArray(batch_vao);
-  // // mode, type, offest ptr, command count, stride (0 since tightly packed)
-  // glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, user_draw_cmds.size(), 0);
+  glBindVertexArray(batch_vao);
+  // mode, type, offest ptr, command count, stride (0 since tightly packed)
+  glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, user_draw_cmds.size(), 0);
 
+  // TODO (tony): create buffer class with RAII
+  glDeleteBuffers(1, &ssbo_buffer.id);
   glDeleteBuffers(1, &draw_cmd_buffer.id);
 }
+
+void RenderOpaqueObjects() {
+  // sort user commands by material and mesh, must match mesh_buffer_info
+  std::sort(std::execution::par, user_draw_cmds.begin(), user_draw_cmds.end(),
+            [](const UserDrawCommand& lhs, const UserDrawCommand& rhs) {
+              if (lhs.material_id != rhs.material_id) return lhs.material_id < rhs.material_id;
+              return lhs.mesh_id < rhs.mesh_id;
+            });
+
+  // accumulate per-material draw commands and uniforms
+  // for each material, push all the uniforms of meshes using the material
+  // into a vector, and increase the instance count of each mesh.
+  // When the next material doesn't match, draw with the current uniforms
+  // and material id.
+  std::vector<glm::mat4> uniforms;
+  uniforms.reserve(user_draw_cmds.size());
+  MaterialID curr_mat_id = user_draw_cmds[0].material_id;
+  for (const auto& user_draw_cmd : user_draw_cmds) {
+    if (user_draw_cmd.material_id != curr_mat_id) {
+      // draw with this material and uniforms of objects that use this material
+      DrawOpaqueHelper(curr_mat_id, uniforms);
+
+      curr_mat_id = user_draw_cmd.material_id;
+      uniforms.clear();
+    }
+
+    // push uniform and inc instance count of mesh of current command
+    mesh_buffer_info[user_draw_cmd.mesh_id].instance_count++;
+    uniforms.push_back(user_draw_cmd.model_matrix);
+  }
+  // if all materials are the same or the last commands used same material,
+  // draw them
+  if (uniforms.size() > 0) {
+    DrawOpaqueHelper(curr_mat_id, uniforms);
+  }
+
+  user_draw_cmds_index = 0;
+}
+
+void EndFrame() { ImGuiMenu(); }
 
 void ClearAllData() {}
 

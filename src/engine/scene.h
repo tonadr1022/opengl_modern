@@ -25,7 +25,7 @@ class Scene {
   // [[nodiscard]] Entity CreateEntity();
   // [[nodiscard]] Entity CreateEntity(std::string_view tag);
   // [[nodiscard]] Entity GetEntity(std::string_view tag);
-  entt::registry registry_;
+  entt::registry registry;
 
  protected:
   Engine* engine_{nullptr};

@@ -71,14 +71,17 @@ void Input::keypress_cb(GLFWwindow* window, int key, int scancode, int action, i
   //  io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
   Event e;
-  e.type = static_cast<Event::EventType>(action);
+  e.type = static_cast<Event::Type>(action);
+  e.key.action = static_cast<InputAction>(action);
   e.key.code = static_cast<KeyCode>(key);
+
   e.key.alt = mods & GLFW_MOD_ALT;
   e.key.control = mods & GLFW_MOD_CONTROL;
   e.key.shift = mods & GLFW_MOD_SHIFT;
   e.key.system = mods & GLFW_MOD_SUPER;
 
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+  engine->OnEvent(e);
 
   if (static_cast<InputAction>(action) == InputAction::Press) {
     key_states_[key] = Pressed;

@@ -11,7 +11,7 @@
 #include "engine/ecs/system/window_system.h"
 #include "input.h"
 
-Engine* Engine::instance_ = nullptr;
+// Engine* Engine::instance_ = nullptr;
 
 Engine::Engine() {
   window_system_ = new WindowSystem;
@@ -31,7 +31,7 @@ Engine::Engine() {
 
 void Engine::OnEvent(const Event& e) {
   switch (e.type) {
-    case Event::EventType::KeyPressed:
+    case Event::Type::KeyPressed:
       if (e.key.code == KeyCode::Q && e.key.system) {
         Stop();
         return;
@@ -42,13 +42,13 @@ void Engine::OnEvent(const Event& e) {
   active_scene_->OnEvent(e);
 }
 
-Engine& Engine::Get() {
-  if (instance_ == nullptr) {
-    instance_ = new Engine;
-  }
-  EASSERT(instance_);
-  return *instance_;
-}
+// Engine& Engine::Get() {
+//   if (instance_ == nullptr) {
+//     instance_ = new Engine;
+//   }
+//   EASSERT(instance_);
+//   return *instance_;
+// }
 
 void Engine::Run() {
   EASSERT(active_scene_ != nullptr);
@@ -80,7 +80,7 @@ void Engine::Run() {
     timestep.dt_actual = delta_time;
 
     graphics_system_->StartFrame();
-
+    graphics_system_->DrawOpaque(*active_scene_);
     graphics_system_->EndFrame();
 
     ImGuiSystemPerFrame(timestep);
@@ -112,8 +112,6 @@ void Engine::Shutdown() {
   delete imgui_system_;
   delete graphics_system_;
   delete window_system_;
-
-  delete instance_;
 }
 
 Engine::~Engine() = default;
