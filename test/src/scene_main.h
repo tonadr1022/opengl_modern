@@ -13,6 +13,5 @@ class SceneMain : public Scene {
   void Load() override;
 
   void OnUpdate(Timestep timestep) override;
-
-  void OnKeyEvent(const KeyEvent& e) override;
+  void OnEvent(Event& e) override;
 };

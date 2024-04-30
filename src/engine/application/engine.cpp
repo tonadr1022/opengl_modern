@@ -5,6 +5,8 @@
 #include "../scene.h"
 #include "../timestep.h"
 #include "../util/timer.h"
+#include "engine/application/event.h"
+#include "engine/application/event_system.h"
 #include "engine/ecs/system/graphics_system.h"
 #include "engine/ecs/system/imgui_system.h"
 #include "engine/ecs/system/window_system.h"
@@ -13,13 +15,12 @@
 Engine* Engine::instance_ = nullptr;
 
 Engine::Engine() {
-  enabled_systems_.set();
-
   window_system_ = new WindowSystem;
   imgui_system_ = new ImGuiSystem;
   graphics_system_ = new GraphicsSystem;
 
-  window_system_->Init();
+  window_system_->Init(this);
+  // TODO(tony): global variable system
   window_system_->SetVsync(true);
 
   graphics_system_->Init();
@@ -29,14 +30,17 @@ Engine::Engine() {
   Input::init_glfw_input_callbacks(window_system_->GetContext());
 }
 
-void Engine::OnKeyEvent(KeyEvent& e) {
-  // TODO(tony): imgui handle first
-  if (e.key == KeyCode::Q && e.mods == KeyMod::Control) {
-    Stop();
-    return;
+void Engine::OnEvent(Event& e) {
+  switch (e.type) {
+    case Event::EventType::KeyPressed:
+      if (e.key.code == KeyCode::Q && e.key.system) {
+        Stop();
+        return;
+      }
+    default:
+      break;
   }
-  EASSERT(active_scene_ != nullptr);
-  active_scene_->OnKeyEvent(e);
+  active_scene_->OnEvent(e);
 }
 
 Engine& Engine::Get() {
@@ -88,6 +92,7 @@ void Engine::Run() {
 
   Shutdown();
 }
+
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {
   ImGui::Begin("Settings");
   bool vsync = window_system_->GetVsync();
@@ -118,6 +123,7 @@ void Engine::Stop() { running_ = false; }
 
 void Engine::AddScene(std::unique_ptr<Scene> scene) {
   auto it = scenes_.find(scene->GetName());
+  scene->engine_ = this;
   EASSERT_MSG(it == scenes_.end(), "Scene Added Already");
   scenes_.emplace(scene->GetName(), std::move(scene));
 }

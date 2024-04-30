@@ -1,6 +1,24 @@
 #include "window_system.h"
 
-void WindowSystem::Init() {
+#include "engine/application/engine.h"
+#include "engine/application/event.h"
+
+void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
+  engine->window_system_->framebuffer_height_ = height;
+  engine->window_system_->framebuffer_width_ = width;
+}
+
+void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
+  Event e;
+  e.type = Event::WindowResize;
+  e.size.x = width;
+  e.size.y = height;
+  engine->OnEvent(e);
+}
+
+void WindowSystem::Init(Engine* engine) {
   // TODO(tony): opengl error callback
   glfwSetErrorCallback([](int error, const char* description) {
     spdlog::critical("GFLW error {}: {}\n", error, description);
@@ -34,14 +52,10 @@ void WindowSystem::Init() {
 
   // one window for now, if multiple windows ever, (probably not, then make this function public to
   // set the active window class)
-  glfwSetWindowUserPointer(glfw_window_, static_cast<void*>(this));
+  glfwSetWindowUserPointer(glfw_window_, static_cast<void*>(engine));
 
-  glfwSetFramebufferSizeCallback(glfw_window_, [](GLFWwindow* glfw_window, int width, int height) {
-    WindowSystem* this_window;
-    this_window = static_cast<WindowSystem*>(glfwGetWindowUserPointer(glfw_window));
-    this_window->framebuffer_height_ = height;
-    this_window->framebuffer_width_ = width;
-  });
+  glfwSetFramebufferSizeCallback(glfw_window_, framebuffer_size_callback);
+  glfwSetWindowSizeCallback(glfw_window_, window_size_callback);
 
   GLenum err = glewInit();
   if (err != GLEW_OK) {

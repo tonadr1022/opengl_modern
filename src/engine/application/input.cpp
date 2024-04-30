@@ -3,6 +3,8 @@
 #include <imgui_impl_glfw.h>
 
 #include "engine/application/engine.h"
+#include "engine/application/event.h"
+#include "engine/application/event_system.h"
 
 void Input::Update() {
   for (auto& mouse_button_state : mouse_button_states_) {
@@ -69,11 +71,16 @@ void Input::keypress_cb(GLFWwindow* window, int key, int scancode, int action, i
   //  io.KeysDown[GLFW_KEY_RIGHT_ALT]; io.KeySuper =
   //  io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
-  KeyEvent e{.key = static_cast<KeyCode>(key),
-             .action = static_cast<InputAction>(action),
-             .mods = static_cast<KeyMod>(mods)};
+  Event e;
+  e.type = static_cast<Event::EventType>(action);
+  e.key.code = static_cast<KeyCode>(key);
+  e.key.alt = mods & GLFW_MOD_ALT;
+  e.key.control = mods & GLFW_MOD_CONTROL;
+  e.key.shift = mods & GLFW_MOD_SHIFT;
+  e.key.system = mods & GLFW_MOD_SUPER;
 
-  Engine::Get().OnKeyEvent(e);
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+
   if (static_cast<InputAction>(action) == InputAction::Press) {
     key_states_[key] = Pressed;
   } else if (static_cast<InputAction>(action) == InputAction::Release) {
@@ -83,12 +90,12 @@ void Input::keypress_cb(GLFWwindow* window, int key, int scancode, int action, i
 
 void Input::mouse_pos_cb(GLFWwindow* window, double xpos, double ypos) {
   ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
-  static double last_x;
-  static double last_y;
-  double x_offset = xpos - last_x;
-  double y_offset = ypos - last_y;
-  last_x = xpos;
-  last_y = ypos;
+  // static double last_x;
+  // static double last_y;
+  // double x_offset = xpos - last_x;
+  // double y_offset = ypos - last_y;
+  // last_x = xpos;
+  // last_y = ypos;
   // mouse_screen_offset_ = {x_offset, y_offset};
   // mouse_screen_pos_ = {xpos, ypos};
   // mouse_moved_ = true;
@@ -96,10 +103,13 @@ void Input::mouse_pos_cb(GLFWwindow* window, double xpos, double ypos) {
 
 void Input::mouse_scroll_cb(GLFWwindow* window, double xoffset, double yoffset) {
   ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+  Event e{.type = Event::MouseScrolled};
+  e.scroll.offset = yoffset;
 }
 
 void Input::mouse_button_cb(GLFWwindow* window, int button, int action, int mods) {
   ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+  Event e{.type = Event::MouseButtonPressed};
   if (action == GLFW_PRESS) {
     mouse_button_states_[button] = Pressed;
   } else if (action == GLFW_RELEASE) {

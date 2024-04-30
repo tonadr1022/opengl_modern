@@ -6,15 +6,19 @@
 #include <entt/entity/registry.hpp>
 
 struct Timestep;
+class Engine;
+class Event;
 
 class Scene {
+  friend class Engine;
+
  public:
   Scene() = default;
   explicit Scene(std::string name);
   virtual ~Scene() = default;
   [[nodiscard]] const std::string& GetName() const { return name_; }
   virtual void OnUpdate(Timestep timestep);
-  virtual void OnKeyEvent(const KeyEvent& e);
+  virtual void OnEvent(Event& e);
   virtual void Load() = 0;
   void Shutdown();
 
@@ -23,7 +27,9 @@ class Scene {
   // [[nodiscard]] Entity GetEntity(std::string_view tag);
   entt::registry registry_;
 
+ protected:
+  Engine* engine_{nullptr};
+
  private:
-  friend class Entity;
   std::string name_;
 };

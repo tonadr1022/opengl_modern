@@ -1,23 +1,25 @@
 #include "scene_main.h"
 
+#include <engine/application/event.h>
+#include <engine/application/key_codes.h>
 #include <engine/ecs/component/renderer_components.h>
+#include <engine/renderer/material.h>
+#include <engine/renderer/resource/material_manager.h>
+#include <engine/renderer/resource/mesh_manager.h>
 #include <engine/renderer/resource/paths.h>
+#include <engine/renderer/resource/shader_manager.h>
 #include <imgui.h>
-
-#include "engine/application/key_codes.h"
-#include "engine/renderer/material.h"
-#include "engine/renderer/resource/material_manager.h"
-#include "engine/renderer/resource/mesh_manager.h"
-#include "engine/renderer/resource/shader_manager.h"
 
 SceneMain::SceneMain() : Scene("main") {}
 
-void SceneMain::OnKeyEvent(const KeyEvent& e) {
-  bool pressed = e.action == InputAction::Press;
-  if (pressed) {
-    if (e.key == KeyCode::B) {
-      Engine::Get().LoadScene("test2");
-    }
+void SceneMain::OnEvent(Event& e) {
+  switch (e.type) {
+    case Event::KeyPressed:
+      if (e.key.code == KeyCode::B) {
+        engine_->LoadScene("test2");
+      }
+    default:
+      break;
   }
 }
 

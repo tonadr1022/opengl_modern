@@ -12,12 +12,6 @@ enum class InputAction {
   Repeat = GLFW_REPEAT,
 };
 
-struct KeyEvent {
-  KeyCode key;
-  InputAction action;
-  KeyMod mods;
-};
-
 class Input {
  public:
   enum KeyState : uint8_t {

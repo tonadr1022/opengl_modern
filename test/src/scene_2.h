@@ -1,5 +1,6 @@
 #pragma once
 #include <engine/application/engine.h>
+#include <engine/application/event.h>
 #include <engine/application/input.h>
 #include <engine/scene.h>
 #include <engine/timestep.h>
@@ -10,16 +11,18 @@ class Scene2 : public Scene {
 
   void Load() override { spdlog::info("loading scene 2."); };
 
-  void OnUpdate(Timestep timestep) override {
-    // std::cout << "scene2 update: " << timestep.delta_time << "\n";
+  void OnUpdate(Timestep timestep) override{
+      // std::cout << "scene2 update: " << timestep.delta_time << "\n";
   };
 
-  void OnKeyEvent(const KeyEvent& e) override {
-    bool pressed = e.action == InputAction::Press;
-    if (pressed) {
-      if (e.key == KeyCode::B) {
-        Engine::Get().LoadScene("main");
-      }
+  void OnEvent(Event& e) override {
+    switch (e.type) {
+      case Event::KeyPressed:
+        if (e.key.code == KeyCode::B) {
+          engine_->LoadScene("main");
+        }
+      default:
+        break;
     }
   }
 };
