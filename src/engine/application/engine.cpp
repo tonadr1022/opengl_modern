@@ -6,9 +6,11 @@
 #include "../timestep.h"
 #include "../util/timer.h"
 #include "engine/application/event.h"
+#include "engine/application/key_codes.h"
 #include "engine/ecs/system/graphics_system.h"
 #include "engine/ecs/system/imgui_system.h"
 #include "engine/ecs/system/window_system.h"
+#include "engine/renderer/renderer.h"
 #include "input.h"
 
 // Engine* Engine::instance_ = nullptr;
@@ -34,6 +36,9 @@ void Engine::OnEvent(const Event& e) {
     case Event::Type::KeyPressed:
       if (e.key.code == KeyCode::Q && e.key.system) {
         Stop();
+        return;
+      } else if (e.key.code == KeyCode::G && e.key.control) {
+        draw_imgui_ = !draw_imgui_;
         return;
       }
     default:
@@ -62,7 +67,7 @@ void Engine::Run() {
   while (running_ && !window_system_->ShouldClose()) {
     Input::Update();
 
-    imgui_system_->StartFrame();
+    if (draw_imgui_) imgui_system_->StartFrame();
 
     auto current_time = timer.GetElapsedSeconds();
     double delta_time = current_time - last_time;
@@ -83,8 +88,10 @@ void Engine::Run() {
     graphics_system_->DrawOpaque(*active_scene_);
     graphics_system_->EndFrame();
 
-    ImGuiSystemPerFrame(timestep);
-    imgui_system_->EndFrame();
+    if (draw_imgui_) {
+      ImGuiSystemPerFrame(timestep);
+      imgui_system_->EndFrame();
+    }
 
     window_system_->SwapBuffers();
   }
@@ -93,6 +100,8 @@ void Engine::Run() {
 }
 
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {
+  gfx::renderer::OnImGuiRender();
+
   ImGui::Begin("Settings");
   bool vsync = window_system_->GetVsync();
   if (ImGui::Checkbox("Vsync", &vsync)) {

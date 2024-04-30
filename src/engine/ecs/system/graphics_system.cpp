@@ -18,6 +18,7 @@ void GraphicsSystem::DrawOpaque(Scene& scene) {
                   auto [transform, model] =
                       model_group.get<component::Transform, component::Model>(entity);
                   model.matrix = transform.CalculateModel();
+                  // model.matrix = glm::mat4(1);
                 });
   auto group =
       scene.registry.group<component::Mesh>(entt::get<component::Model, component::Material>);

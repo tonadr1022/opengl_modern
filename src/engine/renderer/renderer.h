@@ -19,6 +19,7 @@ extern void SetBatchedObjectCount(uint32_t count);
 extern void SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id);
 extern void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>& indices);
 extern void RenderOpaqueObjects();
+extern void OnImGuiRender();
 
 }  // namespace renderer
 

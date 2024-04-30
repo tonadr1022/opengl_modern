@@ -18,12 +18,12 @@ class Engine {
   void AddScene(std::unique_ptr<Scene> scene);
   void LoadScene(const std::string& name);
   void OnEvent(const Event& e);
-  void ImGuiSystemPerFrame(Timestep timestep);
 
   // static Engine& Get();
 
  private:
   void Shutdown();
+  bool draw_imgui_{true};
   // static Engine* instance_;
   // TODO(tony): serialize scenes instead of this?
   std::unordered_map<std::string, std::unique_ptr<Scene>> scenes_;
@@ -36,4 +36,5 @@ class Engine {
 
   Scene* active_scene_{nullptr};
   bool running_{false};
+  void ImGuiSystemPerFrame(Timestep timestep);
 };

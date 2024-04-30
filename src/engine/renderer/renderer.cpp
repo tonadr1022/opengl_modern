@@ -78,7 +78,14 @@ void InitVaos() {
   glVertexArrayElementBuffer(batch_vao, batch_element_buffer.id);
 }
 
-void ImGuiMenu() {
+void LoadShaders() {
+  ShaderManager::AddShader("batch", {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
+                                     {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
+}
+
+}  // namespace
+
+void OnImGuiRender() {
   ImGui::Begin("Renderer");
   if (ImGui::Button("Recompile Shaders")) {
     ShaderManager::RecompileShaders();
@@ -89,17 +96,9 @@ void ImGuiMenu() {
   ImGui::End();
 }
 
-void LoadShaders() {
-  ShaderManager::AddShader("batch", {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
-                                     {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
-}
-
-}  // namespace
-
 void SetBatchedObjectCount(uint32_t count) { user_draw_cmds.resize(count); }
 
 void SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id) {
-  std::cout << "draw cmd " << user_draw_cmds_index << "\n";
   user_draw_cmds[user_draw_cmds_index++] =
       UserDrawCommand{.mesh_id = mesh_id, .material_id = material_id, .model_matrix = model};
 }
@@ -118,9 +117,6 @@ void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>
                        sizeof(Vertex) * vertices.size(), vertices.data());
   glNamedBufferSubData(batch_element_buffer.id, batch_element_buffer.offset,
                        sizeof(Index) * indices.size(), indices.data());
-  // buffer is void* type
-  batch_vertex_buffer.offset += vertices.size() * sizeof(Vertex);
-  batch_element_buffer.offset += indices.size() * sizeof(Index);
 
   DrawElementsIndirectCommand cmd{};
   // number of elements
@@ -135,12 +131,16 @@ void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>
   cmd.instance_count = 0;
 
   mesh_buffer_info[id] = cmd;
+
+  // buffer is void* type
+  batch_vertex_buffer.offset += vertices.size() * sizeof(Vertex);
+  batch_element_buffer.offset += indices.size() * sizeof(Index);
 }
 
 void StartFrame() {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
-  glClearColor(0.0, 0.0, 0.0, 1.0);
+  glClearColor(0.1, 0.1, 0.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
@@ -162,11 +162,7 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   // create draw indirect buffer
   Buffer draw_cmd_buffer;
   glCreateBuffers(1, &draw_cmd_buffer.id);
-  // glNamedBufferStorage(draw_cmd_buffer.id,
-  //                      sizeof(DrawElementsIndirectCommand) * user_draw_cmds.size(), nullptr,
-  //                      GL_DYNAMIC_STORAGE_BIT);
-  glNamedBufferData(draw_cmd_buffer.id, sizeof(DrawElementsIndirectCommand) * commands.size(),
-                    commands.data(), 0);
+  glNamedBufferStorage(draw_cmd_buffer.id, std::span(commands).size_bytes(), commands.data(), 0);
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw_cmd_buffer.id);
 
   // clear instance count for future draw calls with diff materials
@@ -177,20 +173,16 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   // create ssbo for uniforms (model matrices for each)
   Buffer ssbo_buffer;
   glCreateBuffers(1, &ssbo_buffer.id);
-  glNamedBufferData(ssbo_buffer.id, sizeof(glm::mat4) * uniforms.size(), uniforms.data(),
-                    GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferStorage(ssbo_buffer.id, std::span(uniforms).size_bytes(), uniforms.data(), 0);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_buffer.id);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_buffer.id);
 
   auto batch_shader = ShaderManager::GetShader("batch");
   batch_shader->Bind();
 
-  for (auto& [mesh_id, material_id, model_matrix] : user_draw_cmds) {
-  }
-
   glBindVertexArray(batch_vao);
   // mode, type, offest ptr, command count, stride (0 since tightly packed)
-  glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, user_draw_cmds.size(), 0);
+  glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, commands.size(), 0);
 
   // TODO (tony): create buffer class with RAII
   glDeleteBuffers(1, &ssbo_buffer.id);
@@ -217,7 +209,6 @@ void RenderOpaqueObjects() {
     if (user_draw_cmd.material_id != curr_mat_id) {
       // draw with this material and uniforms of objects that use this material
       DrawOpaqueHelper(curr_mat_id, uniforms);
-
       curr_mat_id = user_draw_cmd.material_id;
       uniforms.clear();
     }
@@ -232,10 +223,11 @@ void RenderOpaqueObjects() {
     DrawOpaqueHelper(curr_mat_id, uniforms);
   }
 
+  // reset draw commands index
   user_draw_cmds_index = 0;
 }
 
-void EndFrame() { ImGuiMenu(); }
+void EndFrame() {}
 
 void ClearAllData() {}
 
