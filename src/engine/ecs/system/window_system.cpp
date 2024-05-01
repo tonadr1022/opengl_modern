@@ -31,8 +31,14 @@ bool WindowSystem::GetCursorVisible() const {
   return glfwGetInputMode(glfw_window_, GLFW_CURSOR) != 0;
 }
 
+glm::vec2 WindowSystem::GetWindowDimensions() const {
+  int w;
+  int h;
+  glfwGetWindowSize(glfw_window_, &w, &h);
+  return {w, h};
+}
+
 void WindowSystem::Init(Engine* engine) {
-  // TODO(tony): opengl error callback
   glfwSetErrorCallback([](int error, const char* description) {
     spdlog::critical("GFLW error {}: {}\n", error, description);
   });

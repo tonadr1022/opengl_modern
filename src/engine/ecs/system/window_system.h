@@ -3,6 +3,8 @@
 struct GLFWwindow;
 class Engine;
 
+#include "engine/pch.h"
+
 struct WindowSystem {
   void Init(Engine* engine);
   void SwapBuffers();
@@ -11,6 +13,7 @@ struct WindowSystem {
   void SetCursorVisible(bool state);
   void CenterCursor();
   bool ShouldClose();
+  [[nodiscard]] glm::vec2 GetWindowDimensions() const;
   [[nodiscard]] bool GetVsync() const { return is_vsync_; };
   [[nodiscard]] GLFWwindow* GetContext() const { return glfw_window_; }
   [[nodiscard]] bool GetCursorVisible() const;

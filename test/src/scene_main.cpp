@@ -62,7 +62,9 @@ void SceneMain::OnUpdate(Timestep timestep) {
       engine_->window_system_->CenterCursor();
     }
     view_matrix_ = ecs::fps_cam_sys::GetView(camera);
-    projection_matrix_ = ecs::fps_cam_sys::GetProjection(camera.proj_mat_settings);
+    auto window_dims = engine_->window_system_->GetWindowDimensions();
+    float aspect_ratio = static_cast<float>(window_dims.y) / static_cast<float>(window_dims.x);
+    projection_matrix_ = ecs::fps_cam_sys::GetProjection(camera, aspect_ratio);
   }
 }
 

@@ -37,17 +37,17 @@ void OnUpdate(FPSCamera &camera, Timestep timestep) {
 }
 
 void OnScroll(FPSCamera &camera, float offset) {
-  camera.proj_mat_settings.fov += static_cast<float>(offset);
-  camera.proj_mat_settings.fov = glm::clamp(camera.proj_mat_settings.fov, 1.f, 200.f);
+  camera.fov += static_cast<float>(offset);
+  camera.fov = glm::clamp(camera.fov, 1.f, 200.f);
 }
 
 glm::mat4 GetView(FPSCamera &camera) {
   return glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
 }
 
-glm::mat4 GetProjection(ProjectionMatrixSettings &proj_settings) {
-  return glm::perspective(glm::radians(proj_settings.fov), proj_settings.aspect_ratio,
-                          proj_settings.near_plane, proj_settings.far_plane);
+glm::mat4 GetProjection(FPSCamera &camera, float aspect_ratio) {
+  return glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane,
+                          camera.far_plane);
 }
 
 void OnMouseMoved(FPSCamera &camera, glm::vec2 pos) {
@@ -55,9 +55,9 @@ void OnMouseMoved(FPSCamera &camera, glm::vec2 pos) {
   glm::vec2 offset = pos - last;
   last = pos;
 
-  camera.yaw += static_cast<float>(offset.x) * camera.settings.mouse_sensitivity;
+  camera.yaw += static_cast<float>(offset.x) * camera.mouse_sensitivity;
   camera.pitch -= static_cast<float>(offset.y) *
-                  camera.settings.mouse_sensitivity;  // need to flip yOffset (screen space)
+                  camera.mouse_sensitivity;  // need to flip yOffset (screen space)
   camera.pitch = glm::clamp(camera.pitch, -89.0f, 89.0f);
   glm::vec3 eulers;
   eulers.x = glm::cos(glm::radians(camera.yaw)) * glm::cos(glm::radians(camera.pitch));
@@ -74,15 +74,13 @@ void OnImGui(FPSCamera &camera) {
   ImGui::Text("Front: %.1f, %.1f, %.1f", front.x, front.y, front.z);
   ImGui::SliderFloat("Movement Speed", &camera.movement_speed, FPSCamera::MinMoveSpeed,
                      FPSCamera::MaxMoveSpeed);
-  float fov_rad = glm::radians(camera.proj_mat_settings.fov);
-  if (ImGui::SliderAngle("FOV", &fov_rad, ProjectionMatrixSettings::MinFov,
-                         ProjectionMatrixSettings::MaxFov)) {
+  float fov_rad = glm::radians(camera.fov);
+  if (ImGui::SliderAngle("FOV", &fov_rad, FPSCamera::MinFov, FPSCamera::MaxFov)) {
     camera.proj_mat_settings.fov = glm::degrees(fov_rad);
   }
-  ImGui::Text("Aspect Ratio: %.3f", camera.proj_mat_settings.aspect_ratio);
-  auto &settings = camera.settings;
-  ImGui::SliderFloat("Mouse Sensitivity", &settings.mouse_sensitivity,
-                     CameraSettings::MinMouseSensitivity, CameraSettings::MaxMouseSensitivity);
+  ImGui::Text("Aspect Ratio: %.3f", camera.aspect_ratio);
+  ImGui::SliderFloat("Mouse Sensitivity", &camera.mouse_sensitivity, FPSCamera::MinMouseSensitivity,
+                     FPSCamera::MaxMouseSensitivity);
 }
 
 }  // namespace fps_cam_sys
