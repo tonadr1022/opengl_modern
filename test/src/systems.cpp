@@ -41,15 +41,6 @@ void OnScroll(FPSCamera &camera, float offset) {
   camera.fov = glm::clamp(camera.fov, 1.f, 200.f);
 }
 
-glm::mat4 GetView(FPSCamera &camera) {
-  return glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
-}
-
-glm::mat4 GetProjection(FPSCamera &camera, float aspect_ratio) {
-  return glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane,
-                          camera.far_plane);
-}
-
 void OnMouseMoved(FPSCamera &camera, glm::vec2 pos) {
   static glm::vec2 last = pos;
   glm::vec2 offset = pos - last;
@@ -76,9 +67,8 @@ void OnImGui(FPSCamera &camera) {
                      FPSCamera::MaxMoveSpeed);
   float fov_rad = glm::radians(camera.fov);
   if (ImGui::SliderAngle("FOV", &fov_rad, FPSCamera::MinFov, FPSCamera::MaxFov)) {
-    camera.proj_mat_settings.fov = glm::degrees(fov_rad);
+    camera.fov = glm::degrees(fov_rad);
   }
-  ImGui::Text("Aspect Ratio: %.3f", camera.aspect_ratio);
   ImGui::SliderFloat("Mouse Sensitivity", &camera.mouse_sensitivity, FPSCamera::MinMouseSensitivity,
                      FPSCamera::MaxMouseSensitivity);
 }

@@ -11,14 +11,10 @@ struct FPSCamera;
 namespace ecs {
 
 namespace fps_cam_sys {
-
 extern void OnUpdate(component::FPSCamera& camera, Timestep timestep);
 extern void OnMouseMoved(component::FPSCamera& camera, glm::vec2 pos);
 extern void OnScroll(component::FPSCamera& camera, float offset);
-extern glm::mat4 GetView(component::FPSCamera& camera);
-extern glm::mat4 GetProjection(component::FPSCamera& camera, float aspect_ratio);
 extern void OnImGui(component::FPSCamera& camera);
-
 }  // namespace fps_cam_sys
 
 };  // namespace ecs

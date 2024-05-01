@@ -43,7 +43,7 @@ void Input::init_glfw_input_callbacks(GLFWwindow* window) {
   glfwSetCursorPosCallback(window, mouse_pos_cb);
   glfwSetMouseButtonCallback(window, mouse_button_cb);
   glfwSetScrollCallback(window, mouse_scroll_cb);
-  // glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
+  glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
 }
 
 // void Input::SetCursorVisible(bool state) {
@@ -80,46 +80,43 @@ void Input::keypress_cb(GLFWwindow* window, int key, int scancode, int action, i
   e.key.shift = mods & GLFW_MOD_SHIFT;
   e.key.system = mods & GLFW_MOD_SUPER;
 
-  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
-  engine->OnEvent(e);
-
   if (static_cast<InputAction>(action) == InputAction::Press) {
     key_states_[key] = Pressed;
   } else if (static_cast<InputAction>(action) == InputAction::Release) {
     key_states_[key] = Released;
   }
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+  engine->OnEvent(e);
 }
 
 void Input::mouse_pos_cb(GLFWwindow* window, double xpos, double ypos) {
   ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
-  // static double last_x;
-  // static double last_y;
-  // double x_offset = xpos - last_x;
-  // double y_offset = ypos - last_y;
-  // last_x = xpos;
-  // last_y = ypos;
-  // mouse_screen_offset_ = {x_offset, y_offset};
-  // mouse_screen_pos_ = {xpos, ypos};
-  // mouse_moved_ = true;
+  Event e{.type = Event::Type::MouseMoved};
+  e.mouse_pos.x = xpos;
+  e.mouse_pos.y = ypos;
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+  engine->OnEvent(e);
 }
 
 void Input::mouse_scroll_cb(GLFWwindow* window, double xoffset, double yoffset) {
   ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
   Event e{.type = Event::MouseScrolled};
   e.scroll.offset = yoffset;
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+  engine->OnEvent(e);
 }
 
 void Input::mouse_button_cb(GLFWwindow* window, int button, int action, int mods) {
   ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
-  Event e{.type = Event::MouseButtonPressed};
+  Event e{.type = Event::Type::MouseButtonPressed};
   if (action == GLFW_PRESS) {
     mouse_button_states_[button] = Pressed;
   } else if (action == GLFW_RELEASE) {
     mouse_button_states_[button] = Released;
   }
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+  engine->OnEvent(e);
 }
-
-// void Input::SetCursorPos(float x, float y) { glfwSetCursorPos(window_, x, y); }
 
 // void Input::CenterCursor() {
 //   int width;

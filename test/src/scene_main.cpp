@@ -43,6 +43,7 @@ void SceneMain::OnEvent(const Event& e) {
       break;
   }
 }
+
 void SceneMain::OnImGuiRender() {
   ImGui::Begin("Scene");
   auto player_entity = registry.view<Player>().front();
@@ -61,10 +62,12 @@ void SceneMain::OnUpdate(Timestep timestep) {
     if (!engine_->window_system_->GetCursorVisible()) {
       engine_->window_system_->CenterCursor();
     }
-    view_matrix_ = ecs::fps_cam_sys::GetView(camera);
+    view_matrix_ = glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
     auto window_dims = engine_->window_system_->GetWindowDimensions();
     float aspect_ratio = static_cast<float>(window_dims.y) / static_cast<float>(window_dims.x);
-    projection_matrix_ = ecs::fps_cam_sys::GetProjection(camera, aspect_ratio);
+    projection_matrix_ = glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane,
+                                          camera.far_plane);
+    ;
   }
 }
 

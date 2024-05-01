@@ -1,5 +1,7 @@
 #include "window_system.h"
 
+#include <GLFW/glfw3.h>
+
 #include "engine/application/engine.h"
 #include "engine/application/event.h"
 
@@ -19,6 +21,10 @@ void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
 }
 
 void WindowSystem::CenterCursor() {
+  // int width;
+  // int height;
+  // glfwGetWindowSize(window_, &width, &height);
+  // glfwSetCursorPos(window_, static_cast<float>(width) / 2.0f, static_cast<float>(height) / 2.0f);
   std::cout << "framebuff " << framebuffer_height_ << "  " << framebuffer_width_ << "\n";
   glfwSetCursorPos(glfw_window_, framebuffer_width_ / 2.0f, framebuffer_height_ / 2.0f);
 }
@@ -75,6 +81,12 @@ void WindowSystem::Init(Engine* engine) {
 
   glfwSetFramebufferSizeCallback(glfw_window_, framebuffer_size_callback);
   glfwSetWindowSizeCallback(glfw_window_, window_size_callback);
+
+  int curr_framebuffer_width;
+  int curr_framebuffer_height;
+  glfwGetFramebufferSize(glfw_window_, &curr_framebuffer_width, &curr_framebuffer_height);
+  framebuffer_width_ = curr_framebuffer_width;
+  framebuffer_height_ = curr_framebuffer_height;
 
   GLenum err = glewInit();
   if (err != GLEW_OK) {
