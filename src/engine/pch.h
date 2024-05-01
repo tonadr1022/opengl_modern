@@ -16,6 +16,8 @@
 #include <glm/fwd.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>

@@ -9,19 +9,21 @@
 
 void GraphicsSystem::Init() { gfx::renderer::Init(); }
 void GraphicsSystem::Shutdown() {}
-void GraphicsSystem::StartFrame() { gfx::renderer::StartFrame(); }
+void GraphicsSystem::StartFrame(Scene& scene) {
+  gfx::renderer::StartFrame(scene.view_matrix_, scene.projection_matrix_);
+}
 
 void GraphicsSystem::DrawOpaque(Scene& scene) {
-  auto model_group = scene.registry.group<component::Transform, component::Model>();
+  auto model_group = scene.registry.group<component::Transform, component::ModelMatrix>();
   std::for_each(std::execution::par, model_group.begin(), model_group.end(),
                 [&model_group](entt::entity entity) {
                   auto [transform, model] =
-                      model_group.get<component::Transform, component::Model>(entity);
+                      model_group.get<component::Transform, component::ModelMatrix>(entity);
                   model.matrix = transform.CalculateModel();
                   // model.matrix = glm::mat4(1);
                 });
   auto group =
-      scene.registry.group<component::Mesh>(entt::get<component::Model, component::Material>);
+      scene.registry.group<component::Mesh>(entt::get<component::ModelMatrix, component::Material>);
 
   gfx::renderer::SetBatchedObjectCount(group.size());
 

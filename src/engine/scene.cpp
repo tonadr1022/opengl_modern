@@ -10,3 +10,5 @@ void Scene::OnEvent(const Event& e) {}
 void Scene::OnUpdate(Timestep timestep) {}
 
 void Scene::Shutdown() { registry.clear(); }
+
+void Scene::OnImGuiRender() {};

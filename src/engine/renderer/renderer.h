@@ -12,7 +12,7 @@ namespace gfx {
 namespace renderer {
 
 extern void Init();
-extern void StartFrame();
+void StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
 extern void EndFrame();
 extern void Restart();
 extern void SetBatchedObjectCount(uint32_t count);

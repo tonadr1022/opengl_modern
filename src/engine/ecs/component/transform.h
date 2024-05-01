@@ -26,7 +26,7 @@ struct Transform {
   bool dirty_{true};
 };
 
-struct Model {
+struct ModelMatrix {
   glm::mat4 matrix{};
 };
 

@@ -84,7 +84,7 @@ void Engine::Run() {
     active_scene_->OnUpdate(timestep);
     timestep.dt_actual = delta_time;
 
-    graphics_system_->StartFrame();
+    graphics_system_->StartFrame(*active_scene_);
     graphics_system_->DrawOpaque(*active_scene_);
     graphics_system_->EndFrame();
 
@@ -101,6 +101,7 @@ void Engine::Run() {
 
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {
   gfx::renderer::OnImGuiRender();
+  active_scene_->OnImGuiRender();
 
   ImGui::Begin("Settings");
   bool vsync = window_system_->GetVsync();

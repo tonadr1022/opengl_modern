@@ -2,7 +2,7 @@ project(opengl_renderer)
 
 set(HEADERS)
 
-set(SOURCES src/main.cpp src/scene_main.cpp)
+set(SOURCES src/systems.cpp src/main.cpp src/scene_main.cpp)
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 

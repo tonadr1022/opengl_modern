@@ -6,7 +6,7 @@ struct GraphicsSystem {
  public:
   void Init();
   void Shutdown();
-  void StartFrame();
-  void DrawOpaque(Scene &scene);
+  void StartFrame(Scene& scene);
+  void DrawOpaque(Scene& scene);
   void EndFrame();
 };

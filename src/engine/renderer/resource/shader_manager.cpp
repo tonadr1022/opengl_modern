@@ -107,7 +107,7 @@ void ShaderManager::InitializeUniforms(ShaderProgramData& program_data) {
     glGetActiveUniform(program_data.id, i, active_uniform_max_length, &uniform_name_length,
                        &uniform_size, &uniform_type, uniform_name);
     uint32_t location = glGetUniformLocation(program_data.id, uniform_name);
-    program_data.uniform_locations.emplace(HashedString(uniform_name), program_data.id);
+    program_data.uniform_locations.emplace(HashedString(uniform_name), location);
   }
 }
 

@@ -21,6 +21,8 @@ class Engine {
 
   // static Engine& Get();
 
+  WindowSystem* window_system_{nullptr};
+
  private:
   void Shutdown();
   bool draw_imgui_{true};
@@ -31,7 +33,6 @@ class Engine {
 
   friend void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
 
-  WindowSystem* window_system_{nullptr};
   ImGuiSystem* imgui_system_{nullptr};
 
   Scene* active_scene_{nullptr};

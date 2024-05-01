@@ -39,6 +39,13 @@ struct Buffer {
   uint32_t offset{0};
 };
 
+struct CameraInfo {
+  glm::mat4 view_matrix;
+  glm::mat4 projection_matrix;
+  glm::mat4 vp_matrix;
+};
+
+CameraInfo cam_info;
 uint32_t batch_vao{};
 Buffer batch_vertex_buffer;
 Buffer batch_element_buffer;
@@ -137,7 +144,10 @@ void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>
   batch_element_buffer.offset += indices.size() * sizeof(Index);
 }
 
-void StartFrame() {
+void StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix) {
+  cam_info.view_matrix = view_matrix;
+  cam_info.projection_matrix = projection_matrix;
+  cam_info.vp_matrix = projection_matrix * view_matrix;
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
   glClearColor(0.1, 0.1, 0.0, 1.0);
@@ -179,6 +189,7 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
 
   auto batch_shader = ShaderManager::GetShader("batch");
   batch_shader->Bind();
+  batch_shader->SetMat4("vp_matrix", cam_info.vp_matrix);
 
   glBindVertexArray(batch_vao);
   // mode, type, offest ptr, command count, stride (0 since tightly packed)

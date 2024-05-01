@@ -18,6 +18,19 @@ void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
   engine->OnEvent(e);
 }
 
+void WindowSystem::CenterCursor() {
+  std::cout << "framebuff " << framebuffer_height_ << "  " << framebuffer_width_ << "\n";
+  glfwSetCursorPos(glfw_window_, framebuffer_width_ / 2.0f, framebuffer_height_ / 2.0f);
+}
+
+void WindowSystem::SetCursorVisible(bool state) {
+  glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+bool WindowSystem::GetCursorVisible() const {
+  return glfwGetInputMode(glfw_window_, GLFW_CURSOR) != 0;
+}
+
 void WindowSystem::Init(Engine* engine) {
   // TODO(tony): opengl error callback
   glfwSetErrorCallback([](int error, const char* description) {
