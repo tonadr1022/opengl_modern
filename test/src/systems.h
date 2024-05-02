@@ -6,17 +6,18 @@ struct Timestep;
 
 namespace component {
 struct FPSCamera;
-}
+struct Transform;
+}  // namespace component
 
 namespace ecs {
 
 namespace fps_cam_sys {
 extern void OnUpdate(component::FPSCamera& camera, Timestep timestep);
-extern void OnMouseMoved(component::FPSCamera& camera, glm::vec2 pos);
 extern void OnScroll(component::FPSCamera& camera, float offset);
 extern void OnImGui(component::FPSCamera& camera);
 }  // namespace fps_cam_sys
 
+namespace movement_system {}
 };  // namespace ecs
 
 // void FPSCamera::OnImGuiRender() {

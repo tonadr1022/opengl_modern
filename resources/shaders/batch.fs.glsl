@@ -8,6 +8,8 @@ layout(location = 0) in VS_OUT {
 
 layout(location = 0) out vec4 o_color;
 
+uniform vec3 diffuse;
+
 void main() {
     o_color = vec4(1.0);
 }

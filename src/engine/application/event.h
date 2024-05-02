@@ -16,6 +16,15 @@ struct Event {
     bool shift;
   };
 
+  struct MouseEvent {
+    MouseCode code;
+    InputAction action;
+    bool alt;
+    bool control;
+    bool system;
+    bool shift;
+  };
+
   struct WindowSize {
     uint32_t x;
     uint32_t y;
@@ -52,5 +61,6 @@ struct Event {
     WindowSize size;
     MouseScroll scroll;
     MouseMove mouse_pos;
+    MouseEvent mouse;
   };
 };

@@ -2,11 +2,14 @@
 
 #include <imgui.h>
 
+#include <cstdint>
+
 #include "engine/pch.h"
 #include "engine/renderer/gl/buffer.h"
 #include "engine/renderer/gl/data_types.h"
 #include "engine/renderer/gl/debug.h"
 #include "engine/renderer/material.h"
+#include "engine/renderer/resource/material_manager.h"
 #include "engine/renderer/resource/mesh_manager.h"
 #include "engine/renderer/resource/paths.h"
 #include "engine/renderer/resource/shader_manager.h"
@@ -54,6 +57,7 @@ std::vector<UserDrawCommand> user_draw_cmds;
 uint32_t user_draw_cmds_index{0};
 
 std::map<MeshID, DrawElementsIndirectCommand> mesh_buffer_info;
+uint32_t framebuffer_width{1}, frame_buffer_height{1};
 
 void InitBuffers() {
   glCreateBuffers(1, &batch_vertex_buffer.id);
@@ -92,6 +96,22 @@ void LoadShaders() {
 
 }  // namespace
 
+struct RendererStats {
+  uint32_t vertices;
+  uint32_t indices;
+  uint32_t multi_draw_calls;
+  uint32_t meshes_drawn;
+  uint32_t material_swaps;
+  uint32_t shader_swaps;
+  uint32_t meshes_in_memory;
+};
+RendererStats stats;
+
+void SetFrameBufferSize(uint32_t width, uint32_t height) {
+  frame_buffer_height = height;
+  framebuffer_width = width;
+}
+
 void OnImGuiRender() {
   ImGui::Begin("Renderer");
   if (ImGui::Button("Recompile Shaders")) {
@@ -99,6 +119,8 @@ void OnImGuiRender() {
   }
   ImGui::Text("Buffer Offsets: Vertex: %i, Index: %i", batch_vertex_buffer.offset,
               batch_element_buffer.offset);
+  ImGui::Text("Width: %i, height: %i, ratio: %f", framebuffer_width, frame_buffer_height,
+              static_cast<float>(framebuffer_width) / static_cast<float>(frame_buffer_height));
 
   ImGui::End();
 }
@@ -114,7 +136,6 @@ void Init() {
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
-
   InitBuffers();
   InitVaos();
 }
@@ -142,12 +163,14 @@ void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>
   // buffer is void* type
   batch_vertex_buffer.offset += vertices.size() * sizeof(Vertex);
   batch_element_buffer.offset += indices.size() * sizeof(Index);
+  stats.meshes_in_memory++;
 }
 
 void StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix) {
   cam_info.view_matrix = view_matrix;
   cam_info.projection_matrix = projection_matrix;
   cam_info.vp_matrix = projection_matrix * view_matrix;
+  glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
   glClearColor(0.1, 0.1, 0.0, 1.0);
@@ -155,6 +178,7 @@ void StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix
 }
 
 void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& uniforms) {
+  glBindVertexArray(batch_vao);
   // for each mesh that has an instance count with this material,
   // set base instance and increment it by the number of instances
   // of the mesh that have this material, then add the command
@@ -187,13 +211,40 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_buffer.id);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_buffer.id);
 
-  auto batch_shader = ShaderManager::GetShader("batch");
-  batch_shader->Bind();
-  batch_shader->SetMat4("vp_matrix", cam_info.vp_matrix);
+  // auto batch_shader = ShaderManager::GetShader("batch");
+  // batch_shader->Bind();
+  auto& material = material_manager::GetMaterial(material_id);
+  auto shader = ShaderManager::GetShader(material.shader_id);
+  shader->Bind();
 
-  glBindVertexArray(batch_vao);
+  for (const auto& attr : material.attributes) {
+    switch (attr.type) {
+      case gfx::MaterialAttribute::Type::Vec3:
+        shader->SetVec3(attr.name, attr.value.vec3_v);
+      case gfx::MaterialAttribute::Type::Vec4:
+        shader->SetVec4(attr.name, attr.value.vec4_v);
+      case gfx::MaterialAttribute::Type::Float:
+        shader->SetFloat(attr.name, attr.value.float_v);
+      default:
+        break;
+    }
+  }
+
+  // /**
+  //  * @brief Sets a uniform value by location.
+  //  * NOTE: Operates against the currently-used shader.
+  //  *
+  //  * @param index The location of the uniform.
+  //  * @param value The value of the uniform.
+  //  * @return True on success; otherwise false.
+  //  */
+  // KAPI b8 shader_system_uniform_set_by_location(u16 location, const void* value);
+  //
+  shader->SetMat4("vp_matrix", cam_info.vp_matrix);
+
   // mode, type, offest ptr, command count, stride (0 since tightly packed)
   glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, commands.size(), 0);
+  stats.multi_draw_calls++;
 
   // TODO (tony): create buffer class with RAII
   glDeleteBuffers(1, &ssbo_buffer.id);
@@ -218,6 +269,7 @@ void RenderOpaqueObjects() {
   MaterialID curr_mat_id = user_draw_cmds[0].material_id;
   for (const auto& user_draw_cmd : user_draw_cmds) {
     if (user_draw_cmd.material_id != curr_mat_id) {
+      stats.material_swaps++;
       // draw with this material and uniforms of objects that use this material
       DrawOpaqueHelper(curr_mat_id, uniforms);
       curr_mat_id = user_draw_cmd.material_id;
@@ -238,7 +290,11 @@ void RenderOpaqueObjects() {
   user_draw_cmds_index = 0;
 }
 
-void EndFrame() {}
+void EndFrame() {
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 
 void ClearAllData() {}
 

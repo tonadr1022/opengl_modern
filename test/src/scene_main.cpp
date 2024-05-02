@@ -26,18 +26,16 @@ void SceneMain::OnEvent(const Event& e) {
   auto& camera = registry.get<component::FPSCamera>(player_entity);
   switch (e.type) {
     case Event::Type::KeyPressed:
-      if (e.key.code == KeyCode::B) {
+      if (e.key.code == KeyCode::M) {
+        fps_focused_ = !fps_focused_;
+        if (!fps_focused_) engine_->window_system_->CenterCursor();
+        engine_->window_system_->SetCursorVisible(!fps_focused_);
+      } else if (e.key.code == KeyCode::B) {
         engine_->LoadScene("test2");
-      } else if (e.key.code == KeyCode::Escape) {
-        bool visible = engine_->window_system_->GetCursorVisible();
-        std::cout << visible << "  visible\n";
-        engine_->window_system_->SetCursorVisible(!visible);
       }
-    case Event::Type::MouseMoved:
-      ecs::fps_cam_sys::OnMouseMoved(camera, {e.mouse_pos.x, e.mouse_pos.y});
       break;
     case Event::Type::MouseScrolled:
-      ecs::fps_cam_sys::OnScroll(camera, e.scroll.offset);
+      if (fps_focused_) ecs::fps_cam_sys::OnScroll(camera, e.scroll.offset);
       break;
     default:
       break;
@@ -56,33 +54,42 @@ void SceneMain::OnImGuiRender() {
 
 void SceneMain::OnUpdate(Timestep timestep) {
   auto player_entity = registry.view<Player>().front();
-  if (registry.any_of<component::FPSCamera>(player_entity)) {
-    auto& camera = registry.get<component::FPSCamera>(player_entity);
-    ecs::fps_cam_sys::OnUpdate(camera, timestep);
-    if (!engine_->window_system_->GetCursorVisible()) {
-      engine_->window_system_->CenterCursor();
-    }
-    view_matrix_ = glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
-    auto window_dims = engine_->window_system_->GetWindowDimensions();
-    float aspect_ratio = static_cast<float>(window_dims.y) / static_cast<float>(window_dims.x);
-    projection_matrix_ = glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane,
-                                          camera.far_plane);
-    ;
-  }
+  if (!registry.any_of<component::FPSCamera>(player_entity)) return;
+  auto& camera = registry.get<component::FPSCamera>(player_entity);
+  if (fps_focused_) ecs::fps_cam_sys::OnUpdate(camera, timestep);
+  view_matrix_ = glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
+  auto dims = engine_->window_system_->GetWindowDimensions();
+  float aspect_ratio = static_cast<float>(dims.x) / static_cast<float>(dims.y);
+  projection_matrix_ =
+      glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane, camera.far_plane);
 }
 
 void SceneMain::Load() {
-  auto tri = registry.create();
-  int a = 5;
-  component::Transform t;
-  t.SetTranslation({0.1, 0.1, 0});
-  registry.emplace<component::Transform>(tri, t);
-  registry.emplace<component::ModelMatrix>(tri);
+  engine_->window_system_->SetCursorVisible(!fps_focused_);
+  glm::vec3 iter{0, 0, 0};
   gfx::MeshID mesh_id = gfx::mesh_manager::LoadShape(gfx::ShapeType::Cube);
-  registry.emplace<component::Mesh>(tri, mesh_id);
+  gfx::Material mat;
+  mat.shader_id = "batch";
+  std::vector<gfx::MaterialAttribute> attrs{
+      {gfx::MaterialAttribute::Type::Vec3, "diffuse", {1.f, 1.f, 0.f}}};
+  attrs.emplace_back(gfx::MaterialAttribute::Type::Vec3, "diffuse", {1.f, 1.f, 0.f});
+
+  gfx::MaterialID color_only_mat = gfx::material_manager::AddMaterial(mat);
+  // auto color_only_mat = gfx::material_manager::AddMaterial(gfx::ColorMaterial{{1.f, 1.f, 1.f}});
+  for (iter.x = -50; iter.x <= 50; iter.x++) {
+    auto tri = registry.create();
+    component::Transform t;
+    t.SetTranslation({iter.x * 2, 0, 0});
+    registry.emplace<component::Transform>(tri, t);
+    registry.emplace<component::ModelMatrix>(tri);
+    registry.emplace<component::Mesh>(tri, mesh_id);
+    registry.emplace<component::Material>(tri, color_only_mat);
+  }
   auto player = registry.create();
   registry.emplace<Player>(player);
-  registry.emplace<component::FPSCamera>(player);
+  component::FPSCamera fps_cam;
+  fps_cam.position = {2, 1, 1};
+  registry.emplace<component::FPSCamera>(player, fps_cam);
   // gfx::MaterialCreateInfo color_mat_create_info;
   //
   // std::vector<gfx::ShaderCreateInfo> color_shader_create_info{
@@ -97,7 +104,5 @@ void SceneMain::Load() {
   // registry_.emplace<component::Material>(tri, color_mat);
   //
   // // Color only, no shader
-  auto color_only_mat = gfx::material_manager::AddMaterial(gfx::ColorMaterial{{1.f, 1.f, 1.f}});
   // registry_.remove<component::Material>(tri);
-  registry.emplace<component::Material>(tri, color_only_mat);
 }

@@ -22,8 +22,9 @@ layout(std430, binding = 0) readonly buffer data {
 
 void main(void) {
     mat4 model = uniforms[gl_BaseInstance + gl_InstanceID].model;
-    vs_out.posWorldSpace = vec3(vp_matrix * model * vec4(aPosition, 1.0));
+    vec4 posWorldSpace = vp_matrix * model * vec4(aPosition, 1.0);
+    vs_out.posWorldSpace = vec3(posWorldSpace);
     vs_out.texCoord = aTexCoord;
     vs_out.normal = aNormal;
-    gl_Position = vec4(vs_out.posWorldSpace, 1.0);
+    gl_Position = posWorldSpace;
 }

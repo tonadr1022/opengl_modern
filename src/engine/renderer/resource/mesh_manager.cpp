@@ -13,6 +13,8 @@
 namespace gfx::mesh_manager {
 
 namespace {
+MeshID curr_id = 0;
+MeshID GetNextMeshID() { return ++curr_id; }
 
 glm::vec3 aiVec3ToGLM(const aiVector3f& vec) { return {vec.x, vec.y, vec.z}; }
 glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
@@ -20,7 +22,7 @@ glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
 Assimp::Importer importer;
 uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
 
-void ProcessMesh(const aiMesh& mesh) {
+MeshID ProcessMesh(const aiMesh& mesh) {
   EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
               "Mesh needs positions, normals, and texture coords");
   std::vector<Vertex> vertices;
@@ -41,9 +43,10 @@ void ProcessMesh(const aiMesh& mesh) {
       indices.push_back(mesh.mFaces[i].mIndices[j]);
     }
   }
+  auto mesh_id = GetNextMeshID();
 
-  renderer::AddBatchedMesh(HashedString(mesh.mName.data), vertices, indices);
-
+  renderer::AddBatchedMesh(mesh_id, vertices, indices);
+  return mesh_id;
   // if (mesh.mMaterialIndex >= 0) {
   //   aiMaterial* ai_mat = scene.mMaterials[mesh.mMaterialIndex];
   // }
@@ -52,14 +55,12 @@ void ProcessMesh(const aiMesh& mesh) {
 std::optional<MeshID> ProcessNodes(const aiScene& scene) {
   std::stack<aiNode*> mesh_stack;
   mesh_stack.push(scene.mRootNode);
-
   aiNode* curr_node;
   std::vector<bool> processed_materials(scene.mNumMaterials, false);
 
   while (!mesh_stack.empty()) {
     curr_node = mesh_stack.top();
     mesh_stack.pop();
-
     for (uint32_t i = 0; i < curr_node->mNumMeshes; i++) {
       aiMesh* mesh = scene.mMeshes[curr_node->mMeshes[i]];
       ProcessMesh(*mesh);

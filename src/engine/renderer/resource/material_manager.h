@@ -4,15 +4,13 @@
 #include "engine/renderer/material.h"
 
 namespace gfx {
-using MaterialType = std::variant<ColorMaterial, MaterialCreateInfo>;
+struct Material;
 
 namespace material_manager {
 
-extern MaterialID AddMaterial(HashedString name, const MaterialType& create_info);
-extern MaterialID AddMaterial(const MaterialType& create_info);
-extern MaterialID GetMaterial(HashedString name);
-extern MaterialType& GetMaterialCreateInfo(HashedString name);
-extern MaterialType& GetMaterialCreateInfo(MaterialID id);
+[[nodiscard]] extern MaterialID AddMaterial(HashedString name, const Material& material);
+[[nodiscard]] extern MaterialID AddMaterial(const Material& material);
+extern Material& GetMaterial(MaterialID id);
 extern void ClearMaterials();
 
 }  // namespace material_manager

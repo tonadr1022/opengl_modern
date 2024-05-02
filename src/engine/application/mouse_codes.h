@@ -1,9 +1,8 @@
 #pragma once
 
-using MouseCode = uint16_t;
+#include "engine/pch.h"
 
-namespace mouse {
-enum : MouseCode {
+enum MouseCode {
   // From glfw3.h
   Button0 = 0,
   Button1 = 1,
@@ -19,4 +18,3 @@ enum : MouseCode {
   ButtonRight = Button1,
   ButtonMiddle = Button2
 };
-}  // namespace mouse

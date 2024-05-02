@@ -19,8 +19,8 @@ struct FPSCamera {
   static constexpr const float DefaultFov = 45.0f;
   static constexpr const float MaxFov = 120.0f;
   static constexpr const float MinFov = 5.0f;
-  static constexpr const float DefaultMouseSensitivity = 0.1f;
-  static constexpr const float MinMouseSensitivity = 0.01f;
+  static constexpr const float DefaultMouseSensitivity = 0.5f;
+  static constexpr const float MinMouseSensitivity = 0.05f;
   static constexpr const float MaxMouseSensitivity = 1.0f;
   static constexpr const float DefaultMovementSpeed = 5.0f;
   static constexpr const float MinMoveSpeed = 0.1f;

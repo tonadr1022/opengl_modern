@@ -33,16 +33,21 @@ class Input {
   static bool IsMouseUp(MouseButton key);
   static bool IsMousePressed(MouseButton key);
   static bool IsMouseReleased(MouseButton key);
-  // static const glm::vec2& GetMousePosOffset();
-  // static const glm::vec2& GetMousePosition();
   static bool MouseMoved();
 
   static void SetCursorVisible(bool state);
   static bool GetCursorVisible();
+  inline static glm::vec2 GetCursorOffset() { return cursor_pos_ - prev_cursor_pos_; };
 
  private:
   friend class Engine;
+  inline static GLFWwindow* glfw_window_{nullptr};
   static void init_glfw_input_callbacks(GLFWwindow* window);
+  // inline static glm::vec2 cursor_offset_{0, 0};
+  // inline static glm::vec2 prev_cursor_offset_{0, 0};
+  inline static glm::vec2 cursor_pos_{0, 0};
+  inline static glm::vec2 prev_cursor_pos_{0, 0};
+
   // static inline glm::vec2 mouse_screen_pos_;
   // static inline glm::vec2 mouse_screen_offset_;
   // static inline glm::vec2 prev_mouse_screen_pos_;

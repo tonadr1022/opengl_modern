@@ -1,14 +1,14 @@
 #include "window_system.h"
 
-#include <GLFW/glfw3.h>
-
 #include "engine/application/engine.h"
 #include "engine/application/event.h"
+#include "engine/renderer/renderer.h"
 
 void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
   engine->window_system_->framebuffer_height_ = height;
   engine->window_system_->framebuffer_width_ = width;
+  gfx::renderer::SetFrameBufferSize(width, height);
 }
 
 void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
@@ -21,12 +21,12 @@ void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
 }
 
 void WindowSystem::CenterCursor() {
-  // int width;
-  // int height;
-  // glfwGetWindowSize(window_, &width, &height);
-  // glfwSetCursorPos(window_, static_cast<float>(width) / 2.0f, static_cast<float>(height) / 2.0f);
-  std::cout << "framebuff " << framebuffer_height_ << "  " << framebuffer_width_ << "\n";
-  glfwSetCursorPos(glfw_window_, framebuffer_width_ / 2.0f, framebuffer_height_ / 2.0f);
+  int width;
+  int height;
+  glfwGetWindowSize(glfw_window_, &width, &height);
+  glfwSetCursorPos(glfw_window_, static_cast<float>(width) / 2.0f,
+                   static_cast<float>(height) / 2.0f);
+  // glfwSetCursorPos(glfw_window_, framebuffer_width_ / 2.0f, framebuffer_height_ / 2.0f);
 }
 
 void WindowSystem::SetCursorVisible(bool state) {
@@ -66,7 +66,8 @@ void WindowSystem::Init(Engine* engine) {
   //  m_windowWidth = videoMode->width / 2;
   //  m_windowHeight = videoMode->height / 2;
 
-  glfw_window_ = glfwCreateWindow(800, 600, "OpenGL Modern", nullptr, nullptr);
+  // glfw_window_ = glfwCreateWindow(800, 600, "OpenGL Modern", nullptr, nullptr);
+  glfw_window_ = glfwCreateWindow(1600, 900, "OpenGL Modern", nullptr, nullptr);
 
   if (!glfw_window_) {
     spdlog::critical("Failed to create GLFW window");
