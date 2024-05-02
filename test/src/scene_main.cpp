@@ -80,14 +80,16 @@ void SceneMain::Load() {
   gfx::MaterialData mat;
   mat.diffuse = {1., 0., 1.};
   gfx::MaterialID color_only_mat = gfx::MaterialManager::AddMaterial(mat);
+  component::Transform t;
   for (iter.x = -50; iter.x <= 50; iter.x++) {
-    auto tri = registry.create();
-    component::Transform t;
-    t.SetTranslation({iter.x * 2, 0, 0});
-    registry.emplace<component::Transform>(tri, t);
-    registry.emplace<component::ModelMatrix>(tri);
-    registry.emplace<component::Mesh>(tri, mesh_id);
-    registry.emplace<component::Material>(tri, color_only_mat);
+    for (iter.y = -50; iter.y <= 50; iter.y++) {
+      auto tri = registry.create();
+      t.SetTranslation({iter.x * 2, iter.y * 2, 0});
+      registry.emplace<component::Transform>(tri, t);
+      registry.emplace<component::ModelMatrix>(tri);
+      registry.emplace<component::Mesh>(tri, mesh_id);
+      registry.emplace<component::Material>(tri, color_only_mat);
+    }
   }
   auto player = registry.create();
   registry.emplace<Player>(player);

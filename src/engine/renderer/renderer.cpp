@@ -115,6 +115,7 @@ void Renderer::Init() {
 }
 
 void Renderer::StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix) {
+  memset(&stats, 0, sizeof(stats));
   cam_info.view_matrix = view_matrix;
   cam_info.projection_matrix = projection_matrix;
   cam_info.vp_matrix = projection_matrix * view_matrix;
