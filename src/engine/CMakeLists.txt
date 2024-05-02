@@ -21,8 +21,7 @@ set(SOURCES
     core/e_assert.cpp
     pch.cpp
     util/timer.cpp
-    test/main.cpp
-    test/scene_main.cpp )
+    )
 
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
