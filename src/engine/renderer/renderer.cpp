@@ -92,7 +92,7 @@ RendererStats stats{0};
 
 }  // namespace
 
-void SetFrameBufferSize(uint32_t width, uint32_t height) {
+void Renderer::SetFrameBufferSize(uint32_t width, uint32_t height) {
   frame_buffer_height = height;
   framebuffer_width = width;
 }
@@ -185,6 +185,7 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_buffer.id);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_buffer.id);
 
+  // bind material
   auto& material = MaterialManager::GetMaterial(material_id);
   auto shader = ShaderManager::GetShader("batch");
   shader->Bind();
@@ -239,12 +240,12 @@ void Renderer::RenderOpaqueObjects() {
   user_draw_cmds_index = 0;
 }
 
-void EndFrame() {
+void Renderer::EndFrame() {
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ClearAllData() {}
+void Renderer::Restart() {}
 
 }  // namespace gfx

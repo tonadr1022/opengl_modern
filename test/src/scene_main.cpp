@@ -13,6 +13,8 @@
 #include <engine/renderer/resource/shader_manager.h>
 #include <imgui.h>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "systems.h"
 
 SceneMain::SceneMain() : Scene("main") {}
@@ -49,6 +51,13 @@ void SceneMain::OnImGuiRender() {
     auto& camera = registry.get<component::FPSCamera>(player_entity);
     ecs::fps_cam_sys::OnImGui(camera);
   }
+
+  auto materials = registry.group<component::Material>();
+  materials.each([](component::Material& material) {
+    auto& mat = gfx::MaterialManager::GetMaterial(material.handle);
+    ImGui::SliderFloat3(std::string("Diffuse###" + std::to_string(material.handle)).c_str(),
+                        glm::value_ptr(mat.diffuse), 0.0f, 1.0f);
+  });
   ImGui::End();
 }
 

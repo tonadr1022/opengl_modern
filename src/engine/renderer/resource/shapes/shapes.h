@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/renderer/gl/data_types.h"
+#include "engine/renderer/data_types.h"
 
 namespace gfx::shape {
 

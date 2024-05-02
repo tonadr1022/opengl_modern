@@ -7,11 +7,13 @@ layout(location = 0) in VS_OUT {
 } vs_in;
 
 layout(location = 0) out vec4 o_color;
+
 struct Material {
     vec3 diffuse;
-}
+};
+
 uniform Material material;
 
 void main() {
-    o_color = vec4(1.0);
+    o_color = vec4(material.diffuse, 1.0);
 }

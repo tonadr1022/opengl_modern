@@ -5,6 +5,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include "engine/renderer/renderer.h"
 #include "engine/timestep.h"
 #include "engine/util/imgui_extensions.h"
 
@@ -112,6 +113,14 @@ void ImGuiSystem::EndFrame() {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   ImGui::EndFrame();
   // ImGui::UpdatePlatformWindows();
+}
+
+void ImGuiSystem::RenderRendererStats(const gfx::RendererStats& stats) {
+  ImGui::BeginChild("Stats");
+  ImGui::Text("Vertices: %i", stats.vertices);
+  ImGui::Text("Indices: %i", stats.indices);
+  ImGui::Text("MultiDrawCalls: %i", stats.multi_draw_calls);
+  ImGui::EndChild();
 }
 
 void ImGuiSystem::FramerateSubMenu(Timestep timestep) {
