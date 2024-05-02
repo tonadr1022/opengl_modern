@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../pch.h"
+#include "engine/pch.h"
 
-namespace component {
+namespace engine::component {
 
 struct Transform {
  public:
@@ -26,4 +26,8 @@ struct Transform {
   bool dirty_{true};
 };
 
-}  // namespace component
+struct ModelMatrix {
+  glm::mat4 matrix{};
+};
+
+}  // namespace engine::component

@@ -1,22 +1,30 @@
 #include "engine.h"
 
+#include <imgui.h>
+
 #include "../scene.h"
 #include "../timestep.h"
 #include "../util/timer.h"
+#include "engine/application/event.h"
+#include "engine/application/key_codes.h"
+#include "engine/ecs/system/graphics_system.h"
 #include "engine/ecs/system/imgui_system.h"
 #include "engine/ecs/system/window_system.h"
+#include "engine/renderer/renderer.h"
+#include "engine/resource/shader_manager.h"
 #include "input.h"
 
-Engine* Engine::instance_ = nullptr;
+// Engine* Engine::instance_ = nullptr;
+
+namespace engine {
 
 Engine::Engine() {
-  enabled_systems_.set();
+  window_system_ = new WindowSystem;
+  imgui_system_ = new ImGuiSystem;
+  graphics_system_ = new GraphicsSystem;
 
-  window_system_ = std::make_unique<WindowSystem>();
-  imgui_system_ = std::make_unique<ImGuiSystem>();
-  graphics_system_ = std::make_unique<GraphicsSystem>();
-
-  window_system_->Init();
+  window_system_->Init(this);
+  // TODO(tony): global variable system
   window_system_->SetVsync(true);
 
   graphics_system_->Init();
@@ -26,19 +34,29 @@ Engine::Engine() {
   Input::init_glfw_input_callbacks(window_system_->GetContext());
 }
 
-void Engine::OnKeyEvent(KeyEvent& e) {
-  // TODO(tony): imgui handle first
-  EASSERT(active_scene_ != nullptr);
-  active_scene_->OnKeyEvent(e);
+void Engine::OnEvent(const Event& e) {
+  switch (e.type) {
+    case EventType::KeyPressed:
+      if (e.key.code == KeyCode::Q && e.key.system) {
+        Stop();
+        return;
+      } else if (e.key.code == KeyCode::G && e.key.control) {
+        draw_imgui_ = !draw_imgui_;
+        return;
+      }
+    default:
+      break;
+  }
+  active_scene_->OnEvent(e);
 }
 
-Engine& Engine::Get() {
-  if (instance_ == nullptr) {
-    instance_ = new Engine;
-  }
-  EASSERT(instance_);
-  return *instance_;
-}
+// Engine& Engine::Get() {
+//   if (instance_ == nullptr) {
+//     instance_ = new Engine;
+//   }
+//   EASSERT(instance_);
+//   return *instance_;
+// }
 
 void Engine::Run() {
   EASSERT(active_scene_ != nullptr);
@@ -48,31 +66,69 @@ void Engine::Run() {
   util::Timer timer;
   timer.Start();
   double last_time = timer.GetElapsedSeconds();
+  // const double sim_time = 1.0 / 60.0;
   while (running_ && !window_system_->ShouldClose()) {
     Input::Update();
 
+    if (draw_imgui_) imgui_system_->StartFrame();
+
     auto current_time = timer.GetElapsedSeconds();
-    timestep.dt_actual = current_time - last_time;
+    double delta_time = current_time - last_time;
     last_time = current_time;
-
-    imgui_system_->StartFrame();
-
+    // for now, give scene simulated time. eventually, have two functions, update and fixed update,
+    // or do all fixed update in physics system that doesn't exist.
+    double frame_time = delta_time;
+    // while (frame_time >= 0) {
+    //   double dt = std::min(frame_time, sim_time);
+    //   timestep.dt_actual = dt;
+    //   frame_time -= dt;
+    //   active_scene_->OnUpdate(timestep);
+    // }
     active_scene_->OnUpdate(timestep);
-    graphics_system_->StartFrame();
+    timestep.dt_actual = delta_time;
+
+    graphics_system_->StartFrame(*active_scene_);
+    graphics_system_->DrawOpaque(*active_scene_);
     graphics_system_->EndFrame();
 
-    imgui_system_->DebugMenu(timestep);
-    imgui_system_->EndFrame();
+    if (draw_imgui_) {
+      ImGuiSystemPerFrame(timestep);
+      imgui_system_->EndFrame();
+    }
 
     window_system_->SwapBuffers();
   }
 
-  delete instance_;
+  Shutdown();
+}
+
+void Engine::ImGuiSystemPerFrame(Timestep timestep) {
+  imgui_system_->RenderRendererStats(gfx::Renderer::GetStats());
+  active_scene_->OnImGuiRender();
+
+  ImGui::Begin("Settings");
+  bool vsync = window_system_->GetVsync();
+  if (ImGui::Checkbox("Vsync", &vsync)) {
+    window_system_->SetVsync(vsync);
+  }
+
+  if (ImGui::Button("Recompile Shaders")) {
+    ShaderManager::RecompileShaders();
+  }
+
+  imgui_system_->FramerateSubMenu(timestep);
+
+  ImGui::End();
 }
 
 void Engine::Shutdown() {
   imgui_system_->Shutdown();
   graphics_system_->Shutdown();
+  window_system_->Shutdown();
+
+  delete imgui_system_;
+  delete graphics_system_;
+  delete window_system_;
 }
 
 Engine::~Engine() = default;
@@ -81,6 +137,7 @@ void Engine::Stop() { running_ = false; }
 
 void Engine::AddScene(std::unique_ptr<Scene> scene) {
   auto it = scenes_.find(scene->GetName());
+  scene->engine_ = this;
   EASSERT_MSG(it == scenes_.end(), "Scene Added Already");
   scenes_.emplace(scene->GetName(), std::move(scene));
 }
@@ -88,6 +145,9 @@ void Engine::AddScene(std::unique_ptr<Scene> scene) {
 void Engine::LoadScene(const std::string& name) {
   auto it = scenes_.find(name);
   EASSERT_MSG(it != scenes_.end(), "Scene Not Found");
-  active_scene_ = it->second.get();
   std::cout << "Loading scene: " << name << "\n";
+  if (active_scene_) active_scene_->Shutdown();
+  active_scene_ = it->second.get();
+  active_scene_->Load();
 }
+}  // namespace engine

@@ -1,7 +1,51 @@
 #include "window_system.h"
 
-void WindowSystem::Init() {
-  // TODO(tony): opengl error callback
+#include "engine/application/engine.h"
+#include "engine/application/event.h"
+#include "engine/renderer/renderer.h"
+
+namespace engine {
+
+void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
+  Event e{.type = EventType::FrameBufferResize};
+  engine->OnEvent(e);
+  gfx::Renderer::SetFrameBufferSize(width, height);
+}
+
+void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
+  auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
+  Event e{.type = EventType::WindowResize};
+  e.window_size.x = width;
+  e.window_size.y = height;
+  engine->OnEvent(e);
+}
+
+void WindowSystem::CenterCursor() {
+  int width;
+  int height;
+  glfwGetWindowSize(glfw_window_, &width, &height);
+  glfwSetCursorPos(glfw_window_, static_cast<float>(width) / 2.0f,
+                   static_cast<float>(height) / 2.0f);
+  // glfwSetCursorPos(glfw_window_, framebuffer_width_ / 2.0f, framebuffer_height_ / 2.0f);
+}
+
+void WindowSystem::SetCursorVisible(bool state) {
+  glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+bool WindowSystem::GetCursorVisible() const {
+  return glfwGetInputMode(glfw_window_, GLFW_CURSOR) != 0;
+}
+
+glm::vec2 WindowSystem::GetWindowDimensions() const {
+  int w;
+  int h;
+  glfwGetWindowSize(glfw_window_, &w, &h);
+  return {w, h};
+}
+
+void WindowSystem::Init(Engine* engine) {
   glfwSetErrorCallback([](int error, const char* description) {
     spdlog::critical("GFLW error {}: {}\n", error, description);
   });
@@ -23,7 +67,8 @@ void WindowSystem::Init() {
   //  m_windowWidth = videoMode->width / 2;
   //  m_windowHeight = videoMode->height / 2;
 
-  glfw_window_ = glfwCreateWindow(800, 600, "OpenGL Modern", nullptr, nullptr);
+  // glfw_window_ = glfwCreateWindow(800, 600, "OpenGL Modern", nullptr, nullptr);
+  glfw_window_ = glfwCreateWindow(1600, 900, "OpenGL Modern", nullptr, nullptr);
 
   if (!glfw_window_) {
     spdlog::critical("Failed to create GLFW window");
@@ -34,14 +79,16 @@ void WindowSystem::Init() {
 
   // one window for now, if multiple windows ever, (probably not, then make this function public to
   // set the active window class)
-  glfwSetWindowUserPointer(glfw_window_, static_cast<void*>(this));
+  glfwSetWindowUserPointer(glfw_window_, static_cast<void*>(engine));
 
-  glfwSetFramebufferSizeCallback(glfw_window_, [](GLFWwindow* glfw_window, int width, int height) {
-    WindowSystem* this_window;
-    this_window = static_cast<WindowSystem*>(glfwGetWindowUserPointer(glfw_window));
-    this_window->framebuffer_height_ = height;
-    this_window->framebuffer_width_ = width;
-  });
+  glfwSetFramebufferSizeCallback(glfw_window_, framebuffer_size_callback);
+  glfwSetWindowSizeCallback(glfw_window_, window_size_callback);
+
+  int curr_framebuffer_width;
+  int curr_framebuffer_height;
+  glfwGetFramebufferSize(glfw_window_, &curr_framebuffer_width, &curr_framebuffer_height);
+  framebuffer_width_ = curr_framebuffer_width;
+  framebuffer_height_ = curr_framebuffer_height;
 
   GLenum err = glewInit();
   if (err != GLEW_OK) {
@@ -70,3 +117,4 @@ void WindowSystem::SetVsync(bool state) {
 void WindowSystem::Shutdown() { glfwSetWindowShouldClose(glfw_window_, true); }
 
 bool WindowSystem::ShouldClose() { return glfwWindowShouldClose(glfw_window_); }
+}  // namespace engine

@@ -1,13 +1,15 @@
 #pragma once
 
-#include "engine/application/input.h"
-#include "engine/ecs/system/graphics_system.h"
-#include "engine/ecs/system/imgui_system.h"
-#include "engine/ecs/system/window_system.h"
 #include "engine/pch.h"
+
+namespace engine {
 
 struct Timestep;
 class Scene;
+struct GraphicsSystem;
+struct WindowSystem;
+struct ImGuiSystem;
+struct Event;
 
 class Engine {
  public:
@@ -17,20 +19,25 @@ class Engine {
   void Stop();
   void AddScene(std::unique_ptr<Scene> scene);
   void LoadScene(const std::string& name);
-  void OnKeyEvent(KeyEvent& e);
-
-  static Engine& Get();
 
  private:
-  void Shutdown();
-  static Engine* instance_;
-  std::unordered_map<std::string, std::unique_ptr<Scene>> scenes_;
-  std::unique_ptr<GraphicsSystem> graphics_system_{nullptr};
-  std::unique_ptr<WindowSystem> window_system_{nullptr};
-  std::unique_ptr<ImGuiSystem> imgui_system_{nullptr};
+  friend class Input;
+  friend void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
+  friend void window_size_callback(GLFWwindow* glfw_window, int width, int height);
 
-  std::bitset<32> enabled_systems_{};
+  void OnEvent(const Event& e);
+  void Shutdown();
+  bool draw_imgui_{true};
+  // static Engine* instance_;
+  // TODO(tony): serialize scenes instead of this?
+  std::unordered_map<std::string, std::unique_ptr<Scene>> scenes_;
+  GraphicsSystem* graphics_system_{nullptr};
+  WindowSystem* window_system_{nullptr};
+  ImGuiSystem* imgui_system_{nullptr};
 
   Scene* active_scene_{nullptr};
   bool running_{false};
+  void ImGuiSystemPerFrame(Timestep timestep);
 };
+
+}  // namespace engine

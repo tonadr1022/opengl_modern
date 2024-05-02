@@ -2,7 +2,12 @@
 
 #include "engine/pch.h"
 
+namespace engine {
+
 struct Timestep;
+namespace gfx {
+struct RendererStats;
+}
 
 struct ImGuiSystem {
  public:
@@ -10,8 +15,10 @@ struct ImGuiSystem {
   void Shutdown();
   void StartFrame();
   void EndFrame();
-  void DebugMenu(Timestep timestep);
+  void FramerateSubMenu(Timestep timestep);
+  void RenderRendererStats(const gfx::RendererStats& stats);
 
   bool debug_menu_enabled{true};
   bool enabled{true};
 };
+}  // namespace engine

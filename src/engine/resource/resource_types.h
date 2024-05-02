@@ -1,9 +1,5 @@
 #pragma once
 
-#include "../pch.h"
-#include "engine/util/hashed_string.h"
-#include "gl/shader.h"
-
 namespace engine {
 
 struct MaterialData {

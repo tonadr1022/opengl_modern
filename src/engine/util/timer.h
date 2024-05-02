@@ -1,10 +1,8 @@
 #pragma once
 
-// #include "../pch.h"
+#include "../pch.h"
 
-#include <chrono>
-
-namespace util {
+namespace engine::util {
 
 class Timer {
  public:
@@ -18,4 +16,4 @@ class Timer {
   std::chrono::time_point<std::chrono::high_resolution_clock> end_time_;
 };
 
-}  // namespace util
+}  // namespace engine::util

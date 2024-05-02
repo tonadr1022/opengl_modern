@@ -2,6 +2,8 @@
 
 #include <entt/entity/entity.hpp>
 
+namespace engine {
+
 class Scene;
 
 class Entity {
@@ -16,3 +18,5 @@ class Entity {
 
  private:
 };
+
+}  // namespace engine

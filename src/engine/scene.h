@@ -5,22 +5,36 @@
 
 #include <entt/entity/registry.hpp>
 
+namespace engine {
+
 struct Timestep;
+class Engine;
+class Event;
 
 class Scene {
+  friend class Engine;
+
  public:
   Scene() = default;
   explicit Scene(std::string name);
+  virtual ~Scene() = default;
   [[nodiscard]] const std::string& GetName() const { return name_; }
   virtual void OnUpdate(Timestep timestep);
-  virtual void OnKeyEvent(const KeyEvent& e);
+  virtual void OnImGuiRender();
+  virtual void OnEvent(const Event& e);
+  virtual void Load() = 0;
+  void Shutdown();
 
   // [[nodiscard]] Entity CreateEntity();
   // [[nodiscard]] Entity CreateEntity(std::string_view tag);
   // [[nodiscard]] Entity GetEntity(std::string_view tag);
-  entt::registry registry_;
+  entt::registry registry;
+  glm::mat4 view_matrix_;
+  glm::mat4 projection_matrix_;
 
- private:
-  friend class Entity;
+ protected:
+  Engine* engine_{nullptr};
+
   std::string name_;
 };
+}  // namespace engine

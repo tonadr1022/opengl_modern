@@ -4,18 +4,14 @@
 #include "engine/application/key_codes.h"
 #include "engine/application/mouse_codes.h"
 
+namespace engine {
+
 using MouseButton = int;
 
 enum class InputAction {
   Press = GLFW_PRESS,
   Release = GLFW_RELEASE,
   Repeat = GLFW_REPEAT,
-};
-
-struct KeyEvent {
-  KeyCode key;
-  InputAction action;
-  KeyMod mods;
 };
 
 class Input {
@@ -39,16 +35,21 @@ class Input {
   static bool IsMouseUp(MouseButton key);
   static bool IsMousePressed(MouseButton key);
   static bool IsMouseReleased(MouseButton key);
-  // static const glm::vec2& GetMousePosOffset();
-  // static const glm::vec2& GetMousePosition();
   static bool MouseMoved();
 
   static void SetCursorVisible(bool state);
   static bool GetCursorVisible();
+  inline static glm::vec2 GetCursorOffset() { return cursor_pos_ - prev_cursor_pos_; };
 
  private:
   friend class Engine;
+  inline static GLFWwindow* glfw_window_{nullptr};
   static void init_glfw_input_callbacks(GLFWwindow* window);
+  // inline static glm::vec2 cursor_offset_{0, 0};
+  // inline static glm::vec2 prev_cursor_offset_{0, 0};
+  inline static glm::vec2 cursor_pos_{0, 0};
+  inline static glm::vec2 prev_cursor_pos_{0, 0};
+
   // static inline glm::vec2 mouse_screen_pos_;
   // static inline glm::vec2 mouse_screen_offset_;
   // static inline glm::vec2 prev_mouse_screen_pos_;
@@ -65,3 +66,4 @@ class Input {
   static inline KeyState key_states_[ButtonCount] = {static_cast<KeyState>(0)};
   static inline KeyState mouse_button_states_[MouseButtonStates] = {static_cast<KeyState>(0)};
 };
+}  // namespace engine

@@ -4,15 +4,16 @@ set(SOURCES
     scene.cpp
     application/engine.cpp
     renderer/renderer.cpp
-    renderer/resource/shader_manager.cpp
-    renderer/resource/mesh_manager.cpp
-    renderer/resource/material_manager.cpp
-    renderer/resource/texture_manager.cpp
+    resource/shader_manager.cpp
+    resource/mesh_manager.cpp
+    resource/material_manager.cpp
+    resource/texture_manager.cpp
     renderer/gl/shader.cpp
     application/input.cpp
     ecs/system/graphics_system.cpp
     ecs/system/window_system.cpp
     ecs/entity/entity.cpp
+    renderer/gl/debug.cpp
     ecs/component/transform.cpp
     ecs/system/imgui_system.cpp
     util/load_file.cpp
@@ -24,7 +25,7 @@ set(SOURCES
     test/scene_main.cpp )
 
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)

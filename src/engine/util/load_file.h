@@ -2,6 +2,6 @@
 
 #include "../pch.h"
 
-namespace util {
+namespace engine::util {
 extern std::optional<std::string> LoadFromFile(const std::string& path);
 }

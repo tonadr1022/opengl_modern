@@ -6,11 +6,16 @@
 
 #include "engine/timestep.h"
 
+using namespace engine;
+
+struct Player {};
+
 class SceneMain : public Scene {
  public:
   SceneMain();
-
+  void Load() override;
+  void OnImGuiRender() override;
   void OnUpdate(Timestep timestep) override;
-
-  void OnKeyEvent(const KeyEvent& e) override;
+  void OnEvent(const Event& e) override;
+  bool fps_focused_{true};
 };
