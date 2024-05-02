@@ -30,9 +30,9 @@ class ShaderManager {
  private:
   struct ShaderProgramData {
     std::string name;
-    GLuint id;
+    GLuint program_id;
     std::unordered_map<uint32_t, uint32_t> uniform_locations;
-    std::vector<ShaderCreateInfo> shader_create_info_vec;
+    std::vector<ShaderCreateInfo> create_info_vec;
   };
 
   static std::optional<ShaderProgramData> CompileProgram(

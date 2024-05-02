@@ -16,7 +16,7 @@ std::optional<Shader> ShaderManager::GetShader(HashedString name) {
     spdlog::error("Shader not found {}", name.data());
     return std::nullopt;
   }
-  return Shader{it->second.id, it->second.uniform_locations};
+  return Shader{it->second.program_id, it->second.uniform_locations};
 }
 
 bool CheckShaderModuleCompilationSuccess(uint32_t shader_id, const char* shaderPath) {
@@ -77,9 +77,9 @@ std::optional<ShaderManager::ShaderProgramData> ShaderManager::CompileProgram(
   }
 
   ShaderProgramData data;
-  data.id = program_id;
+  data.program_id = program_id;
   data.name = name.data();
-  data.shader_create_info_vec = create_info_vec;
+  data.create_info_vec = create_info_vec;
   InitializeUniforms(data);
   return data;
 }
@@ -92,24 +92,24 @@ std::optional<Shader> ShaderManager::AddShader(
   }
   spdlog::info("Compiled shader: {}", name.data());
   shader_data_.emplace(name, result.value());
-  return Shader{result.value().id, result.value().uniform_locations};
+  return Shader{result.value().program_id, result.value().uniform_locations};
 }
 
 void ShaderManager::InitializeUniforms(ShaderProgramData& program_data) {
-  EASSERT_MSG(program_data.id != 0, "Can't initialize uniforms on invalid shader");
+  EASSERT_MSG(program_data.program_id != 0, "Can't initialize uniforms on invalid shader");
   GLint active_uniform_max_length;
-  glGetProgramiv(program_data.id, GL_ACTIVE_UNIFORM_MAX_LENGTH, &active_uniform_max_length);
+  glGetProgramiv(program_data.program_id, GL_ACTIVE_UNIFORM_MAX_LENGTH, &active_uniform_max_length);
   GLint num_uniforms;
-  glGetProgramiv(program_data.id, GL_ACTIVE_UNIFORMS, &num_uniforms);
+  glGetProgramiv(program_data.program_id, GL_ACTIVE_UNIFORMS, &num_uniforms);
 
   GLenum uniform_type;
   GLint uniform_size;
   GLint uniform_name_length;
   char uniform_name[active_uniform_max_length];
   for (size_t i = 0; i < num_uniforms; i++) {
-    glGetActiveUniform(program_data.id, i, active_uniform_max_length, &uniform_name_length,
+    glGetActiveUniform(program_data.program_id, i, active_uniform_max_length, &uniform_name_length,
                        &uniform_size, &uniform_type, uniform_name);
-    uint32_t location = glGetUniformLocation(program_data.id, uniform_name);
+    uint32_t location = glGetUniformLocation(program_data.program_id, uniform_name);
     program_data.uniform_locations.emplace(HashedString(uniform_name), location);
   }
 }
@@ -120,14 +120,14 @@ std::optional<Shader> ShaderManager::RecompileShader(HashedString name) {
     spdlog::warn("Shader not found, cannot recompile: {}", name.data());
     return std::nullopt;
   }
-  auto recompile_result = CompileProgram(name, it->second.shader_create_info_vec);
+  auto recompile_result = CompileProgram(name, it->second.create_info_vec);
   if (!recompile_result.has_value()) {
     return std::nullopt;
   }
   spdlog::info("Shader recompiled: {}", name.data());
   shader_data_.erase(it);
   auto new_it = shader_data_.emplace(name, recompile_result.value());
-  return Shader{new_it.first->second.id, new_it.first->second.uniform_locations};
+  return Shader{new_it.first->second.program_id, new_it.first->second.uniform_locations};
 }
 
 void ShaderManager::RecompileShaders() {

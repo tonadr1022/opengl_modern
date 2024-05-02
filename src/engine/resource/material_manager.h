@@ -15,6 +15,8 @@ class MaterialManager {
   static void ClearMaterials();
 
  private:
+  static std::vector<MaterialData> materials_;
+  static std::vector<MaterialID, size_t> material_index_map_;
   static std::unordered_map<MaterialID, MaterialData> material_map_;
   static uint32_t mat_counter_;
 };

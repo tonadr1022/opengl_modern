@@ -54,12 +54,15 @@ void SceneMain::OnImGuiRender() {
     ecs::fps_cam_sys::OnImGui(camera);
   }
 
-  auto materials = registry.group<component::Material>();
-  materials.each([](component::Material& material) {
-    auto& mat = gfx::MaterialManager::GetMaterial(material.handle);
-    ImGui::SliderFloat3(std::string("Diffuse###" + std::to_string(material.handle)).c_str(),
-                        glm::value_ptr(mat.diffuse), 0.0f, 1.0f);
-  });
+  ImGui::BeginChild("Materials");
+
+  ImGui::EndChild();
+  // auto materials = registry.group<component::Material>();
+  // materials.each([](component::Material& material) {
+  //   auto& mat = gfx::MaterialManager::GetMaterial(material.handle);
+  //   ImGui::SliderFloat3(std::string("Diffuse###" + std::to_string(material.handle)).c_str(),
+  //                       glm::value_ptr(mat.diffuse), 0.0f, 1.0f);
+  // });
   ImGui::End();
 }
 
