@@ -5,18 +5,13 @@
 #include <cstdint>
 
 #include "engine/pch.h"
-#include "engine/renderer/gl/buffer.h"
-#include "engine/renderer/gl/data_types.h"
 #include "engine/renderer/gl/debug.h"
 #include "engine/renderer/material.h"
 #include "engine/renderer/resource/material_manager.h"
-#include "engine/renderer/resource/mesh_manager.h"
 #include "engine/renderer/resource/paths.h"
 #include "engine/renderer/resource/shader_manager.h"
 
 namespace gfx {
-
-namespace renderer {
 
 struct UserDrawCommand {
   MeshID mesh_id;
@@ -93,46 +88,25 @@ void LoadShaders() {
   ShaderManager::AddShader("batch", {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
                                      {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
 }
+RendererStats stats{0};
 
 }  // namespace
-
-struct RendererStats {
-  uint32_t vertices;
-  uint32_t indices;
-  uint32_t multi_draw_calls;
-  uint32_t meshes_drawn;
-  uint32_t material_swaps;
-  uint32_t shader_swaps;
-  uint32_t meshes_in_memory;
-};
-RendererStats stats;
 
 void SetFrameBufferSize(uint32_t width, uint32_t height) {
   frame_buffer_height = height;
   framebuffer_width = width;
 }
 
-void OnImGuiRender() {
-  ImGui::Begin("Renderer");
-  if (ImGui::Button("Recompile Shaders")) {
-    ShaderManager::RecompileShaders();
-  }
-  ImGui::Text("Buffer Offsets: Vertex: %i, Index: %i", batch_vertex_buffer.offset,
-              batch_element_buffer.offset);
-  ImGui::Text("Width: %i, height: %i, ratio: %f", framebuffer_width, frame_buffer_height,
-              static_cast<float>(framebuffer_width) / static_cast<float>(frame_buffer_height));
+void Renderer::SetBatchedObjectCount(uint32_t count) { user_draw_cmds.resize(count); }
 
-  ImGui::End();
-}
-
-void SetBatchedObjectCount(uint32_t count) { user_draw_cmds.resize(count); }
-
-void SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id) {
+void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id) {
   user_draw_cmds[user_draw_cmds_index++] =
       UserDrawCommand{.mesh_id = mesh_id, .material_id = material_id, .model_matrix = model};
 }
 
-void Init() {
+const RendererStats& Renderer::GetStats() { return stats; }
+
+void Renderer::Init() {
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
@@ -140,12 +114,23 @@ void Init() {
   InitVaos();
 }
 
-void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>& indices) {
+void Renderer::StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix) {
+  cam_info.view_matrix = view_matrix;
+  cam_info.projection_matrix = projection_matrix;
+  cam_info.vp_matrix = projection_matrix * view_matrix;
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_STENCIL_TEST);
+  glClearColor(0.1, 0.1, 0.0, 1.0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+
+void Renderer::AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices,
+                              std::vector<Index>& indices) {
   glNamedBufferSubData(batch_vertex_buffer.id, batch_vertex_buffer.offset,
                        sizeof(Vertex) * vertices.size(), vertices.data());
   glNamedBufferSubData(batch_element_buffer.id, batch_element_buffer.offset,
                        sizeof(Index) * indices.size(), indices.data());
-
   DrawElementsIndirectCommand cmd{};
   // number of elements
   cmd.count = static_cast<uint32_t>(indices.size());
@@ -164,17 +149,6 @@ void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>
   batch_vertex_buffer.offset += vertices.size() * sizeof(Vertex);
   batch_element_buffer.offset += indices.size() * sizeof(Index);
   stats.meshes_in_memory++;
-}
-
-void StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix) {
-  cam_info.view_matrix = view_matrix;
-  cam_info.projection_matrix = projection_matrix;
-  cam_info.vp_matrix = projection_matrix * view_matrix;
-  glEnable(GL_CULL_FACE);
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_STENCIL_TEST);
-  glClearColor(0.1, 0.1, 0.0, 1.0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& uniforms) {
@@ -211,35 +185,10 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_buffer.id);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_buffer.id);
 
-  // auto batch_shader = ShaderManager::GetShader("batch");
-  // batch_shader->Bind();
-  auto& material = material_manager::GetMaterial(material_id);
-  auto shader = ShaderManager::GetShader(material.shader_id);
+  auto& material = MaterialManager::GetMaterial(material_id);
+  auto shader = ShaderManager::GetShader("batch");
   shader->Bind();
-
-  for (const auto& attr : material.attributes) {
-    switch (attr.type) {
-      case gfx::MaterialAttribute::Type::Vec3:
-        shader->SetVec3(attr.name, attr.value.vec3_v);
-      case gfx::MaterialAttribute::Type::Vec4:
-        shader->SetVec4(attr.name, attr.value.vec4_v);
-      case gfx::MaterialAttribute::Type::Float:
-        shader->SetFloat(attr.name, attr.value.float_v);
-      default:
-        break;
-    }
-  }
-
-  // /**
-  //  * @brief Sets a uniform value by location.
-  //  * NOTE: Operates against the currently-used shader.
-  //  *
-  //  * @param index The location of the uniform.
-  //  * @param value The value of the uniform.
-  //  * @return True on success; otherwise false.
-  //  */
-  // KAPI b8 shader_system_uniform_set_by_location(u16 location, const void* value);
-  //
+  shader->SetVec3("material.diffuse", material.diffuse);
   shader->SetMat4("vp_matrix", cam_info.vp_matrix);
 
   // mode, type, offest ptr, command count, stride (0 since tightly packed)
@@ -251,7 +200,7 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   glDeleteBuffers(1, &draw_cmd_buffer.id);
 }
 
-void RenderOpaqueObjects() {
+void Renderer::RenderOpaqueObjects() {
   // sort user commands by material and mesh, must match mesh_buffer_info
   std::sort(std::execution::par, user_draw_cmds.begin(), user_draw_cmds.end(),
             [](const UserDrawCommand& lhs, const UserDrawCommand& rhs) {
@@ -282,7 +231,7 @@ void RenderOpaqueObjects() {
   }
   // if all materials are the same or the last commands used same material,
   // draw them
-  if (uniforms.size() > 0) {
+  if (!uniforms.empty()) {
     DrawOpaqueHelper(curr_mat_id, uniforms);
   }
 
@@ -297,7 +246,5 @@ void EndFrame() {
 }
 
 void ClearAllData() {}
-
-}  // namespace renderer
 
 }  // namespace gfx

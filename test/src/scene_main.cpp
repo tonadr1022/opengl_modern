@@ -67,15 +67,10 @@ void SceneMain::OnUpdate(Timestep timestep) {
 void SceneMain::Load() {
   engine_->window_system_->SetCursorVisible(!fps_focused_);
   glm::vec3 iter{0, 0, 0};
-  gfx::MeshID mesh_id = gfx::mesh_manager::LoadShape(gfx::ShapeType::Cube);
-  gfx::Material mat;
-  mat.shader_id = "batch";
-  std::vector<gfx::MaterialAttribute> attrs{
-      {gfx::MaterialAttribute::Type::Vec3, "diffuse", {1.f, 1.f, 0.f}}};
-  attrs.emplace_back(gfx::MaterialAttribute::Type::Vec3, "diffuse", {1.f, 1.f, 0.f});
-
-  gfx::MaterialID color_only_mat = gfx::material_manager::AddMaterial(mat);
-  // auto color_only_mat = gfx::material_manager::AddMaterial(gfx::ColorMaterial{{1.f, 1.f, 1.f}});
+  gfx::MeshID mesh_id = gfx::MeshManager::LoadShape(gfx::ShapeType::Cube);
+  gfx::MaterialData mat;
+  mat.diffuse = {1., 0., 1.};
+  gfx::MaterialID color_only_mat = gfx::MaterialManager::AddMaterial(mat);
   for (iter.x = -50; iter.x <= 50; iter.x++) {
     auto tri = registry.create();
     component::Transform t;

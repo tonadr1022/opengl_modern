@@ -11,6 +11,7 @@
 #include "engine/ecs/system/imgui_system.h"
 #include "engine/ecs/system/window_system.h"
 #include "engine/renderer/renderer.h"
+#include "engine/renderer/resource/shader_manager.h"
 #include "input.h"
 
 // Engine* Engine::instance_ = nullptr;
@@ -100,13 +101,17 @@ void Engine::Run() {
 }
 
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {
-  gfx::renderer::OnImGuiRender();
+  imgui_system_->RenderRendererStats(gfx::Renderer::GetStats());
   active_scene_->OnImGuiRender();
 
   ImGui::Begin("Settings");
   bool vsync = window_system_->GetVsync();
   if (ImGui::Checkbox("Vsync", &vsync)) {
     window_system_->SetVsync(vsync);
+  }
+
+  if (ImGui::Button("Recompile Shaders")) {
+    gfx::ShaderManager::RecompileShaders();
   }
 
   imgui_system_->FramerateSubMenu(timestep);

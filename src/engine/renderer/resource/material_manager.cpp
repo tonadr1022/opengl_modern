@@ -4,32 +4,25 @@
 
 namespace gfx {
 
-namespace {
-std::unordered_map<MaterialID, Material> material_map;
-uint32_t mat_counter{0};
-}  // namespace
+std::unordered_map<MaterialID, MaterialData> MaterialManager::material_map_;
+uint32_t MaterialManager::mat_counter_{0};
 
-namespace material_manager {
-
-MaterialID AddMaterial(const Material& material) {
-  material_map.emplace(mat_counter, material);
-  MaterialID ret = mat_counter;
-  mat_counter++;
+MaterialID MaterialManager::AddMaterial(const MaterialData& material) {
+  material_map_.emplace(mat_counter_, material);
+  MaterialID ret = mat_counter_;
+  mat_counter_++;
   return ret;
 }
 
-MaterialID GetMaterialHandle(HashedString name) { return name; }
-
-Material& GetMaterial(MaterialID id) {
-  auto it = material_map.find(id);
-  EASSERT(it != material_map.end());
+MaterialData& MaterialManager::GetMaterial(MaterialID id) {
+  auto it = material_map_.find(id);
+  EASSERT(it != material_map_.end());
   return it->second;
 }
 
-void ClearMaterials() {
-  material_map.clear();
-  mat_counter = 0;
+void MaterialManager::ClearMaterials() {
+  material_map_.clear();
+  mat_counter_ = 0;
 }
 
-}  // namespace material_manager
 }  // namespace gfx

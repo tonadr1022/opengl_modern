@@ -7,10 +7,10 @@
 #include "engine/ecs/component/transform.h"
 #include "engine/scene.h"
 
-void GraphicsSystem::Init() { gfx::renderer::Init(); }
+void GraphicsSystem::Init() { gfx::Renderer::Init(); }
 void GraphicsSystem::Shutdown() {}
 void GraphicsSystem::StartFrame(Scene& scene) {
-  gfx::renderer::StartFrame(scene.view_matrix_, scene.projection_matrix_);
+  gfx::Renderer::StartFrame(scene.view_matrix_, scene.projection_matrix_);
 }
 
 void GraphicsSystem::DrawOpaque(Scene& scene) {
@@ -22,21 +22,22 @@ void GraphicsSystem::DrawOpaque(Scene& scene) {
                   model.matrix = transform.CalculateModel();
                   // model.matrix = glm::mat4(1);
                 });
+
   auto group =
       scene.registry.group<component::Mesh>(entt::get<component::ModelMatrix, component::Material>);
 
-  gfx::renderer::SetBatchedObjectCount(group.size());
+  gfx::Renderer::SetBatchedObjectCount(group.size());
 
   // std::for_each(std::execution::par, group.begin(), group.end(), [&group](entt::entity entity) {
   //   auto [mesh, model, material] =
   //       group.get<component::Mesh, component::Model, component::Material>(entity);
-  //   gfx::renderer::SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
+  //   gfx::Renderer::SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
   // });
   group.each([](const auto& mesh, const auto& model, const auto& material) {
-    gfx::renderer::SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
+    gfx::Renderer::SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
   });
 
-  gfx::renderer::RenderOpaqueObjects();
+  gfx::Renderer::RenderOpaqueObjects();
 }
 
-void GraphicsSystem::EndFrame() { gfx::renderer::EndFrame(); }
+void GraphicsSystem::EndFrame() { gfx::Renderer::EndFrame(); }

@@ -8,7 +8,7 @@ void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
   engine->window_system_->framebuffer_height_ = height;
   engine->window_system_->framebuffer_width_ = width;
-  gfx::renderer::SetFrameBufferSize(width, height);
+  gfx::Renderer::SetFrameBufferSize(width, height);
 }
 
 void window_size_callback(GLFWwindow* glfw_window, int width, int height) {

@@ -3,6 +3,9 @@
 #include "engine/pch.h"
 
 struct Timestep;
+namespace gfx {
+struct RendererStats;
+}
 
 struct ImGuiSystem {
  public:
@@ -11,6 +14,7 @@ struct ImGuiSystem {
   void StartFrame();
   void EndFrame();
   void FramerateSubMenu(Timestep timestep);
+  void RenderRendererStats(const gfx::RendererStats& stats);
 
   bool debug_menu_enabled{true};
   bool enabled{true};

@@ -6,13 +6,14 @@
 
 #include <assimp/Importer.hpp>
 
-#include "engine/renderer/gl/data_types.h"
+#include "engine/renderer/data_types.h"
 #include "engine/renderer/renderer.h"
 #include "engine/renderer/resource/shapes/shapes.h"
 
-namespace gfx::mesh_manager {
+namespace gfx {
 
 namespace {
+
 MeshID curr_id = 0;
 MeshID GetNextMeshID() { return ++curr_id; }
 
@@ -25,11 +26,11 @@ uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_
 MeshID ProcessMesh(const aiMesh& mesh) {
   EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
               "Mesh needs positions, normals, and texture coords");
-  std::vector<Vertex> vertices;
+  std::vector<gfx::Vertex> vertices;
   vertices.reserve(mesh.mNumVertices);
-  std::vector<Index> indices;
+  std::vector<gfx::Index> indices;
 
-  Vertex v;
+  gfx::Vertex v;
   // process vertices
   for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
     v.position = aiVec3ToGLM(mesh.mVertices[i]);
@@ -38,14 +39,13 @@ MeshID ProcessMesh(const aiMesh& mesh) {
   }
 
   // process indices
-  for (Index i = 0; i < mesh.mNumFaces; i++) {
-    for (Index j = 0; j < mesh.mFaces[i].mNumIndices; j++) {
+  for (uint32_t i = 0; i < mesh.mNumFaces; i++) {
+    for (uint32_t j = 0; j < mesh.mFaces[i].mNumIndices; j++) {
       indices.push_back(mesh.mFaces[i].mIndices[j]);
     }
   }
   auto mesh_id = GetNextMeshID();
-
-  renderer::AddBatchedMesh(mesh_id, vertices, indices);
+  Renderer::AddBatchedMesh(mesh_id, vertices, indices);
   return mesh_id;
   // if (mesh.mMaterialIndex >= 0) {
   //   aiMaterial* ai_mat = scene.mMaterials[mesh.mMaterialIndex];
@@ -74,36 +74,34 @@ std::optional<MeshID> ProcessNodes(const aiScene& scene) {
 }
 
 MeshID LoadCube() {
-  std::vector<Vertex> vertices;
+  std::vector<gfx::Vertex> vertices;
   for (const auto& vertex : gfx::shape::CubeVertices) {
     vertices.emplace_back(vertex);
   }
-  std::vector<Index> indices;
+  std::vector<gfx::Index> indices;
   for (const auto& index : gfx::shape::CubeIndices) {
     indices.emplace_back(index);
   }
   auto id = HashedString("cube");
-  gfx::renderer::AddBatchedMesh(id, vertices, indices);
+  gfx::Renderer::AddBatchedMesh(id, vertices, indices);
   return id;
 };
 
 }  // namespace
 
-std::optional<MeshID> LoadModel(const std::string& path) {
+std::optional<MeshID> MeshManager::LoadModel(const std::string& path) {
   const aiScene* scene = importer.ReadFile(path, flags);
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     spdlog::error("Assimp error: {}", importer.GetErrorString());
     return std::nullopt;
   }
-
   return ProcessNodes(*scene);
 }
 
-MeshID LoadShape(ShapeType type) {
+MeshID MeshManager::LoadShape(ShapeType type) {
   switch (type) {
     case ShapeType::Cube:
       return LoadCube();
   }
 }
-
-}  // namespace gfx::mesh_manager
+}  // namespace gfx
