@@ -5,7 +5,7 @@
 #include "scene_2.h"
 #include "scene_main.h"
 
-void LoadScenes(Engine& engine) {
+void LoadScenes(engine::Engine& engine) {
   auto scene = std::make_unique<SceneMain>();
   auto scene2 = std::make_unique<Scene2>();
   engine.AddScene(std::move(scene));
@@ -14,7 +14,7 @@ void LoadScenes(Engine& engine) {
 }
 
 int main() {
-  auto* engine = new Engine;
+  auto* engine = new engine::Engine;
   LoadScenes(*engine);
   engine->Run();
 

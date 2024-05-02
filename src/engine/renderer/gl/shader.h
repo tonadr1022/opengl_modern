@@ -2,7 +2,7 @@
 
 #include "../../pch.h"
 
-namespace gfx {
+namespace engine::gfx {
 
 // lightweight, meant to be created and destroyed every frame, contains an int and a reference.
 class Shader {
@@ -29,4 +29,4 @@ class Shader {
   std::unordered_map<uint32_t, uint32_t>& uniform_locations_;
 };
 
-}  // namespace gfx
+}  // namespace engine::gfx

@@ -1,6 +1,6 @@
 #include "timer.h"
 
-namespace util {
+namespace engine::util {
 
 void Timer::Start() { start_time_ = std::chrono::high_resolution_clock::now(); };
 
@@ -17,4 +17,4 @@ double Timer::GetElapsedMS() {
 
 void Timer::Reset() { start_time_ = std::chrono::high_resolution_clock::now(); }
 
-}  // namespace util
+}  // namespace engine::util

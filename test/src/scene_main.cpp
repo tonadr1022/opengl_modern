@@ -7,10 +7,10 @@
 #include <engine/ecs/component/renderer_components.h>
 #include <engine/ecs/system/window_system.h>
 #include <engine/renderer/material.h>
-#include <engine/renderer/resource/material_manager.h>
-#include <engine/renderer/resource/mesh_manager.h>
-#include <engine/renderer/resource/paths.h>
-#include <engine/renderer/resource/shader_manager.h>
+#include <engine/resource/material_manager.h>
+#include <engine/resource/mesh_manager.h>
+#include <engine/resource/paths.h>
+#include <engine/resource/shader_manager.h>
 #include <imgui.h>
 
 #include <glm/gtc/type_ptr.hpp>
@@ -18,6 +18,8 @@
 #include "systems.h"
 
 SceneMain::SceneMain() : Scene("main") {}
+
+using namespace engine;
 
 void SceneMain::OnEvent(const Event& e) {
   auto player_entity = registry.view<Player>().front();

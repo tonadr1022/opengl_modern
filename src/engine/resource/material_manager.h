@@ -1,10 +1,11 @@
 #pragma once
 
 #include "engine/pch.h"
-#include "engine/renderer/data_types.h"
-#include "engine/renderer/material.h"
+#include "engine/resource/data_types.h"
 
-namespace gfx {
+namespace engine {
+
+struct Vertex;
 struct MaterialData;
 
 class MaterialManager {
@@ -18,4 +19,4 @@ class MaterialManager {
   static uint32_t mat_counter_;
 };
 
-}  // namespace gfx
+}  // namespace engine

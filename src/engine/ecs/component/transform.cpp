@@ -1,6 +1,6 @@
 #include "transform.h"
 
-namespace component {
+namespace engine::component {
 glm::mat4 Transform::CalculateModel() {
   return glm::translate(glm::mat4(1), translation_) * glm::mat4_cast(rotation_) *
          glm::scale(glm::mat4(1), scale_);
@@ -26,4 +26,4 @@ void Transform::SetScale(const glm::vec3& vec) {
   dirty_ = true;
 }
 
-}  // namespace component
+}  // namespace engine::component

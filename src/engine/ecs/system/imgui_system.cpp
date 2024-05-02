@@ -9,6 +9,8 @@
 #include "engine/timestep.h"
 #include "engine/util/imgui_extensions.h"
 
+namespace engine {
+
 namespace {
 
 void SetImGuiStyle() {
@@ -159,3 +161,4 @@ void ImGuiSystem::FramerateSubMenu(Timestep timestep) {
 
   ImGui::EndChild();
 }
+}  // namespace engine

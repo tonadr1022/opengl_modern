@@ -3,9 +3,12 @@
 #include <spdlog/spdlog.h>
 #include <sys/resource.h>
 
+#include "engine/renderer/gl/shader.h"
 #include "engine/util/load_file.h"
 
-namespace gfx {
+namespace engine {
+
+using gfx::Shader;
 
 std::optional<Shader> ShaderManager::GetShader(HashedString name) {
   auto it = shader_data_.find(name);
@@ -139,4 +142,4 @@ void ShaderManager::RecompileShaders() {
   }
 }
 
-}  // namespace gfx
+}  // namespace engine

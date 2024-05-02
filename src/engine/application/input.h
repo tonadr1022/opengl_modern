@@ -4,6 +4,8 @@
 #include "engine/application/key_codes.h"
 #include "engine/application/mouse_codes.h"
 
+namespace engine {
+
 using MouseButton = int;
 
 enum class InputAction {
@@ -64,3 +66,4 @@ class Input {
   static inline KeyState key_states_[ButtonCount] = {static_cast<KeyState>(0)};
   static inline KeyState mouse_button_states_[MouseButtonStates] = {static_cast<KeyState>(0)};
 };
+}  // namespace engine

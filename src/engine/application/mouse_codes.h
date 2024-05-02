@@ -2,6 +2,8 @@
 
 #include "engine/pch.h"
 
+namespace engine {
+
 enum MouseCode {
   // From glfw3.h
   Button0 = 0,
@@ -18,3 +20,5 @@ enum MouseCode {
   ButtonRight = Button1,
   ButtonMiddle = Button2
 };
+
+}  // namespace engine

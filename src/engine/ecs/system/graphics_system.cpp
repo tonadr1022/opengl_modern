@@ -7,6 +7,8 @@
 #include "engine/ecs/component/transform.h"
 #include "engine/scene.h"
 
+namespace engine {
+
 void GraphicsSystem::Init() { gfx::Renderer::Init(); }
 void GraphicsSystem::Shutdown() {}
 void GraphicsSystem::StartFrame(Scene& scene) {
@@ -41,3 +43,4 @@ void GraphicsSystem::DrawOpaque(Scene& scene) {
 }
 
 void GraphicsSystem::EndFrame() { gfx::Renderer::EndFrame(); }
+}  // namespace engine

@@ -5,6 +5,8 @@
 #include <engine/scene.h>
 #include <engine/timestep.h>
 
+using namespace engine;
+
 class Scene2 : public Scene {
  public:
   Scene2() : Scene("test2") {}
@@ -17,7 +19,7 @@ class Scene2 : public Scene {
 
   void OnEvent(const Event& e) override {
     switch (e.type) {
-      case Event::KeyPressed:
+      case EventType::KeyPressed:
         if (e.key.code == KeyCode::B) {
           engine_->LoadScene("main");
         }

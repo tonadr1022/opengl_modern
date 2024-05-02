@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../pch.h"
+#include "engine/pch.h"
 
-namespace component {
+namespace engine::component {
 
 struct Transform {
  public:
@@ -30,4 +30,4 @@ struct ModelMatrix {
   glm::mat4 matrix{};
 };
 
-}  // namespace component
+}  // namespace engine::component

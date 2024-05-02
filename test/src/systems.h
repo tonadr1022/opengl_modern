@@ -2,19 +2,20 @@
 
 #include <glm/fwd.hpp>
 
+namespace engine {
 struct Timestep;
-
 namespace component {
 struct FPSCamera;
 struct Transform;
 }  // namespace component
+}  // namespace engine
 
 namespace ecs {
 
 namespace fps_cam_sys {
-extern void OnUpdate(component::FPSCamera& camera, Timestep timestep);
-extern void OnScroll(component::FPSCamera& camera, float offset);
-extern void OnImGui(component::FPSCamera& camera);
+extern void OnUpdate(engine::component::FPSCamera& camera, engine::Timestep timestep);
+extern void OnScroll(engine::component::FPSCamera& camera, float offset);
+extern void OnImGui(engine::component::FPSCamera& camera);
 }  // namespace fps_cam_sys
 
 namespace movement_system {}

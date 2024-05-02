@@ -1,10 +1,10 @@
 #pragma once
 
-#include "engine/renderer/data_types.h"
+#include "engine/resource/data_types.h"
 
 struct GLFWwindow;
 
-namespace gfx {
+namespace engine::gfx {
 
 struct RendererStats {
   uint32_t vertices;
@@ -29,8 +29,6 @@ class Renderer {
   static void AddMesh(MeshID id, int vertices, int indices);
   static void RenderOpaqueObjects();
   static const RendererStats& GetStats();
-
- private:
 };
 
-}  // namespace gfx
+}  // namespace engine::gfx

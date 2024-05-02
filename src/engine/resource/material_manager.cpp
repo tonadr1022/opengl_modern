@@ -1,8 +1,9 @@
 #include "material_manager.h"
 
 #include "engine/renderer/material.h"
+#include "engine/resource/data_types.h"
 
-namespace gfx {
+namespace engine {
 
 std::unordered_map<MaterialID, MaterialData> MaterialManager::material_map_;
 uint32_t MaterialManager::mat_counter_{0};
@@ -25,4 +26,4 @@ void MaterialManager::ClearMaterials() {
   mat_counter_ = 0;
 }
 
-}  // namespace gfx
+}  // namespace engine

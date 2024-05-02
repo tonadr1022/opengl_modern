@@ -7,11 +7,11 @@
 #include "engine/pch.h"
 #include "engine/renderer/gl/debug.h"
 #include "engine/renderer/material.h"
-#include "engine/renderer/resource/material_manager.h"
-#include "engine/renderer/resource/paths.h"
-#include "engine/renderer/resource/shader_manager.h"
+#include "engine/resource/material_manager.h"
+#include "engine/resource/paths.h"
+#include "engine/resource/shader_manager.h"
 
-namespace gfx {
+namespace engine::gfx {
 
 struct UserDrawCommand {
   MeshID mesh_id;
@@ -248,4 +248,4 @@ void Renderer::EndFrame() {
 
 void Renderer::Restart() {}
 
-}  // namespace gfx
+}  // namespace engine::gfx

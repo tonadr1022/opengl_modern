@@ -7,13 +7,14 @@
 #include <engine/timestep.h>
 #include <imgui.h>
 
+using namespace engine;
+using namespace engine::component;
+
 namespace ecs {
 
 namespace fps_cam_sys {
 
-using namespace component;
-
-void OnUpdate(FPSCamera &camera, Timestep timestep) {
+void OnUpdate(FPSCamera &camera, engine::Timestep timestep) {
   float movement_offset = camera.movement_speed * static_cast<float>(timestep.dt_actual);
   glm::vec3 movement(0.f);
   if (Input::IsKeyDown(KeyCode::W) || Input::IsKeyDown(KeyCode::I)) {
