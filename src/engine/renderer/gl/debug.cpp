@@ -1,7 +1,7 @@
 #include "debug.h"
 
 #include "engine/pch.h"
-namespace gfx {
+namespace engine::gfx {
 
 // adapted from https://learnopengl.com/In-Practice/Debugging
 void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
@@ -93,4 +93,4 @@ void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum se
       break;
   }
 }
-}  // namespace gfx
+}  // namespace engine::gfx

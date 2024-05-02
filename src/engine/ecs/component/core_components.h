@@ -2,8 +2,8 @@
 
 #include "engine/pch.h"
 
-namespace component {
+namespace engine::component {
 struct Tag {
   std::string tag;
 };
-}  // namespace component
+}  // namespace engine::component

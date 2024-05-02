@@ -1,7 +1,8 @@
 #pragma once
 
-class Scene;
+namespace engine {
 
+class Scene;
 struct GraphicsSystem {
  public:
   void Init();
@@ -10,3 +11,4 @@ struct GraphicsSystem {
   void DrawOpaque(Scene& scene);
   void EndFrame();
 };
+}  // namespace engine

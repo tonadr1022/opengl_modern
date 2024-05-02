@@ -4,7 +4,8 @@
 #include <engine/pch.h>
 
 #include <entt/entity/registry.hpp>
-#include <string_view>
+
+namespace engine {
 
 struct Timestep;
 class Engine;
@@ -36,3 +37,4 @@ class Scene {
 
   std::string name_;
 };
+}  // namespace engine

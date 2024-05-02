@@ -2,6 +2,8 @@
 
 #include "engine/pch.h"
 
+namespace engine {
+
 struct Timestep;
 namespace gfx {
 struct RendererStats;
@@ -19,3 +21,4 @@ struct ImGuiSystem {
   bool debug_menu_enabled{true};
   bool enabled{true};
 };
+}  // namespace engine

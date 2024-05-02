@@ -11,10 +11,12 @@
 #include "engine/ecs/system/imgui_system.h"
 #include "engine/ecs/system/window_system.h"
 #include "engine/renderer/renderer.h"
-#include "engine/renderer/resource/shader_manager.h"
+#include "engine/resource/shader_manager.h"
 #include "input.h"
 
 // Engine* Engine::instance_ = nullptr;
+
+namespace engine {
 
 Engine::Engine() {
   window_system_ = new WindowSystem;
@@ -34,7 +36,7 @@ Engine::Engine() {
 
 void Engine::OnEvent(const Event& e) {
   switch (e.type) {
-    case Event::Type::KeyPressed:
+    case EventType::KeyPressed:
       if (e.key.code == KeyCode::Q && e.key.system) {
         Stop();
         return;
@@ -111,7 +113,7 @@ void Engine::ImGuiSystemPerFrame(Timestep timestep) {
   }
 
   if (ImGui::Button("Recompile Shaders")) {
-    gfx::ShaderManager::RecompileShaders();
+    ShaderManager::RecompileShaders();
   }
 
   imgui_system_->FramerateSubMenu(timestep);
@@ -148,3 +150,4 @@ void Engine::LoadScene(const std::string& name) {
   active_scene_ = it->second.get();
   active_scene_->Load();
 }
+}  // namespace engine

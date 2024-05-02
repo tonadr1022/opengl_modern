@@ -2,7 +2,7 @@
 
 #include "engine/pch.h"
 
-namespace gfx {
+namespace engine::gfx {
 enum class BufferType : uint32_t { Vertex = GL_ARRAY_BUFFER, Index = GL_ELEMENT_ARRAY_BUFFER };
 
 // class Buffer {
@@ -14,4 +14,4 @@ enum class BufferType : uint32_t { Vertex = GL_ARRAY_BUFFER, Index = GL_ELEMENT_
 //   uint32_t id_{0};
 // };
 
-}  // namespace gfx
+}  // namespace engine::gfx

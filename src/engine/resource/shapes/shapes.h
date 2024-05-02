@@ -1,8 +1,8 @@
 #pragma once
 
-#include "engine/renderer/data_types.h"
+#include "engine/resource/data_types.h"
 
-namespace gfx::shape {
+namespace engine::gfx::shape {
 
 // clang-format off
 static const float QuadVertices[] = {
@@ -109,4 +109,4 @@ constexpr const Index CubeIndices[] = {
 
 // clang-format on
 
-}  // namespace gfx::shape
+}  // namespace engine::gfx::shape

@@ -5,7 +5,7 @@ struct Event;
 
 #include "engine/pch.h"
 
-namespace component {
+namespace engine::component {
 
 struct FPSCamera {
   glm::vec3 position{};
@@ -28,4 +28,4 @@ struct FPSCamera {
   static constexpr const glm::vec3 UpVector{0.f, 1.f, 0.f};
 };
 
-}  // namespace component
+}  // namespace engine::component

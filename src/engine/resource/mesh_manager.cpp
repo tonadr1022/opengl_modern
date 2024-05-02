@@ -6,11 +6,11 @@
 
 #include <assimp/Importer.hpp>
 
-#include "engine/renderer/data_types.h"
 #include "engine/renderer/renderer.h"
-#include "engine/renderer/resource/shapes/shapes.h"
+#include "engine/resource/data_types.h"
+#include "engine/resource/shapes/shapes.h"
 
-namespace gfx {
+namespace engine {
 
 namespace {
 
@@ -45,7 +45,7 @@ MeshID ProcessMesh(const aiMesh& mesh) {
     }
   }
   auto mesh_id = GetNextMeshID();
-  Renderer::AddBatchedMesh(mesh_id, vertices, indices);
+  gfx::Renderer::AddBatchedMesh(mesh_id, vertices, indices);
   return mesh_id;
   // if (mesh.mMaterialIndex >= 0) {
   //   aiMaterial* ai_mat = scene.mMaterials[mesh.mMaterialIndex];
@@ -104,4 +104,4 @@ MeshID MeshManager::LoadShape(ShapeType type) {
       return LoadCube();
   }
 }
-}  // namespace gfx
+}  // namespace engine

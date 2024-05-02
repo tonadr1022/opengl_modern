@@ -2,6 +2,8 @@
 
 #include "engine/pch.h"
 
+namespace engine {
+
 enum class KeyMod : uint16_t {
   Shift = GLFW_MOD_SHIFT,
   Control = GLFW_MOD_CONTROL,
@@ -144,3 +146,4 @@ enum class KeyCode : uint16_t {
   RightSuper = 347,
   Menu = 348
 };
+}  // namespace engine

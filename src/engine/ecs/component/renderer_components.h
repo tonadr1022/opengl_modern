@@ -1,16 +1,18 @@
 #pragma once
 
-#include "engine/renderer/material.h"
-#include "engine/renderer/resource/mesh_manager.h"
+namespace engine {
+using MaterialID = uint32_t;
+using MeshID = uint32_t;
 
 namespace component {
 
 struct Mesh {
-  gfx::MeshID handle;
+  MeshID handle;
 };
 
 struct Material {
-  gfx::MaterialID handle;
+  MaterialID handle;
 };
 
 }  // namespace component
+}  // namespace engine

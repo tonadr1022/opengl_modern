@@ -4,19 +4,20 @@
 #include "engine/application/event.h"
 #include "engine/renderer/renderer.h"
 
+namespace engine {
+
 void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
-  engine->window_system_->framebuffer_height_ = height;
-  engine->window_system_->framebuffer_width_ = width;
+  Event e{.type = EventType::FrameBufferResize};
+  engine->OnEvent(e);
   gfx::Renderer::SetFrameBufferSize(width, height);
 }
 
 void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
-  Event e;
-  e.type = Event::WindowResize;
-  e.size.x = width;
-  e.size.y = height;
+  Event e{.type = EventType::WindowResize};
+  e.window_size.x = width;
+  e.window_size.y = height;
   engine->OnEvent(e);
 }
 
@@ -116,3 +117,4 @@ void WindowSystem::SetVsync(bool state) {
 void WindowSystem::Shutdown() { glfwSetWindowShouldClose(glfw_window_, true); }
 
 bool WindowSystem::ShouldClose() { return glfwWindowShouldClose(glfw_window_); }
+}  // namespace engine

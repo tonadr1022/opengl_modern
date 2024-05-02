@@ -1,6 +1,6 @@
 #include "load_file.h"
 
-namespace util {
+namespace engine::util {
 
 std::optional<std::string> LoadFromFile(const std::string& path) {
   std::ifstream file_stream(path);
@@ -13,4 +13,4 @@ std::optional<std::string> LoadFromFile(const std::string& path) {
   return s_stream.str();
 }
 
-}  // namespace util
+}  // namespace engine::util

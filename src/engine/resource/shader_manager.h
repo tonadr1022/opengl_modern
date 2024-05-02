@@ -1,11 +1,13 @@
 #pragma once
 
-#include <initializer_list>
+#include "engine/pch.h"
 
-#include "../../pch.h"
-#include "../gl/shader.h"
+namespace engine {
 
 namespace gfx {
+struct Shader;
+};
+
 enum class ShaderType {
   Vertex = GL_VERTEX_SHADER,
   Geometry = GL_GEOMETRY_SHADER,
@@ -28,9 +30,9 @@ class ShaderManager {
  private:
   struct ShaderProgramData {
     std::string name;
-    GLuint id;
+    GLuint program_id;
     std::unordered_map<uint32_t, uint32_t> uniform_locations;
-    std::vector<ShaderCreateInfo> shader_create_info_vec;
+    std::vector<ShaderCreateInfo> create_info_vec;
   };
 
   static std::optional<ShaderProgramData> CompileProgram(
@@ -39,4 +41,4 @@ class ShaderManager {
 
   inline static std::unordered_map<uint32_t, ShaderProgramData> shader_data_;
 };
-}  // namespace gfx
+}  // namespace engine

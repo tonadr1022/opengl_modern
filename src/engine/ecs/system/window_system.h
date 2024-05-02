@@ -1,10 +1,11 @@
 #pragma once
 
-struct GLFWwindow;
-class Engine;
-
 #include "engine/pch.h"
 
+struct GLFWwindow;
+namespace engine {
+
+class Engine;
 struct WindowSystem {
   void Init(Engine* engine);
   void SwapBuffers();
@@ -18,11 +19,10 @@ struct WindowSystem {
   [[nodiscard]] GLFWwindow* GetContext() const { return glfw_window_; }
   [[nodiscard]] bool GetCursorVisible() const;
 
-  friend void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
-
  private:
   bool is_vsync_;
   GLFWwindow* glfw_window_;
   uint32_t framebuffer_width_;
   uint32_t framebuffer_height_;
 };
+}  // namespace engine

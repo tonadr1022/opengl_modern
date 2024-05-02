@@ -6,7 +6,10 @@
 
 #include "engine/timestep.h"
 
+using namespace engine;
+
 struct Player {};
+
 class SceneMain : public Scene {
  public:
   SceneMain();
