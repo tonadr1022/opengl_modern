@@ -6,6 +6,7 @@ out
 .idea
 compile_commands.json
 vcpkg
+.vs
 
 imgui.ini
 

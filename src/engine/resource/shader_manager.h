@@ -1,12 +1,9 @@
 #pragma once
 
 #include "engine/pch.h"
+#include "engine/renderer/gl/shader.h"
 
 namespace engine {
-
-namespace gfx {
-struct Shader;
-};
 
 enum class ShaderType {
   Vertex = GL_VERTEX_SHADER,

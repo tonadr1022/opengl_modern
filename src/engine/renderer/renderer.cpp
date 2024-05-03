@@ -10,6 +10,7 @@
 #include "engine/resource/material_manager.h"
 #include "engine/resource/paths.h"
 #include "engine/resource/shader_manager.h"
+#include "engine/renderer/gl/Shader.h"
 
 namespace engine::gfx {
 
@@ -22,11 +23,11 @@ struct UserDrawCommand {
 namespace {
 
 struct DrawElementsIndirectCommand {
-  uint count;
-  uint instance_count;
-  uint first_index;
+  uint32_t count;
+  uint32_t instance_count;
+  uint32_t first_index;
   int base_vertex;
-  uint base_instance;
+  uint32_t base_instance;
 };
 
 constexpr uint32_t VertexBufferArrayMaxLength{10'000'000};

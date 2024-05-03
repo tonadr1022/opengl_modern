@@ -1,7 +1,6 @@
 #include "shader_manager.h"
 
 #include <spdlog/spdlog.h>
-#include <sys/resource.h>
 
 #include "engine/renderer/gl/shader.h"
 #include "engine/util/load_file.h"
@@ -105,7 +104,7 @@ void ShaderManager::InitializeUniforms(ShaderProgramData& program_data) {
   GLenum uniform_type;
   GLint uniform_size;
   GLint uniform_name_length;
-  char uniform_name[active_uniform_max_length];
+  char uniform_name[100];
   for (size_t i = 0; i < num_uniforms; i++) {
     glGetActiveUniform(program_data.program_id, i, active_uniform_max_length, &uniform_name_length,
                        &uniform_size, &uniform_type, uniform_name);
