@@ -50,7 +50,8 @@ void WindowSystem::Init(Engine* engine) {
     spdlog::critical("GFLW error {}: {}\n", error, description);
   });
 
-  EASSERT(glfwInit() != false);
+  int success = glfwInit();
+  EASSERT(success);
   // if (!glfwInit()) {
   //   spdlog::critical("GLFW initialization failed");
   // }

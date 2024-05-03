@@ -236,9 +236,9 @@ void Renderer::RenderOpaqueObjects() {
   if (!uniforms.empty()) {
     DrawOpaqueHelper(curr_mat_id, uniforms);
   }
-
   // reset draw commands index
   user_draw_cmds_index = 0;
+  stats.meshes_drawn += user_draw_cmds.size();
 }
 
 void Renderer::EndFrame() {

@@ -19,9 +19,7 @@
 
 SceneMain::SceneMain() : Scene("main") {}
 
-using namespace engine;
-
-void SceneMain::OnEvent(const Event& e) {
+void SceneMain::OnEvent(const engine::Event& e) {
   auto player_entity = registry.view<Player>().front();
   if (!registry.any_of<component::FPSCamera>(player_entity)) {
     std::cout << "return\n";
@@ -29,7 +27,7 @@ void SceneMain::OnEvent(const Event& e) {
   }
   auto& camera = registry.get<component::FPSCamera>(player_entity);
   switch (e.type) {
-    case Event::Type::KeyPressed:
+    case EventType::KeyPressed:
       if (e.key.code == KeyCode::M) {
         fps_focused_ = !fps_focused_;
         if (!fps_focused_) engine_->window_system_->CenterCursor();
@@ -38,7 +36,7 @@ void SceneMain::OnEvent(const Event& e) {
         engine_->LoadScene("test2");
       }
       break;
-    case Event::Type::MouseScrolled:
+    case EventType::MouseScrolled:
       if (fps_focused_) ecs::fps_cam_sys::OnScroll(camera, e.scroll.offset);
       break;
     default:
@@ -54,9 +52,6 @@ void SceneMain::OnImGuiRender() {
     ecs::fps_cam_sys::OnImGui(camera);
   }
 
-  ImGui::BeginChild("Materials");
-
-  ImGui::EndChild();
   // auto materials = registry.group<component::Material>();
   // materials.each([](component::Material& material) {
   //   auto& mat = gfx::MaterialManager::GetMaterial(material.handle);
@@ -66,7 +61,7 @@ void SceneMain::OnImGuiRender() {
   ImGui::End();
 }
 
-void SceneMain::OnUpdate(Timestep timestep) {
+void SceneMain::OnUpdate(engine::Timestep timestep) {
   auto player_entity = registry.view<Player>().front();
   if (!registry.any_of<component::FPSCamera>(player_entity)) return;
   auto& camera = registry.get<component::FPSCamera>(player_entity);
@@ -80,20 +75,24 @@ void SceneMain::OnUpdate(Timestep timestep) {
 
 void SceneMain::Load() {
   engine_->window_system_->SetCursorVisible(!fps_focused_);
-  glm::vec3 iter{0, 0, 0};
-  gfx::MeshID mesh_id = gfx::MeshManager::LoadShape(gfx::ShapeType::Cube);
-  gfx::MaterialData mat;
-  mat.diffuse = {1., 0., 1.};
-  gfx::MaterialID color_only_mat = gfx::MaterialManager::AddMaterial(mat);
+  glm::ivec3 iter{0, 0, 0};
+  engine::MeshID mesh_id = engine::MeshManager::LoadShape(engine::ShapeType::Cube);
   component::Transform t;
-  for (iter.x = -50; iter.x <= 50; iter.x++) {
-    for (iter.y = -50; iter.y <= 50; iter.y++) {
-      auto tri = registry.create();
-      t.SetTranslation({iter.x * 2, iter.y * 2, 0});
-      registry.emplace<component::Transform>(tri, t);
-      registry.emplace<component::ModelMatrix>(tri);
-      registry.emplace<component::Mesh>(tri, mesh_id);
-      registry.emplace<component::Material>(tri, color_only_mat);
+  float r = 0;
+  for (iter.x = -40; iter.x <= 40; iter.x++) {
+    engine::MaterialData m;
+    m.diffuse = {r, 0., 1.0 - r};
+    r += 0.01;
+    engine::MaterialID itermat = engine::MaterialManager::AddMaterial(m);
+    for (iter.y = -40; iter.y <= 40; iter.y++) {
+      for (iter.z = -20; iter.z <= 20; iter.z++) {
+        auto tri = registry.create();
+        t.SetTranslation({iter.x * 2, iter.y * 2, iter.z * 2});
+        registry.emplace<component::Transform>(tri, t);
+        registry.emplace<component::ModelMatrix>(tri);
+        registry.emplace<component::Mesh>(tri, mesh_id);
+        registry.emplace<component::Material>(tri, itermat);
+      }
     }
   }
   auto player = registry.create();

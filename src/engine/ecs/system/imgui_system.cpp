@@ -122,6 +122,7 @@ void ImGuiSystem::RenderRendererStats(const gfx::RendererStats& stats) {
   ImGui::Text("Vertices: %i", stats.vertices);
   ImGui::Text("Indices: %i", stats.indices);
   ImGui::Text("MultiDrawCalls: %i", stats.multi_draw_calls);
+  ImGui::Text("Objects Drawn: %i", stats.meshes_drawn);
   ImGui::EndChild();
 }
 

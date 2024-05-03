@@ -1,13 +1,13 @@
 #include "graphics_system.h"
 
-#include <execution>
-
 #include "../../renderer/renderer.h"
 #include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
 #include "engine/scene.h"
 
 namespace engine {
+
+using namespace component;
 
 void GraphicsSystem::Init() { gfx::Renderer::Init(); }
 void GraphicsSystem::Shutdown() {}
@@ -16,25 +16,18 @@ void GraphicsSystem::StartFrame(Scene& scene) {
 }
 
 void GraphicsSystem::DrawOpaque(Scene& scene) {
-  auto model_group = scene.registry.group<component::Transform, component::ModelMatrix>();
-  std::for_each(std::execution::par, model_group.begin(), model_group.end(),
-                [&model_group](entt::entity entity) {
-                  auto [transform, model] =
-                      model_group.get<component::Transform, component::ModelMatrix>(entity);
-                  model.matrix = transform.CalculateModel();
-                  // model.matrix = glm::mat4(1);
+  auto model_group = scene.registry.view<Transform, ModelMatrix>();
+  std::for_each(std::execution::par_unseq, model_group.begin(), model_group.end(),
+                [&model_group](auto entity) {
+                  auto [transform, model] = model_group.get<Transform, ModelMatrix>(entity);
+                  if (transform.IsDirty()) {
+                    model.matrix = transform.CalculateModel();
+                    transform.SetModel();
+                  }
                 });
 
-  auto group =
-      scene.registry.group<component::Mesh>(entt::get<component::ModelMatrix, component::Material>);
-
+  auto group = scene.registry.group<Mesh>(entt::get<ModelMatrix, Material>);
   gfx::Renderer::SetBatchedObjectCount(group.size());
-
-  // std::for_each(std::execution::par, group.begin(), group.end(), [&group](entt::entity entity) {
-  //   auto [mesh, model, material] =
-  //       group.get<component::Mesh, component::Model, component::Material>(entity);
-  //   gfx::Renderer::SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
-  // });
   group.each([](const auto& mesh, const auto& model, const auto& material) {
     gfx::Renderer::SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
   });
