@@ -75,8 +75,16 @@ void SceneMain::OnUpdate(engine::Timestep timestep) {
 
 void SceneMain::Load() {
   engine_->window_system_->SetCursorVisible(!fps_focused_);
+<<<<<<< HEAD
   glm::ivec3 iter{0, 0, 0};
   engine::MeshID mesh_id = engine::MeshManager::LoadShape(engine::ShapeType::Cube);
+=======
+  glm::vec3 iter{0, 0, 0};
+  engine::MeshID mesh_id = engine::MeshManager::LoadShape(engine::ShapeType::Cube);
+  engine::MaterialData mat;
+  mat.diffuse = {1., 0., 1.};
+  engine::MaterialID color_only_mat = engine::MaterialManager::AddMaterial(mat);
+>>>>>>> 89b1a33df3cea488fcba514729e8fd37618e7cc3
   component::Transform t;
   float r = 0;
   for (iter.x = -40; iter.x <= 40; iter.x++) {
