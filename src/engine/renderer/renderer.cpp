@@ -204,7 +204,7 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
 
 void Renderer::RenderOpaqueObjects() {
   // sort user commands by material and mesh, must match mesh_buffer_info
-  std::sort(std::execution::par, user_draw_cmds.begin(), user_draw_cmds.end(),
+  std::sort(user_draw_cmds.begin(), user_draw_cmds.end(),
             [](const UserDrawCommand& lhs, const UserDrawCommand& rhs) {
               if (lhs.material_id != rhs.material_id) return lhs.material_id < rhs.material_id;
               return lhs.mesh_id < rhs.mesh_id;

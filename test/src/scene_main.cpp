@@ -88,7 +88,7 @@ void SceneMain::Load() {
     r += 0.01;
     engine::MaterialID itermat = engine::MaterialManager::AddMaterial(m);
     for (iter.y = -40; iter.y <= 40; iter.y++) {
-      for (iter.z = -20; iter.z <= 20; iter.z++) {
+      for (iter.z = -2; iter.z <= 2; iter.z++) {
         auto tri = registry.create();
         t.SetTranslation({iter.x * 2, iter.y * 2, iter.z * 2});
         registry.emplace<component::Transform>(tri, t);
