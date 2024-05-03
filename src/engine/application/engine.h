@@ -20,6 +20,8 @@ class Engine {
   void AddScene(std::unique_ptr<Scene> scene);
   void LoadScene(const std::string& name);
 
+  WindowSystem* window_system_{nullptr};
+
  private:
   friend class Input;
   friend void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
@@ -32,7 +34,6 @@ class Engine {
   // TODO(tony): serialize scenes instead of this?
   std::unordered_map<std::string, std::unique_ptr<Scene>> scenes_;
   GraphicsSystem* graphics_system_{nullptr};
-  WindowSystem* window_system_{nullptr};
   ImGuiSystem* imgui_system_{nullptr};
 
   Scene* active_scene_{nullptr};
