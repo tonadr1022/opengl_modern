@@ -11,9 +11,9 @@ namespace engine {
 using namespace component;
 
 void GraphicsSystem::Init() { gfx::Renderer::Init(); }
-void GraphicsSystem::Shutdown() {}
+void GraphicsSystem::Shutdown() { gfx::Renderer::Shutdown(); }
 
-void GraphicsSystem::StartFrame(const gfx::CameraMatrices& camera_matrices) {
+void GraphicsSystem::StartFrame(const gfx::ViewInfo& camera_matrices) {
   gfx::Renderer::StartFrame(camera_matrices);
 }
 

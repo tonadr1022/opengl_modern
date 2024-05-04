@@ -11,7 +11,6 @@ using namespace engine;
 class SceneMain : public Scene {
  public:
   SceneMain();
-  void Load() override;
   void OnImGuiRender() override;
   void OnUpdate(Timestep timestep) override;
   void OnEvent(const Event& e) override;

@@ -18,46 +18,10 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "components.h"
-#include "engine/core/e_assert.h"
 #include "engine/ecs/component/transform.h"
 #include "systems.h"
 
-SceneMain::SceneMain() : Scene("main") {}
-
-void SceneMain::OnEvent(const engine::Event& e) { ecs::fps_cam_sys::OnEvent(registry, e); }
-
-void SceneMain::OnImGuiRender() {
-  ImGui::Begin("Scene");
-  auto player_entity = registry.view<Player>().front();
-  if (registry.any_of<component::FPSCamera>(player_entity)) {
-    auto& camera = registry.get<component::FPSCamera>(player_entity);
-    ecs::fps_cam_sys::OnImGui(camera);
-  }
-
-  // auto materials = registry.group<component::Material>();
-  // materials.each([](component::Material& material) {
-  //   auto& mat = gfx::MaterialManager::GetMaterial(material.handle);
-  //   ImGui::SliderFloat3(std::string("Diffuse###" + std::to_string(material.handle)).c_str(),
-  //                       glm::value_ptr(mat.diffuse), 0.0f, 1.0f);
-  // });
-  ImGui::End();
-}
-
-void SceneMain::OnUpdate(engine::Timestep timestep) {
-  entt::entity player_entity = registry.view<Player>().front();
-  if (!registry.any_of<component::FPSCamera>(player_entity)) return;
-  auto& player = registry.get<Player>(player_entity);
-  auto& camera = registry.get<component::FPSCamera>(player_entity);
-  if (player.fps_focused) ecs::fps_cam_sys::OnUpdate(camera, timestep);
-  current_camera_matrices.view_matrix =
-      glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
-  auto dims = engine_->window_system_->GetWindowDimensions();
-  float aspect_ratio = static_cast<float>(dims.x) / static_cast<float>(dims.y);
-  current_camera_matrices.projection_matrix =
-      glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane, camera.far_plane);
-}
-
-void SceneMain::Load() {
+SceneMain::SceneMain() {
   glm::vec3 iter{0, 0, 0};
   engine::MeshID mesh_id = engine::MeshManager::LoadShape(engine::ShapeType::Cube);
   engine::MaterialData mat;
@@ -85,6 +49,7 @@ void SceneMain::Load() {
   // registry.emplace<component::Mesh>(captain, mesh_id);
   // m.diffuse = {0, 1, 1};
   // registry.emplace<component::Material>(captain, m);
+
   std::vector<component::Material> data;
   int num_mats = 100;
   data.reserve(num_mats);
@@ -112,9 +77,31 @@ void SceneMain::Load() {
   bool start_fps_focus = true;
   auto player = registry.create();
   registry.emplace<Player>(player).fps_focused = start_fps_focus;
-  engine_->window_system_->SetCursorVisible(!start_fps_focus);
+  WindowSystem::Get().SetCursorVisible(!start_fps_focus);
 
   component::FPSCamera fps_cam;
   fps_cam.position = {2, 1, 1};
   registry.emplace<component::FPSCamera>(player, fps_cam);
 }
+
+void SceneMain::OnEvent(const engine::Event& e) { ecs::fps_cam_sys::OnEvent(registry, e); }
+
+void SceneMain::OnImGuiRender() {
+  ImGui::Begin("Scene");
+  auto player_entity = registry.view<Player>().front();
+  if (registry.any_of<component::FPSCamera>(player_entity)) {
+    auto& camera = registry.get<component::FPSCamera>(player_entity);
+    ecs::fps_cam_sys::FPSCamImGui(camera);
+  }
+
+  // auto materials = registry.group<component::Material>();
+  // materials.each([](component::Material& material) {
+  //   auto& mat = gfx::MaterialManager::GetMaterial(material.handle);
+  //   ImGui::SliderFloat3(std::string("Diffuse###" + std::to_string(material.handle)).c_str(),
+  //                       glm::value_ptr(mat.diffuse), 0.0f, 1.0f);
+  // });
+
+  ImGui::End();
+}
+
+void SceneMain::OnUpdate(engine::Timestep timestep) { ecs::fps_cam_sys::Run(registry, timestep); }

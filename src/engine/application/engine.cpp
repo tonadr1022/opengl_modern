@@ -89,7 +89,8 @@ void Engine::Run() {
     active_scene_->OnUpdate(timestep);
     timestep.dt_actual = delta_time;
 
-    graphics_system_->StartFrame(active_scene_->current_camera_matrices);
+    graphics_system_->StartFrame(active_scene_->GetViewInfo());
+
     graphics_system_->DrawOpaque(active_scene_->registry);
     graphics_system_->EndFrame();
 
@@ -145,19 +146,20 @@ Engine::~Engine() = default;
 
 void Engine::Stop() { running_ = false; }
 
-void Engine::AddScene(std::unique_ptr<Scene> scene) {
-  auto it = scenes_.find(scene->GetName());
-  scene->engine_ = this;
-  EASSERT_MSG(it == scenes_.end(), "Scene Added Already");
-  scenes_.emplace(scene->GetName(), std::move(scene));
-}
+// void Engine::AddScene(std::unique_ptr<Scene> scene) {
+//   auto it = scenes_.find(scene->GetName());
+//   // scene->engine_ = this;
+//   EASSERT_MSG(it == scenes_.end(), "Scene Added Already");
+//   scenes_.emplace(scene->GetName(), std::move(scene));
+// }
 
-void Engine::LoadScene(const std::string& name) {
-  auto it = scenes_.find(name);
-  EASSERT_MSG(it != scenes_.end(), "Scene Not Found");
-  std::cout << "Loading scene: " << name << "\n";
-  if (active_scene_) active_scene_->Shutdown();
-  active_scene_ = it->second.get();
-  active_scene_->Load();
-}
+void Engine::LoadScene(std::unique_ptr<Scene> scene) { active_scene_ = std::move(scene); }
+
+// void Engine::LoadScene(const std::string& name) {
+//   auto it = scenes_.find(name);
+//   EASSERT_MSG(it != scenes_.end(), "Scene Not Found");
+//   std::cout << "Loading scene: " << name << "\n";
+//   active_scene_ = it->second.get();
+//   active_scene_->Load();
+// }
 }  // namespace engine

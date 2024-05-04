@@ -4,6 +4,7 @@
 
 #include <cstdint>
 
+#include "engine/core/e_assert.h"
 #include "engine/pch.h"
 #include "engine/renderer/gl/debug.h"
 #include "engine/renderer/material.h"
@@ -16,8 +17,8 @@ namespace engine::gfx {
 struct UserDrawCommand {
   MeshID mesh_id;
   MaterialID material_id;
-  glm::mat4 model_matrix;
-  // uint32_t model_matrix_index;
+  // glm::mat4 model_matrix;
+  uint32_t model_matrix_index;
 };
 
 namespace {
@@ -62,21 +63,7 @@ uint32_t framebuffer_width{1}, frame_buffer_height{1};
 
 std::vector<glm::mat4> uniforms;
 
-void InitBuffers() {
-  glCreateBuffers(1, &batch_vertex_buffer.id);
-  glCreateBuffers(1, &batch_element_buffer.id);
-  glNamedBufferStorage(batch_vertex_buffer.id, sizeof(Vertex) * VertexBufferArrayMaxLength, nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-  glNamedBufferStorage(batch_element_buffer.id, sizeof(Index) * IndexBufferArrayMaxLength, nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-  glCreateBuffers(1, &batch_ssbo_buffer.id);
-  glNamedBufferStorage(batch_ssbo_buffer.id, sizeof(glm::mat4) * MaxDrawCommands, nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-  glCreateBuffers(1, &draw_indirect_buffer.id);
-  glNamedBufferStorage(draw_indirect_buffer.id,
-                       sizeof(DrawElementsIndirectCommand) * MaxDrawCommands, nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-}
+void InitBuffers() {}
 
 void InitVaos() {
   ///////////////////// Batched VAO ///////////////////////////////////////////////
@@ -113,14 +100,14 @@ void Renderer::SetFrameBufferSize(uint32_t width, uint32_t height) {
 }
 
 void Renderer::SetBatchedObjectCount(uint32_t count) {
-  // user_draw_cmd_model_matrices.resize(count);
+  user_draw_cmd_model_matrices.resize(count);
   user_draw_cmds.resize(count);
 }
 
 void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id) {
-  user_draw_cmds[user_draw_cmds_index] =
-      UserDrawCommand{.mesh_id = mesh_id, .material_id = material_id, .model_matrix = model};
-  // user_draw_cmd_model_matrices[user_draw_cmds_index] = model;
+  user_draw_cmds[user_draw_cmds_index] = UserDrawCommand{
+      .mesh_id = mesh_id, .material_id = material_id, .model_matrix_index = user_draw_cmds_index};
+  user_draw_cmd_model_matrices[user_draw_cmds_index] = model;
   user_draw_cmds_index++;
 }
 
@@ -130,11 +117,30 @@ void Renderer::Init() {
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
-  InitBuffers();
+  glCreateBuffers(1, &batch_vertex_buffer.id);
+  glCreateBuffers(1, &batch_element_buffer.id);
+  glNamedBufferStorage(batch_vertex_buffer.id, sizeof(Vertex) * VertexBufferArrayMaxLength, nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferStorage(batch_element_buffer.id, sizeof(Index) * IndexBufferArrayMaxLength, nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
+  glCreateBuffers(1, &batch_ssbo_buffer.id);
+  glNamedBufferStorage(batch_ssbo_buffer.id, sizeof(glm::mat4) * MaxDrawCommands, nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
+  glCreateBuffers(1, &draw_indirect_buffer.id);
+  glNamedBufferStorage(draw_indirect_buffer.id,
+                       sizeof(DrawElementsIndirectCommand) * MaxDrawCommands, nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
   InitVaos();
 }
 
-void Renderer::StartFrame(const CameraMatrices& camera_matrices) {
+void Renderer::Shutdown() {
+  glDeleteVertexArrays(1, &batch_vao);
+  glDeleteBuffers(1, &batch_vertex_buffer.id);
+  glDeleteBuffers(1, &batch_element_buffer.id);
+  glDeleteBuffers(1, &batch_ssbo_buffer.id);
+}
+
+void Renderer::StartFrame(const ViewInfo& camera_matrices) {
   memset(&stats, 0, sizeof(stats));
   cam_info.view_matrix = camera_matrices.view_matrix;
   cam_info.projection_matrix = camera_matrices.projection_matrix;
@@ -145,12 +151,6 @@ void Renderer::StartFrame(const CameraMatrices& camera_matrices) {
   glEnable(GL_STENCIL_TEST);
   glClearColor(0.1, 0.1, 0.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-}
-
-void res() {
-  for (auto& info : mesh_buffer_info) {
-    info.second.instance_count = 0;
-  }
 }
 
 void Renderer::AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices,
@@ -168,7 +168,7 @@ void Renderer::AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices,
   cmd.base_instance = 0;
   // location in the buffer of first index of the mesh
   cmd.first_index = batch_element_buffer.offset / sizeof(Index);
-  // no instancing
+  // will be incremented when multiple draw calls use the same mesh
   cmd.instance_count = 0;
 
   mesh_buffer_info[id] = cmd;
@@ -195,26 +195,14 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
                   }
                 });
 
-  // create draw indirect buffer
-  // Buffer draw_cmd_buffer;
-  // glCreateBuffers(1, &draw_cmd_buffer.id);
-  // glNamedBufferStorage(draw_cmd_buffer.id, std::span(commands).size_bytes(), commands.data(), 0);
-  // glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw_cmd_buffer.id);
+  // bind buffers
   glNamedBufferSubData(draw_indirect_buffer.id, 0,
                        sizeof(DrawElementsIndirectCommand) * commands.size(), commands.data());
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw_indirect_buffer.id);
-
   glNamedBufferSubData(batch_ssbo_buffer.id, 0, sizeof(glm::mat4) * uniforms.size(),
                        uniforms.data());
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch_ssbo_buffer.id);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, batch_ssbo_buffer.id);
-
-  // create ssbo for uniforms (model matrices for each)
-  // Buffer ssbo_buffer;
-  // glCreateBuffers(1, &ssbo_buffer.id);
-  // glNamedBufferStorage(ssbo_buffer.id, std::span(uniforms).size_bytes(), uniforms.data(), 0);
-  // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_buffer.id);
-  // glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_buffer.id);
 
   // bind material
   auto& material = MaterialManager::GetMaterial(material_id);
@@ -226,16 +214,17 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, commands.size(), 0);
   stats.multi_draw_calls++;
 
-  res();
+  for (auto& info : mesh_buffer_info) {
+    info.second.instance_count = 0;
+  }
+
   // clear instance count for future draw calls with diff materials
   // TODO (tony): create buffer class with RAII
-  // glDeleteBuffers(1, &ssbo_buffer.id);
-  // glDeleteBuffers(1, &draw_cmd_buffer.id);
-  //
 }
 
 void Renderer::RenderOpaqueObjects() {
   auto shader = ShaderManager::GetShader("batch");
+  EASSERT(shader.has_value());
   shader->Bind();
 
   // sort user commands by material and mesh, must match mesh_buffer_info
@@ -263,14 +252,15 @@ void Renderer::RenderOpaqueObjects() {
 
     // push uniform and inc instance count of mesh of current command
     mesh_buffer_info[user_draw_cmd.mesh_id].instance_count++;
-    // uniforms.push_back(user_draw_cmd_model_matrices[user_draw_cmd.model_matrix_index]);
-    uniforms.push_back(user_draw_cmd.model_matrix);
+    uniforms.push_back(user_draw_cmd_model_matrices[user_draw_cmd.model_matrix_index]);
+    // uniforms.push_back(user_draw_cmd.model_matrix);
   }
   // if all materials are the same or the last commands used same material,
   // draw them
   if (!uniforms.empty()) {
     DrawOpaqueHelper(curr_mat_id, uniforms);
   }
+
   // reset draw commands index
   user_draw_cmds_index = 0;
   stats.meshes_drawn += user_draw_cmds.size();
@@ -283,6 +273,10 @@ void Renderer::EndFrame() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::Restart() {}
+void Renderer::Restart() {
+  EASSERT(batch_vertex_buffer.id && batch_element_buffer.id);
+  batch_vertex_buffer.offset = 0;
+  batch_element_buffer.offset = 0;
+}
 
 }  // namespace engine::gfx

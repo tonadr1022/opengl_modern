@@ -9,10 +9,13 @@
 #include <engine/timestep.h>
 #include <imgui.h>
 
+#include <entt/core/hashed_string.hpp>
 #include <entt/entity/registry.hpp>
 
 #include "components.h"
 #include "engine/application/event.h"
+#include "engine/renderer/renderer.h"
+#include "scene_2.h"
 
 using namespace engine;
 using namespace engine::component;
@@ -21,7 +24,32 @@ namespace ecs {
 
 namespace fps_cam_sys {
 
-void OnUpdate(FPSCamera &camera, engine::Timestep timestep) {
+namespace {
+void OnScroll(FPSCamera &camera, float offset) {
+  camera.fov += static_cast<float>(offset);
+  camera.fov = glm::clamp(camera.fov, 1.f, 200.f);
+}
+
+void UpdateMatrices(entt::registry &registry, FPSCamera &camera) {
+  auto matrices_view = registry.view<entt::tag<entt::hashed_string{"view_info"}>>();
+  auto &camera_matrices = registry.get<engine::gfx::ViewInfo>(matrices_view.front());
+
+  camera_matrices.view_matrix =
+      glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
+  auto dims = WindowSystem::Get().GetWindowDimensions();
+  float aspect_ratio = static_cast<float>(dims.x) / static_cast<float>(dims.y);
+  camera_matrices.projection_matrix =
+      glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane, camera.far_plane);
+}
+
+}  // namespace
+
+void Run(entt::registry &registry, engine::Timestep timestep) {
+  entt::entity player_entity = registry.view<Player>().front();
+  auto &player = registry.get<Player>(player_entity);
+  if (!player.fps_focused) return;
+  auto &camera = registry.get<component::FPSCamera>(player_entity);
+
   float movement_offset = camera.movement_speed * static_cast<float>(timestep.dt_actual);
   glm::vec3 movement(0.f);
   if (Input::IsKeyDown(KeyCode::W) || Input::IsKeyDown(KeyCode::I)) {
@@ -56,14 +84,11 @@ void OnUpdate(FPSCamera &camera, engine::Timestep timestep) {
   front.y = glm::sin(glm::radians(camera.pitch));
   front.z = glm::sin(glm::radians(camera.yaw)) * glm::cos(glm::radians(camera.pitch));
   camera.front = glm::normalize(front);
+
+  UpdateMatrices(registry, camera);
 }
 
-void OnScroll(FPSCamera &camera, float offset) {
-  camera.fov += static_cast<float>(offset);
-  camera.fov = glm::clamp(camera.fov, 1.f, 200.f);
-}
-
-void OnImGui(FPSCamera &camera) {
+void FPSCamImGui(FPSCamera &camera) {
   auto &position = camera.position;
   auto &front = camera.front;
   ImGui::Text("Yaw: %.1f, Pitch: %.1f", camera.yaw, camera.pitch);
@@ -90,7 +115,7 @@ void OnEvent(entt::registry &registry, const engine::Event &e) {
         if (!player.fps_focused) engine::WindowSystem::Get().CenterCursor();
         WindowSystem::Get().SetCursorVisible(!player.fps_focused);
       } else if (e.key.code == KeyCode::B) {
-        Engine::Get().LoadScene("test2");
+        Engine::Get().LoadScene(std::make_unique<Scene2>());
       }
       break;
     case EventType::MouseScrolled:
@@ -102,5 +127,5 @@ void OnEvent(entt::registry &registry, const engine::Event &e) {
 }
 
 }  // namespace fps_cam_sys
-namespace move_system {}
+
 }  // namespace ecs
