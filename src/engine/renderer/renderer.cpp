@@ -16,7 +16,7 @@ namespace engine::gfx {
 struct UserDrawCommand {
   MeshID mesh_id;
   MaterialID material_id;
-  glm::mat4 model_matrix;
+  uint32_t model_matrix_index;
 };
 
 namespace {
@@ -50,10 +50,13 @@ Buffer batch_vertex_buffer;
 Buffer batch_element_buffer;
 
 std::vector<UserDrawCommand> user_draw_cmds;
+std::vector<glm::mat4> user_draw_cmd_model_matrices;
 uint32_t user_draw_cmds_index{0};
 
 std::map<MeshID, DrawElementsIndirectCommand> mesh_buffer_info;
 uint32_t framebuffer_width{1}, frame_buffer_height{1};
+
+std::vector<glm::mat4> uniforms;
 
 void InitBuffers() {
   glCreateBuffers(1, &batch_vertex_buffer.id);
@@ -98,11 +101,16 @@ void Renderer::SetFrameBufferSize(uint32_t width, uint32_t height) {
   framebuffer_width = width;
 }
 
-void Renderer::SetBatchedObjectCount(uint32_t count) { user_draw_cmds.resize(count); }
+void Renderer::SetBatchedObjectCount(uint32_t count) {
+  user_draw_cmd_model_matrices.resize(count);
+  user_draw_cmds.resize(count);
+}
 
 void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id) {
-  user_draw_cmds[user_draw_cmds_index++] =
-      UserDrawCommand{.mesh_id = mesh_id, .material_id = material_id, .model_matrix = model};
+  user_draw_cmds[user_draw_cmds_index] = UserDrawCommand{
+      .mesh_id = mesh_id, .material_id = material_id, .model_matrix_index = user_draw_cmds_index};
+  user_draw_cmd_model_matrices[user_draw_cmds_index] = model;
+  user_draw_cmds_index++;
 }
 
 const RendererStats& Renderer::GetStats() { return stats; }
@@ -191,7 +199,6 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   // bind material
   auto& material = MaterialManager::GetMaterial(material_id);
   auto shader = ShaderManager::GetShader("batch");
-  shader->Bind();
   shader->SetVec3("material.diffuse", material.diffuse);
   shader->SetMat4("vp_matrix", cam_info.vp_matrix);
 
@@ -204,14 +211,17 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   glDeleteBuffers(1, &draw_cmd_buffer.id);
 }
 
-std::vector<glm::mat4> uniforms;
 void Renderer::RenderOpaqueObjects() {
+  auto shader = ShaderManager::GetShader("batch");
+  shader->Bind();
+
   // sort user commands by material and mesh, must match mesh_buffer_info
   std::sort(user_draw_cmds.begin(), user_draw_cmds.end(),
             [](const UserDrawCommand& lhs, const UserDrawCommand& rhs) {
               if (lhs.material_id != rhs.material_id) return lhs.material_id < rhs.material_id;
               return lhs.mesh_id < rhs.mesh_id;
             });
+
   // accumulate per-material draw commands and uniforms
   // for each material, push all the uniforms of meshes using the material
   // into a vector, and increase the instance count of each mesh.
@@ -230,7 +240,7 @@ void Renderer::RenderOpaqueObjects() {
 
     // push uniform and inc instance count of mesh of current command
     mesh_buffer_info[user_draw_cmd.mesh_id].instance_count++;
-    uniforms.push_back(user_draw_cmd.model_matrix);
+    uniforms.push_back(user_draw_cmd_model_matrices[user_draw_cmd.model_matrix_index]);
   }
   // if all materials are the same or the last commands used same material,
   // draw them
