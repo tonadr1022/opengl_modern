@@ -26,6 +26,8 @@ class Scene {
   virtual void OnImGuiRender();
   virtual void OnEvent(const Event& e);
   gfx::ViewInfo GetViewInfo();
+  entt::entity MakeDynamicEntity();
+  entt::entity MakeStaticEntity();
 
   // [[nodiscard]] Entity CreateEntity();
   // [[nodiscard]] Entity CreateEntity(std::string_view tag);

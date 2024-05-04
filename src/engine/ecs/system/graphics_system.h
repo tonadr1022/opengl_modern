@@ -12,7 +12,9 @@ struct GraphicsSystem {
  public:
   void Init();
   void Shutdown();
-  void StartFrame(const gfx::ViewInfo& camera_matrices);
+  void StartFrame(Scene& scene);
+  void InitScene(Scene& scene);
+
   void UpdateTransforms(entt::registry& registry);
   void DrawOpaque(entt::registry& registry);
   void EndFrame();

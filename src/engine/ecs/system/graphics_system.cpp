@@ -5,6 +5,7 @@
 #include "../../renderer/renderer.h"
 #include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
+#include "engine/scene.h"
 
 namespace engine {
 
@@ -13,9 +14,9 @@ using namespace component;
 void GraphicsSystem::Init() { gfx::Renderer::Init(); }
 void GraphicsSystem::Shutdown() { gfx::Renderer::Shutdown(); }
 
-void GraphicsSystem::StartFrame(const gfx::ViewInfo& camera_matrices) {
-  gfx::Renderer::StartFrame(camera_matrices);
-}
+void GraphicsSystem::StartFrame(Scene& scene) { gfx::Renderer::StartFrame(scene.GetViewInfo()); }
+
+void GraphicsSystem::InitScene(Scene& scene) {}
 
 void update_model_matrices(entt::registry& registry) {
   auto model_group = registry.view<Transform, ModelMatrix>();
@@ -30,11 +31,20 @@ void update_model_matrices(entt::registry& registry) {
 }
 
 void submit_cmds(entt::registry& registry) {
-  auto group = registry.group<Mesh>(entt::get<ModelMatrix, Material>);
-  gfx::Renderer::SetBatchedObjectCount(group.size());
+  // auto group = registry.group<Mesh>(entt::get<Mesh, ModelMatrix, Material>);
+  auto group = registry.view<Mesh, ModelMatrix, Material, DynamicEntity>();
+  gfx::Renderer::SetBatchedObjectCount(group.size_hint());
   group.each([](const auto& mesh, const auto& model, const auto& material) {
     gfx::Renderer::SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
   });
+}
+
+void submit_dynamic_cmds(entt::registry& registry) {
+  // auto group = registry.group<Mesh>(entt::get<ModelMatrix, Material>);
+  // gfx::Renderer::SetBatchedObjectCount(group.size());
+  // group.each([](const auto& mesh, const auto& model, const auto& material) {
+  //   gfx::Renderer::SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
+  // });
 }
 
 void GraphicsSystem::DrawOpaque(entt::registry& registry) {
@@ -46,6 +56,7 @@ void GraphicsSystem::DrawOpaque(entt::registry& registry) {
   // update model matrices
   update_model_matrices(registry);
   submit_cmds(registry);
+  submit_dynamic_cmds(registry);
 
   gfx::Renderer::RenderOpaqueObjects();
 }

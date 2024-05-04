@@ -5,6 +5,8 @@
 #include <assimp/scene.h>
 
 #include <assimp/Importer.hpp>
+#include <entt/core/hashed_string.hpp>
+#include <entt/entt.hpp>
 
 #include "engine/renderer/renderer.h"
 #include "engine/resource/data_types.h"
@@ -82,7 +84,7 @@ MeshID LoadCube() {
   for (const auto& index : gfx::shape::CubeIndices) {
     indices.emplace_back(index);
   }
-  auto id = HashedString("cube");
+  auto id = entt::hashed_string{"cube"};
   gfx::Renderer::AddBatchedMesh(id, vertices, indices);
   return id;
 };

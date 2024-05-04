@@ -64,7 +64,12 @@ SceneMain::SceneMain() {
   for (iter.x = -40; iter.x <= 40; iter.x++) {
     for (iter.y = -40; iter.y <= 40; iter.y++) {
       for (iter.z = -4; iter.z <= 10; iter.z++) {
-        auto tri = registry.create();
+        entt::entity tri{};
+        if (static_cast<int>(iter.z + iter.x) % 2 == 0) {
+          tri = MakeDynamicEntity();
+        } else {
+          tri = MakeStaticEntity();
+        }
         t.SetTranslation({iter.x * 2, iter.y * 2, iter.z * 2});
         registry.emplace<component::Transform>(tri, t);
         registry.emplace<component::ModelMatrix>(tri);

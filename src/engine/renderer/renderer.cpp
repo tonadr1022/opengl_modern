@@ -6,6 +6,7 @@
 
 #include "engine/core/e_assert.h"
 #include "engine/pch.h"
+#include "engine/renderer/gl/buffer.h"
 #include "engine/renderer/gl/debug.h"
 #include "engine/renderer/material.h"
 #include "engine/resource/material_manager.h"
@@ -35,11 +36,6 @@ constexpr uint32_t VertexBufferArrayMaxLength{10'000'000};
 constexpr uint32_t IndexBufferArrayMaxLength{10'000'000};
 constexpr uint32_t MaxDrawCommands{10'000'000};
 
-struct Buffer {
-  uint32_t id{0};
-  uint32_t offset{0};
-};
-
 struct CameraInfo {
   glm::mat4 view_matrix;
   glm::mat4 projection_matrix;
@@ -63,7 +59,15 @@ uint32_t framebuffer_width{1}, frame_buffer_height{1};
 
 std::vector<glm::mat4> uniforms;
 
-void InitBuffers() {}
+void InitBuffers() {
+  batch_vertex_buffer =
+      Buffer::Create(sizeof(Vertex) * VertexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
+  batch_element_buffer =
+      Buffer::Create(sizeof(Index) * IndexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
+  batch_ssbo_buffer = Buffer::Create(sizeof(glm::mat4) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
+  draw_indirect_buffer =
+      Buffer::Create(sizeof(DrawElementsIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
+}
 
 void InitVaos() {
   ///////////////////// Batched VAO ///////////////////////////////////////////////
@@ -82,8 +86,8 @@ void InitVaos() {
   glVertexArrayAttribBinding(batch_vao, 2, 0);
 
   // attach buffers
-  glVertexArrayVertexBuffer(batch_vao, 0, batch_vertex_buffer.id, 0, sizeof(Vertex));
-  glVertexArrayElementBuffer(batch_vao, batch_element_buffer.id);
+  glVertexArrayVertexBuffer(batch_vao, 0, batch_vertex_buffer.Id(), 0, sizeof(Vertex));
+  glVertexArrayElementBuffer(batch_vao, batch_element_buffer.Id());
 }
 
 void LoadShaders() {
@@ -104,6 +108,8 @@ void Renderer::SetBatchedObjectCount(uint32_t count) {
   user_draw_cmds.resize(count);
 }
 
+void Renderer::SetStaticObjectCount(uint32_t count) {}
+
 void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id) {
   user_draw_cmds[user_draw_cmds_index] = UserDrawCommand{
       .mesh_id = mesh_id, .material_id = material_id, .model_matrix_index = user_draw_cmds_index};
@@ -117,28 +123,12 @@ void Renderer::Init() {
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
-  glCreateBuffers(1, &batch_vertex_buffer.id);
-  glCreateBuffers(1, &batch_element_buffer.id);
-  glNamedBufferStorage(batch_vertex_buffer.id, sizeof(Vertex) * VertexBufferArrayMaxLength, nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-  glNamedBufferStorage(batch_element_buffer.id, sizeof(Index) * IndexBufferArrayMaxLength, nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-  glCreateBuffers(1, &batch_ssbo_buffer.id);
-  glNamedBufferStorage(batch_ssbo_buffer.id, sizeof(glm::mat4) * MaxDrawCommands, nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-  glCreateBuffers(1, &draw_indirect_buffer.id);
-  glNamedBufferStorage(draw_indirect_buffer.id,
-                       sizeof(DrawElementsIndirectCommand) * MaxDrawCommands, nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
+  InitBuffers();
+
   InitVaos();
 }
 
-void Renderer::Shutdown() {
-  glDeleteVertexArrays(1, &batch_vao);
-  glDeleteBuffers(1, &batch_vertex_buffer.id);
-  glDeleteBuffers(1, &batch_element_buffer.id);
-  glDeleteBuffers(1, &batch_ssbo_buffer.id);
-}
+void Renderer::Shutdown() { glDeleteVertexArrays(1, &batch_vao); }
 
 void Renderer::StartFrame(const ViewInfo& camera_matrices) {
   memset(&stats, 0, sizeof(stats));
@@ -155,31 +145,28 @@ void Renderer::StartFrame(const ViewInfo& camera_matrices) {
 
 void Renderer::AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices,
                               std::vector<Index>& indices) {
-  glNamedBufferSubData(batch_vertex_buffer.id, batch_vertex_buffer.offset,
-                       sizeof(Vertex) * vertices.size(), vertices.data());
-  glNamedBufferSubData(batch_element_buffer.id, batch_element_buffer.offset,
-                       sizeof(Index) * indices.size(), indices.data());
   DrawElementsIndirectCommand cmd{};
   // number of elements
   cmd.count = static_cast<uint32_t>(indices.size());
   // location in the buffer of the first vertex of the mesh
-  cmd.base_vertex = batch_vertex_buffer.offset / sizeof(Vertex);
+  cmd.base_vertex = batch_vertex_buffer.Offset() / sizeof(Vertex);
   // first instance is of the sub buffer is used
   cmd.base_instance = 0;
   // location in the buffer of first index of the mesh
-  cmd.first_index = batch_element_buffer.offset / sizeof(Index);
+  cmd.first_index = batch_element_buffer.Offset() / sizeof(Index);
   // will be incremented when multiple draw calls use the same mesh
   cmd.instance_count = 0;
 
   mesh_buffer_info[id] = cmd;
 
-  // buffer is void* type
-  batch_vertex_buffer.offset += vertices.size() * sizeof(Vertex);
-  batch_element_buffer.offset += indices.size() * sizeof(Index);
+  // need to be called after getting offset since this increases offset
+  batch_vertex_buffer.SubData(sizeof(Vertex) * vertices.size(), vertices.data());
+  batch_element_buffer.SubData(sizeof(Index) * indices.size(), indices.data());
+
   stats.meshes_in_memory++;
 }
 
-void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& uniforms) {
+void DrawOpaqueHelper(MaterialID material_id, std::vector<glm::mat4>& uniforms) {
   glBindVertexArray(batch_vao);
   // for each mesh that has an instance count with this material,
   // set base instance and increment it by the number of instances
@@ -196,13 +183,11 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
                 });
 
   // bind buffers
-  glNamedBufferSubData(draw_indirect_buffer.id, 0,
-                       sizeof(DrawElementsIndirectCommand) * commands.size(), commands.data());
-  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw_indirect_buffer.id);
-  glNamedBufferSubData(batch_ssbo_buffer.id, 0, sizeof(glm::mat4) * uniforms.size(),
-                       uniforms.data());
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, batch_ssbo_buffer.id);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, batch_ssbo_buffer.id);
+  draw_indirect_buffer.SubData(sizeof(DrawElementsIndirectCommand) * commands.size(),
+                               commands.data());
+  batch_ssbo_buffer.SubData(sizeof(glm::mat4) * uniforms.size(), uniforms.data());
+  draw_indirect_buffer.Bind(GL_DRAW_INDIRECT_BUFFER);
+  batch_ssbo_buffer.BindBase(GL_SHADER_STORAGE_BUFFER, 0);
 
   // bind material
   auto& material = MaterialManager::GetMaterial(material_id);
@@ -253,6 +238,7 @@ void Renderer::RenderOpaqueObjects() {
     // push uniform and inc instance count of mesh of current command
     mesh_buffer_info[user_draw_cmd.mesh_id].instance_count++;
     uniforms.push_back(user_draw_cmd_model_matrices[user_draw_cmd.model_matrix_index]);
+
     // uniforms.push_back(user_draw_cmd.model_matrix);
   }
   // if all materials are the same or the last commands used same material,
@@ -273,10 +259,6 @@ void Renderer::EndFrame() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::Restart() {
-  EASSERT(batch_vertex_buffer.id && batch_element_buffer.id);
-  batch_vertex_buffer.offset = 0;
-  batch_element_buffer.offset = 0;
-}
+void Renderer::Restart() { InitBuffers(); }
 
 }  // namespace engine::gfx

@@ -32,6 +32,9 @@ struct ModelMatrix {
   glm::mat4 matrix{};
 };
 
+struct DynamicEntity {};
+struct StaticEntity {};
+
 struct LocalTransform {
   Transform transform;
 };

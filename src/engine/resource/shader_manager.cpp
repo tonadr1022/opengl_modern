@@ -9,7 +9,7 @@ namespace engine {
 
 using gfx::Shader;
 
-std::optional<Shader> ShaderManager::GetShader(HashedString name) {
+std::optional<Shader> ShaderManager::GetShader(entt::hashed_string name) {
   auto it = shader_data_.find(name);
   if (it == shader_data_.end()) {
     spdlog::error("Shader not found {}", name.data());
@@ -51,7 +51,7 @@ uint32_t CompileShader(ShaderType type, const char *src) {
 }
 
 std::optional<ShaderManager::ShaderProgramData> ShaderManager::CompileProgram(
-    HashedString name, const std::vector<ShaderCreateInfo> &create_info_vec) {
+    entt::hashed_string name, const std::vector<ShaderCreateInfo> &create_info_vec) {
   std::vector<uint32_t> shader_ids;
   for (const auto &create_info : create_info_vec) {
     auto src = util::LoadFromFile(create_info.shaderPath);
@@ -84,7 +84,7 @@ std::optional<ShaderManager::ShaderProgramData> ShaderManager::CompileProgram(
 }
 
 std::optional<Shader> ShaderManager::AddShader(
-    HashedString name, const std::vector<ShaderCreateInfo> &create_info_vec) {
+    entt::hashed_string name, const std::vector<ShaderCreateInfo> &create_info_vec) {
   auto result = ShaderManager::CompileProgram(name, create_info_vec);
   if (!result.has_value()) {
     return std::nullopt;
@@ -109,11 +109,11 @@ void ShaderManager::InitializeUniforms(ShaderProgramData &program_data) {
     glGetActiveUniform(program_data.program_id, i, active_uniform_max_length, &uniform_name_length,
                        &uniform_size, &uniform_type, uniform_name);
     uint32_t location = glGetUniformLocation(program_data.program_id, uniform_name);
-    program_data.uniform_locations.emplace(HashedString(uniform_name), location);
+    program_data.uniform_locations.emplace(entt::hashed_string(uniform_name), location);
   }
 }
 
-std::optional<Shader> ShaderManager::RecompileShader(HashedString name) {
+std::optional<Shader> ShaderManager::RecompileShader(entt::hashed_string name) {
   auto it = shader_data_.find(name);
   if (it == shader_data_.end()) {
     spdlog::warn("Shader not found, cannot recompile: {}", name.data());
@@ -131,7 +131,7 @@ std::optional<Shader> ShaderManager::RecompileShader(HashedString name) {
 
 void ShaderManager::RecompileShaders() {
   // have to avoid iterator invalidation
-  std::vector<HashedString> shader_names;
+  std::vector<entt::hashed_string> shader_names;
   shader_names.reserve(shader_data_.size());
   for (auto &shader_data : shader_data_) {
     shader_names.emplace_back(shader_data.second.name.data());

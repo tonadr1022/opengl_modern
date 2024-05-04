@@ -1,13 +1,14 @@
 #pragma once
 
+#include <entt/core/hashed_string.hpp>
+
 #include "../pch.h"
-#include "engine/util/hashed_string.h"
 #include "gl/shader.h"
 
 namespace engine {
 
 struct MaterialData {
-  HashedString shader_id;
+  entt::hashed_string shader_id;
   glm::vec3 diffuse;
   glm::vec3 roughness_metallic;
 };

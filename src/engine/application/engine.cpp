@@ -89,7 +89,7 @@ void Engine::Run() {
     active_scene_->OnUpdate(timestep);
     timestep.dt_actual = delta_time;
 
-    graphics_system_->StartFrame(active_scene_->GetViewInfo());
+    graphics_system_->StartFrame(*active_scene_);
 
     graphics_system_->DrawOpaque(active_scene_->registry);
     graphics_system_->EndFrame();
