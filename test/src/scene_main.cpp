@@ -24,7 +24,7 @@
 
 SceneMain::SceneMain() : Scene("main") {}
 
-void SceneMain::OnEvent(const engine::Event& e) {}
+void SceneMain::OnEvent(const engine::Event& e) { ecs::fps_cam_sys::OnEvent(registry, e); }
 
 void SceneMain::OnImGuiRender() {
   ImGui::Begin("Scene");
@@ -109,9 +109,10 @@ void SceneMain::Load() {
     }
   }
 
+  bool start_fps_focus = true;
   auto player = registry.create();
-  registry.emplace<Player>(player).fps_focused = true;
-  engine_->window_system_->SetCursorVisible(true);
+  registry.emplace<Player>(player).fps_focused = start_fps_focus;
+  engine_->window_system_->SetCursorVisible(!start_fps_focus);
 
   component::FPSCamera fps_cam;
   fps_cam.position = {2, 1, 1};

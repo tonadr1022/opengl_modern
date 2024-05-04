@@ -18,7 +18,7 @@ namespace fps_cam_sys {
 extern void OnUpdate(engine::component::FPSCamera& camera, engine::Timestep timestep);
 extern void OnScroll(engine::component::FPSCamera& camera, float offset);
 extern void OnImGui(engine::component::FPSCamera& camera);
-extern void OnEvent(entt::registry& registry, engine::Event& e);
+extern void OnEvent(entt::registry& registry, const engine::Event& e);
 }  // namespace fps_cam_sys
 
 namespace movement_system {}

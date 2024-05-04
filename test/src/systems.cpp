@@ -79,7 +79,7 @@ void OnImGui(FPSCamera &camera) {
                      FPSCamera::MaxMouseSensitivity);
 }
 
-void OnEvent(entt::registry &registry, engine::Event &e) {
+void OnEvent(entt::registry &registry, const engine::Event &e) {
   auto player_entity = registry.view<Player>().front();
   auto &camera = registry.get<component::FPSCamera>(player_entity);
   auto &player = registry.get<Player>(player_entity);
