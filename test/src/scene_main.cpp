@@ -13,36 +13,18 @@
 #include <engine/resource/shader_manager.h>
 #include <imgui.h>
 
+#include <entt/core/hashed_string.hpp>
+#include <entt/entt.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "components.h"
+#include "engine/core/e_assert.h"
+#include "engine/ecs/component/transform.h"
 #include "systems.h"
 
 SceneMain::SceneMain() : Scene("main") {}
 
-void SceneMain::OnEvent(const engine::Event& e) {
-  auto player_entity = registry.view<Player>().front();
-  if (!registry.any_of<component::FPSCamera>(player_entity)) {
-    std::cout << "return\n";
-    return;
-  }
-  auto& camera = registry.get<component::FPSCamera>(player_entity);
-  switch (e.type) {
-    case EventType::KeyPressed:
-      if (e.key.code == KeyCode::M) {
-        fps_focused_ = !fps_focused_;
-        if (!fps_focused_) engine_->window_system_->CenterCursor();
-        engine_->window_system_->SetCursorVisible(!fps_focused_);
-      } else if (e.key.code == KeyCode::B) {
-        engine_->LoadScene("test2");
-      }
-      break;
-    case EventType::MouseScrolled:
-      if (fps_focused_) ecs::fps_cam_sys::OnScroll(camera, e.scroll.offset);
-      break;
-    default:
-      break;
-  }
-}
+void SceneMain::OnEvent(const engine::Event& e) {}
 
 void SceneMain::OnImGuiRender() {
   ImGui::Begin("Scene");
@@ -62,19 +44,20 @@ void SceneMain::OnImGuiRender() {
 }
 
 void SceneMain::OnUpdate(engine::Timestep timestep) {
-  auto player_entity = registry.view<Player>().front();
+  entt::entity player_entity = registry.view<Player>().front();
   if (!registry.any_of<component::FPSCamera>(player_entity)) return;
+  auto& player = registry.get<Player>(player_entity);
   auto& camera = registry.get<component::FPSCamera>(player_entity);
-  if (fps_focused_) ecs::fps_cam_sys::OnUpdate(camera, timestep);
-  view_matrix_ = glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
+  if (player.fps_focused) ecs::fps_cam_sys::OnUpdate(camera, timestep);
+  current_camera_matrices.view_matrix =
+      glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
   auto dims = engine_->window_system_->GetWindowDimensions();
   float aspect_ratio = static_cast<float>(dims.x) / static_cast<float>(dims.y);
-  projection_matrix_ =
+  current_camera_matrices.projection_matrix =
       glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane, camera.far_plane);
 }
 
 void SceneMain::Load() {
-  engine_->window_system_->SetCursorVisible(!fps_focused_);
   glm::vec3 iter{0, 0, 0};
   engine::MeshID mesh_id = engine::MeshManager::LoadShape(engine::ShapeType::Cube);
   engine::MaterialData mat;
@@ -82,40 +65,49 @@ void SceneMain::Load() {
   engine::MaterialID color_only_mat = engine::MaterialManager::AddMaterial(mat);
   component::Transform t;
   float r = 0;
-  for (iter.x = -40; iter.x <= 40; iter.x++) {
-    engine::MaterialData m;
-    m.diffuse = {r, 0., 1.0 - r};
-    r += 0.01;
-    engine::MaterialID itermat = engine::MaterialManager::AddMaterial(m);
-    for (iter.y = -40; iter.y <= 40; iter.y++) {
-      for (iter.z = -2; iter.z <= 2; iter.z++) {
-        auto tri = registry.create();
-        t.SetTranslation({iter.x * 2, iter.y * 2, iter.z * 2});
-        registry.emplace<component::Transform>(tri, t);
-        registry.emplace<component::ModelMatrix>(tri);
-        registry.emplace<component::Mesh>(tri, mesh_id);
-        registry.emplace<component::Material>(tri, itermat);
-      }
-    }
-  }
+
+  engine::MaterialData m;
+  m.diffuse = {1, 1, 0};
+  auto ship = registry.create();
+  auto captain = registry.create();
+  registry.emplace<component::Children>(ship).children = {captain};
+  registry.emplace<component::Parent>(captain).parent = ship;
+
+  registry.emplace<component::Transform>(ship, t);
+  registry.emplace<component::LocalTransform>(ship);
+  registry.emplace<component::ModelMatrix>(ship);
+  registry.emplace<component::Mesh>(ship, mesh_id);
+  registry.emplace<component::Material>(ship, m);
+
+  registry.emplace<component::Transform>(captain, t);
+  registry.emplace<component::LocalTransform>(captain, t);
+  registry.emplace<component::ModelMatrix>(captain);
+  registry.emplace<component::Mesh>(captain, mesh_id);
+  m.diffuse = {0, 1, 1};
+  registry.emplace<component::Material>(captain, m);
+
+  // for (iter.x = -40; iter.x <= 40; iter.x++) {
+  //   engine::MaterialData m;
+  //   m.diffuse = {r, 0., 1.0 - r};
+  //   r += 0.01;
+  //   engine::MaterialID itermat = engine::MaterialManager::AddMaterial(m);
+  //   for (iter.y = -40; iter.y <= 40; iter.y++) {
+  //     for (iter.z = -4; iter.z <= 4; iter.z++) {
+  //       auto tri = registry.create();
+  //       t.SetTranslation({iter.x * 2, iter.y * 2, iter.z * 2});
+  //       registry.emplace<component::Transform>(tri, t);
+  //       registry.emplace<component::ModelMatrix>(tri);
+  //       registry.emplace<component::Mesh>(tri, mesh_id);
+  //       registry.emplace<component::Material>(tri, itermat);
+  //     }
+  //   }
+  // }
+
   auto player = registry.create();
-  registry.emplace<Player>(player);
+  registry.emplace<Player>(player).fps_focused = true;
+  engine_->window_system_->SetCursorVisible(true);
+
   component::FPSCamera fps_cam;
   fps_cam.position = {2, 1, 1};
   registry.emplace<component::FPSCamera>(player, fps_cam);
-  // gfx::MaterialCreateInfo color_mat_create_info;
-  //
-  // std::vector<gfx::ShaderCreateInfo> color_shader_create_info{
-  //     {GET_SHADER_PATH("color.vs.glsl"), gfx::ShaderType::Vertex},
-  //     {GET_SHADER_PATH("color.fs.glsl"), gfx::ShaderType::Fragment},
-  // };
-  //
-  // // shader with uniform setter function
-  // gfx::ShaderManager::AddShader("color", color_shader_create_info);
-  // color_mat_create_info.shader_id = "color";
-  // auto color_mat = gfx::material_manager::AddMaterial(color_mat_create_info);
-  // registry_.emplace<component::Material>(tri, color_mat);
-  //
-  // // Color only, no shader
-  // registry_.remove<component::Material>(tri);
 }

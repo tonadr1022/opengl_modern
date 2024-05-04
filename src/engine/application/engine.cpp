@@ -23,7 +23,9 @@ Engine::Engine() {
   imgui_system_ = new ImGuiSystem;
   graphics_system_ = new GraphicsSystem;
 
-  window_system_->Init(this);
+  window_system_->Init();
+  window_system_->SetUserPointer(this);
+
   // TODO(tony): global variable system
   window_system_->SetVsync(true);
 
@@ -87,8 +89,8 @@ void Engine::Run() {
     active_scene_->OnUpdate(timestep);
     timestep.dt_actual = delta_time;
 
-    graphics_system_->StartFrame(*active_scene_);
-    graphics_system_->DrawOpaque(*active_scene_);
+    graphics_system_->StartFrame(active_scene_->current_camera_matrices);
+    graphics_system_->DrawOpaque(active_scene_->registry);
     graphics_system_->EndFrame();
 
     if (draw_imgui_) {
@@ -100,6 +102,14 @@ void Engine::Run() {
   }
 
   Shutdown();
+}
+Engine* Engine::instance_ = nullptr;
+
+Engine& Engine::Get() {
+  if (!instance_) {
+    instance_ = new Engine;
+  }
+  return *instance_;
 }
 
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {

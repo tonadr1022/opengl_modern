@@ -16,10 +16,15 @@ struct RendererStats {
   uint32_t meshes_in_memory;
 };
 
+struct CameraMatrices {
+  glm::mat4 view_matrix;
+  glm::mat4 projection_matrix;
+};
+
 class Renderer {
  public:
   static void Init();
-  static void StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
+  static void StartFrame(const CameraMatrices& camera_matrices);
   static void EndFrame();
   static void Restart();
   static void SetBatchedObjectCount(uint32_t count);

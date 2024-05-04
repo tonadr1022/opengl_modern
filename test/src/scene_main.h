@@ -8,8 +8,6 @@
 
 using namespace engine;
 
-struct Player {};
-
 class SceneMain : public Scene {
  public:
   SceneMain();
@@ -17,5 +15,4 @@ class SceneMain : public Scene {
   void OnImGuiRender() override;
   void OnUpdate(Timestep timestep) override;
   void OnEvent(const Event& e) override;
-  bool fps_focused_{true};
 };

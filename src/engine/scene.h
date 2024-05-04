@@ -5,6 +5,8 @@
 
 #include <entt/entity/registry.hpp>
 
+#include "engine/renderer/renderer.h"
+
 namespace engine {
 
 struct Timestep;
@@ -29,8 +31,7 @@ class Scene {
   // [[nodiscard]] Entity CreateEntity(std::string_view tag);
   // [[nodiscard]] Entity GetEntity(std::string_view tag);
   entt::registry registry;
-  glm::mat4 view_matrix_;
-  glm::mat4 projection_matrix_;
+  gfx::CameraMatrices current_camera_matrices;
 
  protected:
   Engine* engine_{nullptr};

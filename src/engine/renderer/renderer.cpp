@@ -10,7 +10,6 @@
 #include "engine/resource/material_manager.h"
 #include "engine/resource/paths.h"
 #include "engine/resource/shader_manager.h"
-#include "engine/renderer/gl/Shader.h"
 
 namespace engine::gfx {
 
@@ -45,6 +44,7 @@ struct CameraInfo {
 };
 
 CameraInfo cam_info;
+
 uint32_t batch_vao{};
 Buffer batch_vertex_buffer;
 Buffer batch_element_buffer;
@@ -115,11 +115,12 @@ void Renderer::Init() {
   InitVaos();
 }
 
-void Renderer::StartFrame(const glm::mat4& view_matrix, const glm::mat4& projection_matrix) {
+void Renderer::StartFrame(const CameraMatrices& camera_matrices) {
   memset(&stats, 0, sizeof(stats));
-  cam_info.view_matrix = view_matrix;
-  cam_info.projection_matrix = projection_matrix;
-  cam_info.vp_matrix = projection_matrix * view_matrix;
+  cam_info.view_matrix = camera_matrices.view_matrix;
+  cam_info.projection_matrix = camera_matrices.projection_matrix;
+  cam_info.vp_matrix = cam_info.projection_matrix * cam_info.view_matrix;
+
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
@@ -203,6 +204,7 @@ void DrawOpaqueHelper(MaterialID material_id, const std::vector<glm::mat4>& unif
   glDeleteBuffers(1, &draw_cmd_buffer.id);
 }
 
+std::vector<glm::mat4> uniforms;
 void Renderer::RenderOpaqueObjects() {
   // sort user commands by material and mesh, must match mesh_buffer_info
   std::sort(user_draw_cmds.begin(), user_draw_cmds.end(),
@@ -210,13 +212,11 @@ void Renderer::RenderOpaqueObjects() {
               if (lhs.material_id != rhs.material_id) return lhs.material_id < rhs.material_id;
               return lhs.mesh_id < rhs.mesh_id;
             });
-
   // accumulate per-material draw commands and uniforms
   // for each material, push all the uniforms of meshes using the material
   // into a vector, and increase the instance count of each mesh.
   // When the next material doesn't match, draw with the current uniforms
   // and material id.
-  std::vector<glm::mat4> uniforms;
   uniforms.reserve(user_draw_cmds.size());
   MaterialID curr_mat_id = user_draw_cmds[0].material_id;
   for (const auto& user_draw_cmd : user_draw_cmds) {
@@ -240,6 +240,7 @@ void Renderer::RenderOpaqueObjects() {
   // reset draw commands index
   user_draw_cmds_index = 0;
   stats.meshes_drawn += user_draw_cmds.size();
+  uniforms.clear();
 }
 
 void Renderer::EndFrame() {

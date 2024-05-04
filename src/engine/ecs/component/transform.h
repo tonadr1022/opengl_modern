@@ -1,5 +1,7 @@
 #pragma once
 
+#include <entt/entity/fwd.hpp>
+
 #include "engine/pch.h"
 
 namespace engine::component {
@@ -28,6 +30,18 @@ struct Transform {
 
 struct ModelMatrix {
   glm::mat4 matrix{};
+};
+
+struct LocalTransform {
+  Transform transform;
+};
+
+struct Parent {
+  entt::entity parent{};
+};
+
+struct Children {
+  std::vector<entt::entity> children;
 };
 
 }  // namespace engine::component

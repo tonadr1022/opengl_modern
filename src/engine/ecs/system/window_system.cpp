@@ -6,6 +6,10 @@
 
 namespace engine {
 
+WindowSystem* WindowSystem::instance_ = nullptr;
+
+WindowSystem& WindowSystem::Get() { return *instance_; }
+
 void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
   Event e{.type = EventType::FrameBufferResize};
@@ -45,7 +49,8 @@ glm::vec2 WindowSystem::GetWindowDimensions() const {
   return {w, h};
 }
 
-void WindowSystem::Init(Engine* engine) {
+void WindowSystem::Init() {
+  instance_ = this;
   glfwSetErrorCallback([](int error, const char* description) {
     spdlog::critical("GFLW error {}: {}\n", error, description);
   });
@@ -77,11 +82,6 @@ void WindowSystem::Init(Engine* engine) {
   }
 
   glfwMakeContextCurrent(glfw_window_);
-
-  // one window for now, if multiple windows ever, (probably not, then make this function public to
-  // set the active window class)
-  glfwSetWindowUserPointer(glfw_window_, static_cast<void*>(engine));
-
   glfwSetFramebufferSizeCallback(glfw_window_, framebuffer_size_callback);
   glfwSetWindowSizeCallback(glfw_window_, window_size_callback);
 
@@ -107,6 +107,8 @@ void WindowSystem::Init(Engine* engine) {
   }
   std::cout << opengl_extensions.size() << "\n";
 }
+
+void WindowSystem::SetUserPointer(void* ptr) { glfwSetWindowUserPointer(glfw_window_, ptr); }
 
 void WindowSystem::SwapBuffers() { glfwSwapBuffers(glfw_window_); }
 

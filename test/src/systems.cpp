@@ -1,11 +1,18 @@
 #include "systems.h"
 
+#include <engine/application/engine.h>
 #include <engine/application/input.h>
 #include <engine/application/key_codes.h>
 #include <engine/ecs/component/camera.h>
+#include <engine/ecs/system/window_system.h>
 #include <engine/pch.h>
 #include <engine/timestep.h>
 #include <imgui.h>
+
+#include <entt/entity/registry.hpp>
+
+#include "components.h"
+#include "engine/application/event.h"
 
 using namespace engine;
 using namespace engine::component;
@@ -70,6 +77,28 @@ void OnImGui(FPSCamera &camera) {
   }
   ImGui::SliderFloat("Mouse Sensitivity", &camera.mouse_sensitivity, FPSCamera::MinMouseSensitivity,
                      FPSCamera::MaxMouseSensitivity);
+}
+
+void OnEvent(entt::registry &registry, engine::Event &e) {
+  auto player_entity = registry.view<Player>().front();
+  auto &camera = registry.get<component::FPSCamera>(player_entity);
+  auto &player = registry.get<Player>(player_entity);
+  switch (e.type) {
+    case EventType::KeyPressed:
+      if (e.key.code == KeyCode::M) {
+        player.fps_focused = !player.fps_focused;
+        if (!player.fps_focused) engine::WindowSystem::Get().CenterCursor();
+        WindowSystem::Get().SetCursorVisible(!player.fps_focused);
+      } else if (e.key.code == KeyCode::B) {
+        Engine::Get().LoadScene("test2");
+      }
+      break;
+    case EventType::MouseScrolled:
+      if (player.fps_focused) ecs::fps_cam_sys::OnScroll(camera, e.scroll.offset);
+      break;
+    default:
+      break;
+  }
 }
 
 }  // namespace fps_cam_sys

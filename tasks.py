@@ -79,11 +79,11 @@ def main():
     parser.add_argument("-b", "--build", help="Build the program", action="store_true")
     parser.add_argument(
         "--mode",
-        help="CMake build type (default Debug)",
+        help="CMake build type (default RelWithDebInfo)",
         type=str,
         choices=BUILD_MODES,
         metavar="BUILD_MODE",
-        default="Debug",
+        default="RelWithDebInfo",
     )
 
     parser.add_argument("-c", help="Configure", action="store_true")

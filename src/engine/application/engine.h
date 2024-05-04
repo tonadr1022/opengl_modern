@@ -22,7 +22,10 @@ class Engine {
 
   WindowSystem* window_system_{nullptr};
 
+  static Engine& Get();
+
  private:
+  static Engine* instance_;
   friend class Input;
   friend void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
   friend void window_size_callback(GLFWwindow* glfw_window, int width, int height);
