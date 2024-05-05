@@ -8,6 +8,7 @@
 #include "engine/pch.h"
 #include "engine/renderer/gl/buffer.h"
 #include "engine/renderer/gl/debug.h"
+#include "engine/renderer/gl/vertex_array.h"
 #include "engine/renderer/material.h"
 #include "engine/resource/material_manager.h"
 #include "engine/resource/paths.h"
@@ -44,7 +45,7 @@ struct CameraInfo {
 
 CameraInfo cam_info;
 
-uint32_t batch_vao{};
+VertexArray batch_vao{};
 Buffer batch_vertex_buffer;
 Buffer batch_element_buffer;
 Buffer batch_ssbo_buffer;
@@ -66,28 +67,16 @@ void InitBuffers() {
       Buffer::Create(sizeof(Index) * IndexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
   batch_ssbo_buffer = Buffer::Create(sizeof(glm::mat4) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
   draw_indirect_buffer =
-      Buffer::Create(sizeof(DrawElementsIndirectCommand), GL_DYNAMIC_STORAGE_BIT);
+      Buffer::Create(sizeof(DrawElementsIndirectCommand) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
 }
 
 void InitVaos() {
-  ///////////////////// Batched VAO ///////////////////////////////////////////////
-  glCreateVertexArrays(1, &batch_vao);
-  // enable the attributes
-  glEnableVertexArrayAttrib(batch_vao, 0);
-  glEnableVertexArrayAttrib(batch_vao, 1);
-  glEnableVertexArrayAttrib(batch_vao, 2);
-  // specify format of vertex data.
-  glVertexArrayAttribFormat(batch_vao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
-  glVertexArrayAttribFormat(batch_vao, 1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
-  glVertexArrayAttribFormat(batch_vao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, tex_coords));
-  // specify where vbos need to be bound
-  glVertexArrayAttribBinding(batch_vao, 0, 0);
-  glVertexArrayAttribBinding(batch_vao, 1, 0);
-  glVertexArrayAttribBinding(batch_vao, 2, 0);
-
-  // attach buffers
-  glVertexArrayVertexBuffer(batch_vao, 0, batch_vertex_buffer.Id(), 0, sizeof(Vertex));
-  glVertexArrayElementBuffer(batch_vao, batch_element_buffer.Id());
+  batch_vao = VertexArray::Create();
+  batch_vao.EnableAttribute<float>(0, 3, offsetof(Vertex, position));
+  batch_vao.EnableAttribute<float>(1, 3, offsetof(Vertex, normal));
+  batch_vao.EnableAttribute<float>(2, 2, offsetof(Vertex, tex_coords));
+  batch_vao.AttachVertexBuffer(batch_vertex_buffer.Id(), 0, 0, sizeof(Vertex));
+  batch_vao.AttachElementBuffer(batch_element_buffer.Id());
 }
 
 void LoadShaders() {
@@ -128,7 +117,7 @@ void Renderer::Init() {
   InitVaos();
 }
 
-void Renderer::Shutdown() { glDeleteVertexArrays(1, &batch_vao); }
+void Renderer::Shutdown() {}
 
 void Renderer::StartFrame(const ViewInfo& camera_matrices) {
   memset(&stats, 0, sizeof(stats));
@@ -167,7 +156,7 @@ void Renderer::AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices,
 }
 
 void DrawOpaqueHelper(MaterialID material_id, std::vector<glm::mat4>& uniforms) {
-  glBindVertexArray(batch_vao);
+  batch_vao.Bind();
   // for each mesh that has an instance count with this material,
   // set base instance and increment it by the number of instances
   // of the mesh that have this material, then add the command
@@ -182,7 +171,8 @@ void DrawOpaqueHelper(MaterialID material_id, std::vector<glm::mat4>& uniforms) 
                   }
                 });
 
-  // bind buffers
+  batch_ssbo_buffer.Reset();
+  draw_indirect_buffer.Reset();
   draw_indirect_buffer.SubData(sizeof(DrawElementsIndirectCommand) * commands.size(),
                                commands.data());
   batch_ssbo_buffer.SubData(sizeof(glm::mat4) * uniforms.size(), uniforms.data());
@@ -251,6 +241,7 @@ void Renderer::RenderOpaqueObjects() {
   user_draw_cmds_index = 0;
   stats.meshes_drawn += user_draw_cmds.size();
   uniforms.clear();
+  exit(0);
 }
 
 void Renderer::EndFrame() {

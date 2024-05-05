@@ -22,6 +22,7 @@ set(SOURCES
     core/e_assert.cpp
     pch.cpp
     util/timer.cpp
+    renderer/gl/vertex_array.cpp
     )
 
 
