@@ -113,13 +113,12 @@ void Renderer::Init() {
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
   InitBuffers();
-
   InitVaos();
 }
 
 void Renderer::Shutdown() {}
 
-void Renderer::StartFrame(const ViewInfo& camera_matrices) {
+void Renderer::StartFrame(const RenderViewInfo& camera_matrices) {
   memset(&stats, 0, sizeof(stats));
   cam_info.view_matrix = camera_matrices.view_matrix;
   cam_info.projection_matrix = camera_matrices.projection_matrix;
@@ -156,7 +155,6 @@ void Renderer::AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices,
 }
 
 void DrawOpaqueHelper(MaterialID material_id, std::vector<glm::mat4>& uniforms) {
-  batch_vao.Bind();
   // for each mesh that has an instance count with this material,
   // set base instance and increment it by the number of instances
   // of the mesh that have this material, then add the command
@@ -201,6 +199,7 @@ void Renderer::RenderOpaqueObjects() {
   auto shader = ShaderManager::GetShader("batch");
   EASSERT(shader.has_value());
   shader->Bind();
+  batch_vao.Bind();
 
   // sort user commands by material and mesh, must match mesh_buffer_info
   std::sort(user_draw_cmds.begin(), user_draw_cmds.end(),
@@ -241,7 +240,6 @@ void Renderer::RenderOpaqueObjects() {
   user_draw_cmds_index = 0;
   stats.meshes_drawn += user_draw_cmds.size();
   uniforms.clear();
-  exit(0);
 }
 
 void Renderer::EndFrame() {

@@ -2,7 +2,6 @@
 
 #include <entt/entity/registry.hpp>
 
-#include "engine/ecs/system/system.h"
 #include "engine/pch.h"
 
 namespace engine {
@@ -13,7 +12,7 @@ class Event;
 struct System;
 
 namespace gfx {
-struct ViewInfo;
+struct RenderViewInfo;
 }
 
 class Scene {
@@ -23,9 +22,10 @@ class Scene {
   Scene();
   virtual ~Scene();
   virtual void OnUpdate(Timestep timestep);
+  virtual void OnFixedUpdate(Timestep timestep);
   virtual void OnImGuiRender();
   virtual void OnEvent(const Event& e);
-  gfx::ViewInfo GetViewInfo();
+  gfx::RenderViewInfo GetViewInfo();
   entt::entity MakeDynamicEntity();
   entt::entity MakeStaticEntity();
 
@@ -33,9 +33,5 @@ class Scene {
   // [[nodiscard]] Entity CreateEntity(std::string_view tag);
   // [[nodiscard]] Entity GetEntity(std::string_view tag);
   entt::registry registry;
-  std::vector<System> systems;
-
- protected:
-  // Engine* engine_{nullptr};
 };
 }  // namespace engine

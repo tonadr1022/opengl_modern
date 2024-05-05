@@ -1,5 +1,7 @@
 #include "buffer.h"
 
+#include "engine/pch.h"
+
 namespace engine::gfx {
 
 Buffer Buffer::Create(uint32_t size_bytes, GLbitfield flags) {
@@ -9,20 +11,19 @@ Buffer Buffer::Create(uint32_t size_bytes, GLbitfield flags) {
   return buffer;
 }
 
-Buffer::Buffer(Buffer&& other) noexcept : id_(other.id_), offset_(other.offset_) {
-  other.id_ = 0;
-  other.offset_ = 0;
-}
+Buffer::Buffer(Buffer&& other) noexcept { *this = std::move(other); }
 
 Buffer& Buffer::operator=(Buffer&& other) noexcept {
-  std::exchange(this->id_, other.id_);
-  std::exchange(this->offset_, other.offset_);
-  other.id_ = 0;
-  other.offset_ = 0;
+  if (&other == this) return *this;
+  this->~Buffer();
+  id_ = std::exchange(other.id_, 0);
+  offset_ = std::exchange(other.offset_, 0);
   return *this;
 }
 
-Buffer::~Buffer() { glDeleteBuffers(1, &id_); }
+Buffer::~Buffer() {
+  if (id_) glDeleteBuffers(1, &id_);
+}
 void Buffer::Bind(GLuint target) const { glBindBuffer(target, id_); }
 
 /** @brief ssbos only */

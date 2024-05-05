@@ -20,7 +20,6 @@ struct VertexArray {
   template <typename T>
   void EnableAttribute(size_t index, size_t size, uint32_t relative_offset) const {
     glEnableVertexArrayAttrib(id_, index);
-
     GLenum type;
     if constexpr (std::is_floating_point_v<T>) {
       type = GL_FLOAT;

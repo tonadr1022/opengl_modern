@@ -6,16 +6,19 @@ VertexArray VertexArray::Create() {
   return vao;
 }
 
-VertexArray::VertexArray(VertexArray&& other) noexcept : id_(other.id_) { other.id_ = 0; }
+VertexArray::VertexArray(VertexArray&& other) noexcept { *this = std::move(other); }
 
-void VertexArray::Bind() const {}
+void VertexArray::Bind() const { glBindVertexArray(id_); }
 VertexArray& VertexArray::operator=(VertexArray&& other) noexcept {
-  std::exchange(this->id_, other.id_);
-  other.id_ = 0;
+  if (&other == this) return *this;
+  this->~VertexArray();
+  id_ = std::exchange(other.id_, 0);
   return *this;
 }
 
-VertexArray::~VertexArray() { glDeleteVertexArrays(1, &id_); }
+VertexArray::~VertexArray() {
+  if (id_) glDeleteVertexArrays(1, &id_);
+}
 
 void VertexArray::AttachVertexBuffer(uint32_t buffer_id, uint32_t binding_index, uint32_t offset,
                                      size_t size) const {

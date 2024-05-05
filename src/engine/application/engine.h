@@ -25,6 +25,7 @@ class Engine {
 
  private:
   static Engine* instance_;
+
   friend class Input;
   friend void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
   friend void window_size_callback(GLFWwindow* glfw_window, int width, int height);
@@ -32,8 +33,6 @@ class Engine {
   void OnEvent(const Event& e);
   void Shutdown();
   bool draw_imgui_{true};
-  // static Engine* instance_;
-  // TODO(tony): serialize scenes instead of this?
   GraphicsSystem* graphics_system_{nullptr};
   ImGuiSystem* imgui_system_{nullptr};
 

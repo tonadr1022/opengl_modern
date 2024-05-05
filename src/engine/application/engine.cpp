@@ -146,20 +146,6 @@ Engine::~Engine() = default;
 
 void Engine::Stop() { running_ = false; }
 
-// void Engine::AddScene(std::unique_ptr<Scene> scene) {
-//   auto it = scenes_.find(scene->GetName());
-//   // scene->engine_ = this;
-//   EASSERT_MSG(it == scenes_.end(), "Scene Added Already");
-//   scenes_.emplace(scene->GetName(), std::move(scene));
-// }
-
 void Engine::LoadScene(std::unique_ptr<Scene> scene) { active_scene_ = std::move(scene); }
 
-// void Engine::LoadScene(const std::string& name) {
-//   auto it = scenes_.find(name);
-//   EASSERT_MSG(it != scenes_.end(), "Scene Not Found");
-//   std::cout << "Loading scene: " << name << "\n";
-//   active_scene_ = it->second.get();
-//   active_scene_->Load();
-// }
 }  // namespace engine

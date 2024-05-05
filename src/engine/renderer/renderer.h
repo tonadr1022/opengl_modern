@@ -16,7 +16,7 @@ struct RendererStats {
   uint32_t meshes_in_memory;
 };
 
-struct ViewInfo {
+struct RenderViewInfo {
   glm::mat4 view_matrix{};
   glm::mat4 projection_matrix{};
 };
@@ -25,7 +25,7 @@ class Renderer {
  public:
   static void Init();
   static void Shutdown();
-  static void StartFrame(const ViewInfo& camera_matrices);
+  static void StartFrame(const RenderViewInfo& camera_matrices);
   static void EndFrame();
   static void Restart();
   static void SetBatchedObjectCount(uint32_t count);

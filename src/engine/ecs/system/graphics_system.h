@@ -4,7 +4,7 @@
 namespace engine {
 
 namespace gfx {
-struct ViewInfo;
+struct RenderViewInfo;
 }
 class Scene;
 

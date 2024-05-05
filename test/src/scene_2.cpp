@@ -4,6 +4,8 @@
 
 #include "scene_main.h"
 
+using namespace engine;
+
 void Scene2::OnEvent(const Event& e) {
   switch (e.type) {
     case EventType::KeyPressed:

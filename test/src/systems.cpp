@@ -10,6 +10,7 @@
 #include <imgui.h>
 
 #include <entt/core/hashed_string.hpp>
+#include <entt/entity/fwd.hpp>
 #include <entt/entity/registry.hpp>
 
 #include "components.h"
@@ -22,8 +23,6 @@ using namespace engine::component;
 
 namespace ecs {
 
-namespace fps_cam_sys {
-
 namespace {
 void OnScroll(FPSCamera &camera, float offset) {
   camera.fov += static_cast<float>(offset);
@@ -32,7 +31,7 @@ void OnScroll(FPSCamera &camera, float offset) {
 
 void UpdateMatrices(entt::registry &registry, FPSCamera &camera) {
   auto matrices_view = registry.view<entt::tag<entt::hashed_string{"view_info"}>>();
-  auto &camera_matrices = registry.get<engine::gfx::ViewInfo>(matrices_view.front());
+  auto &camera_matrices = registry.get<engine::gfx::RenderViewInfo>(matrices_view.front());
 
   camera_matrices.view_matrix =
       glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
@@ -44,7 +43,7 @@ void UpdateMatrices(entt::registry &registry, FPSCamera &camera) {
 
 }  // namespace
 
-void Run(entt::registry &registry, engine::Timestep timestep) {
+void CameraSystem::OnUpdate(entt::registry &registry, engine::Timestep timestep) {
   entt::entity player_entity = registry.view<Player>().front();
   auto &player = registry.get<Player>(player_entity);
   if (!player.fps_focused) return;
@@ -88,7 +87,9 @@ void Run(entt::registry &registry, engine::Timestep timestep) {
   UpdateMatrices(registry, camera);
 }
 
-void FPSCamImGui(FPSCamera &camera) {
+void CameraSystem::OnImGui(entt::registry &registry) {
+  auto player_entity = registry.view<Player>().front();
+  auto &camera = registry.get<component::FPSCamera>(player_entity);
   auto &position = camera.position;
   auto &front = camera.front;
   ImGui::Text("Yaw: %.1f, Pitch: %.1f", camera.yaw, camera.pitch);
@@ -104,7 +105,7 @@ void FPSCamImGui(FPSCamera &camera) {
                      FPSCamera::MaxMouseSensitivity);
 }
 
-void OnEvent(entt::registry &registry, const engine::Event &e) {
+bool CameraSystem::OnEvent(entt::registry &registry, const engine::Event &e) {
   auto player_entity = registry.view<Player>().front();
   auto &camera = registry.get<component::FPSCamera>(player_entity);
   auto &player = registry.get<Player>(player_entity);
@@ -114,18 +115,18 @@ void OnEvent(entt::registry &registry, const engine::Event &e) {
         player.fps_focused = !player.fps_focused;
         if (!player.fps_focused) engine::WindowSystem::Get().CenterCursor();
         WindowSystem::Get().SetCursorVisible(!player.fps_focused);
+        return true;
       } else if (e.key.code == KeyCode::B) {
         Engine::Get().LoadScene(std::make_unique<Scene2>());
+        return true;
       }
-      break;
+      return false;
     case EventType::MouseScrolled:
-      if (player.fps_focused) ecs::fps_cam_sys::OnScroll(camera, e.scroll.offset);
-      break;
+      if (player.fps_focused) OnScroll(camera, e.scroll.offset);
+      return true;
     default:
-      break;
+      return false;
   }
 }
-
-}  // namespace fps_cam_sys
 
 }  // namespace ecs

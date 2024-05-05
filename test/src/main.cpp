@@ -5,7 +5,7 @@
 #include "scene_main.h"
 
 int main() {
-  Engine::Get().LoadScene(std::make_unique<SceneMain>());
-  Engine::Get().Run();
+  engine::Engine::Get().LoadScene(std::make_unique<SceneMain>());
+  engine::Engine::Get().Run();
   return 0;
 }

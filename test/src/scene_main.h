@@ -5,13 +5,15 @@
 #include <engine/scene.h>
 
 #include "engine/timestep.h"
+#include "systems.h"
 
-using namespace engine;
-
-class SceneMain : public Scene {
+class SceneMain : public engine::Scene {
  public:
   SceneMain();
   void OnImGuiRender() override;
-  void OnUpdate(Timestep timestep) override;
-  void OnEvent(const Event& e) override;
+  void OnEvent(const engine::Event& e) override;
+  void OnUpdate(engine::Timestep timestep) override;
+
+ private:
+  ecs::CameraSystem camera_system_;
 };

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "engine/pch.h"
+#include <cstdint>
 
 namespace engine::gfx {
-enum class BufferType : uint32_t { Vertex = GL_ARRAY_BUFFER, Index = GL_ELEMENT_ARRAY_BUFFER };
 
 class Buffer {
  public:
@@ -16,8 +15,8 @@ class Buffer {
   [[nodiscard]] inline uint32_t Id() const { return id_; }
   static Buffer Create(uint32_t size_bytes, GLbitfield flags);
   void SubData(size_t size_bytes, void* data);
-  void Bind(GLuint target) const;
-  void BindBase(GLuint target, GLuint slot) const;
+  void Bind(uint32_t target) const;
+  void BindBase(uint32_t target, uint32_t slot) const;
   void Reset() { offset_ = 0; };
 
   ~Buffer();
