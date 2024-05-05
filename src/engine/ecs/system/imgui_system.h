@@ -1,7 +1,5 @@
 #pragma once
 
-#include "engine/pch.h"
-
 namespace engine {
 
 struct Timestep;

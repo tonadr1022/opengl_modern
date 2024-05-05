@@ -1,17 +1,15 @@
 #pragma once
 
 #include <entt/core/hashed_string.hpp>
+#include <optional>
+#include <string>
+#include <unordered_map>
 
-#include "engine/pch.h"
 #include "engine/renderer/gl/shader.h"
 
 namespace engine {
 
-enum class ShaderType {
-  Vertex = GL_VERTEX_SHADER,
-  Geometry = GL_GEOMETRY_SHADER,
-  Fragment = GL_FRAGMENT_SHADER
-};
+enum class ShaderType { Vertex = 35633, Geometry = 36313, Fragment = 35632 };
 
 struct ShaderCreateInfo {
   std::string shaderPath;
@@ -29,7 +27,7 @@ class ShaderManager {
  private:
   struct ShaderProgramData {
     std::string name;
-    GLuint program_id;
+    uint32_t program_id;
     std::unordered_map<uint32_t, uint32_t> uniform_locations;
     std::vector<ShaderCreateInfo> create_info_vec;
   };

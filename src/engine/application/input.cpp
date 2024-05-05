@@ -1,11 +1,11 @@
 #include "input.h"
 
-#include <GLFW/glfw3.h>
 #include <imgui_impl_glfw.h>
 
 #include "engine/application/engine.h"
 #include "engine/application/event.h"
 #include "engine/application/mouse_codes.h"
+#include "engine/pch.h"
 
 namespace engine {
 

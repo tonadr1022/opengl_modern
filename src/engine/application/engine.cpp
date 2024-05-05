@@ -10,6 +10,7 @@
 #include "engine/ecs/system/graphics_system.h"
 #include "engine/ecs/system/imgui_system.h"
 #include "engine/ecs/system/window_system.h"
+#include "engine/pch.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/shader_manager.h"
 #include "input.h"

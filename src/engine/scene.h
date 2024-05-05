@@ -2,8 +2,6 @@
 
 #include <entt/entity/registry.hpp>
 
-#include "engine/pch.h"
-
 namespace engine {
 
 struct Timestep;

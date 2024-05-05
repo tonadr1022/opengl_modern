@@ -1,7 +1,6 @@
 #pragma once
 
 #include "engine/application/input.h"
-#include "key_codes.h"
 
 // Heavily based on SFML event struct:
 // https://github.com/SFML/SFML/blob/b447d41c6e07a4b3de55848737998b41659f6e78/include/SFML/Window/Event.hpp
@@ -15,8 +14,8 @@ enum class EventType {
   WindowFocused,
   WindowLostFocus,
   WindowMoved,
-  KeyPressed = GLFW_PRESS,
-  KeyReleased = GLFW_REPEAT,
+  KeyPressed = 1,
+  KeyReleased = 2,
   MouseButtonPressed,
   MouseButtonReleased,
   MouseMoved,

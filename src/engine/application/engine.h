@@ -1,7 +1,8 @@
 #pragma once
 
-#include "engine/pch.h"
+#include <memory>
 
+struct GLFWwindow;
 namespace engine {
 
 struct Timestep;

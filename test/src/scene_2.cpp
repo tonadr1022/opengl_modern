@@ -1,6 +1,7 @@
 #include "scene_2.h"
 
 #include <engine/application/event.h>
+#include <engine/pch.h>
 
 #include "scene_main.h"
 

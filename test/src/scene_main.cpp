@@ -3,7 +3,6 @@
 #include <engine/application/event.h>
 #include <engine/application/key_codes.h>
 #include <engine/ecs/component/camera.h>
-#include <engine/ecs/component/core_components.h>
 #include <engine/ecs/component/renderer_components.h>
 #include <engine/ecs/system/window_system.h>
 #include <engine/renderer/material.h>

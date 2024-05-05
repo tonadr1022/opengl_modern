@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
 #include <entt/core/hashed_string.hpp>
+#include <glm/fwd.hpp>
+#include <unordered_map>
 
-#include "../../pch.h"
 namespace engine::gfx {
 
 // lightweight, meant to be created and destroyed every frame, contains an int and a reference.

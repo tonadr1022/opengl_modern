@@ -1,8 +1,10 @@
 #pragma once
 
 #include <entt/entity/fwd.hpp>
-
-#include "engine/pch.h"
+#include <glm/fwd.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/vec3.hpp>
+#include <vector>
 
 namespace engine::component {
 

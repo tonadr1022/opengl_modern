@@ -1,6 +1,8 @@
 #pragma once
 
-#include "engine/pch.h"
+#include <unordered_map>
+#include <vector>
+
 #include "engine/resource/data_types.h"
 
 namespace engine {

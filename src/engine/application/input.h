@@ -1,17 +1,22 @@
 #pragma once
 
-#include "../pch.h"
+#include <glm/fwd.hpp>
+#include <glm/vec2.hpp>
+
 #include "engine/application/key_codes.h"
 #include "engine/application/mouse_codes.h"
+
+struct GLFWwindow;
 
 namespace engine {
 
 using MouseButton = int;
 
 enum class InputAction {
-  Press = GLFW_PRESS,
-  Release = GLFW_RELEASE,
-  Repeat = GLFW_REPEAT,
+  // from glfw
+  Press = 1,
+  Release = 0,
+  Repeat = 2,
 };
 
 class Input {
@@ -61,8 +66,9 @@ class Input {
   static void mouse_scroll_cb(GLFWwindow* window, double xoffset, double yoffset);
   static void mouse_button_cb(GLFWwindow* window, int button, int action, int mods);
 
-  static constexpr int ButtonCount = GLFW_KEY_LAST;
-  static constexpr int MouseButtonStates = GLFW_MOUSE_BUTTON_LAST;
+  // from gflw
+  static constexpr int ButtonCount = 348;
+  static constexpr int MouseButtonStates = 7;
   static inline KeyState key_states_[ButtonCount] = {static_cast<KeyState>(0)};
   static inline KeyState mouse_button_states_[MouseButtonStates] = {static_cast<KeyState>(0)};
 };

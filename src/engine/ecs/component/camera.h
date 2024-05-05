@@ -3,7 +3,7 @@
 struct Timestep;
 struct Event;
 
-#include "engine/pch.h"
+#include <glm/vec3.hpp>
 
 namespace engine::component {
 

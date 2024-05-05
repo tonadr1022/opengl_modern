@@ -1,5 +1,7 @@
 #include "shader.h"
 
+#include "engine/pch.h"
+
 namespace engine::gfx {
 void Shader::Bind() const {
   EASSERT_MSG(id_ != 0, "Shader is invalid");

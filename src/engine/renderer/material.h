@@ -1,9 +1,7 @@
 #pragma once
 
 #include <entt/core/hashed_string.hpp>
-
-#include "../pch.h"
-#include "gl/shader.h"
+#include <glm/vec3.hpp>
 
 namespace engine {
 

@@ -1,6 +1,8 @@
 #pragma once
 
-#include "engine/pch.h"
+#include <cstdint>
+#include <optional>
+#include <string>
 
 namespace engine {
 

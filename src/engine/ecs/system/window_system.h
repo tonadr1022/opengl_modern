@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/pch.h"
+#include <cstdint>
 
 struct GLFWwindow;
 namespace engine {
