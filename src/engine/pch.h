@@ -17,6 +17,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
+#include <cstring>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
@@ -30,6 +31,8 @@
 #include <stack>
 #include <string>
 #include <string_view>
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyOpenGL.hpp>
 #include <unordered_map>
 #include <utility>
 #include <variant>

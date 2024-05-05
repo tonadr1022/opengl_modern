@@ -42,8 +42,6 @@ class Input {
   static bool IsMouseReleased(MouseButton key);
   static bool MouseMoved();
 
-  static void SetCursorVisible(bool state);
-  static bool GetCursorVisible();
   inline static glm::vec2 GetCursorOffset() { return cursor_pos_ - prev_cursor_pos_; };
 
  private:

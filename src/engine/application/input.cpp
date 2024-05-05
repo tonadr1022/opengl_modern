@@ -59,13 +59,6 @@ void Input::init_glfw_input_callbacks(GLFWwindow* window) {
   glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
 }
 
-// void Input::SetCursorVisible(bool state) {
-//   int mode = state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
-//   glfwSetInputMode(window_, GLFW_CURSOR, mode);
-// }
-
-// bool Input::GetCursorVisible() { return glfwGetInputMode(window_, GLFW_CURSOR) != 0; }
-
 void Input::keypress_cb(GLFWwindow* window, int key, int scancode, int action, int mods) {
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
   //  ImGuiIO& io = ImGui::GetIO();

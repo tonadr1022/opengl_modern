@@ -13,6 +13,7 @@
 #include "engine/resource/material_manager.h"
 #include "engine/resource/paths.h"
 #include "engine/resource/shader_manager.h"
+#include "engine/util/profiler.h"
 
 namespace engine::gfx {
 
@@ -59,15 +60,20 @@ std::map<MeshID, DrawElementsIndirectCommand> mesh_buffer_info;
 uint32_t framebuffer_width{1}, frame_buffer_height{1};
 
 std::vector<glm::mat4> uniforms;
+void* batch_map_ptr{nullptr};
 
 void InitBuffers() {
   batch_vertex_buffer =
       Buffer::Create(sizeof(Vertex) * VertexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
   batch_element_buffer =
       Buffer::Create(sizeof(Index) * IndexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
-  batch_ssbo_buffer = Buffer::Create(sizeof(glm::mat4) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
   draw_indirect_buffer =
       Buffer::Create(sizeof(DrawElementsIndirectCommand) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
+  batch_ssbo_buffer = Buffer::Create(sizeof(glm::mat4) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
+  // Buffer::Create(sizeof(glm::mat4) * MaxDrawCommands,
+  //                GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+  // auto* batch_map_ptr = batch_ssbo_buffer.MapRange(0, sizeof(glm::mat4) * MaxDrawCommands,
+  //                                GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 }
 
 void InitVaos() {
@@ -116,7 +122,7 @@ void Renderer::Init() {
   InitVaos();
 }
 
-void Renderer::Shutdown() {}
+void Renderer::Shutdown() { batch_ssbo_buffer.Unmap(); }
 
 void Renderer::StartFrame(const RenderViewInfo& camera_matrices) {
   memset(&stats, 0, sizeof(stats));
@@ -155,40 +161,76 @@ void Renderer::AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices,
 }
 
 void DrawOpaqueHelper(MaterialID material_id, std::vector<glm::mat4>& uniforms) {
+  PROFILE_FUNCTION();
   // for each mesh that has an instance count with this material,
   // set base instance and increment it by the number of instances
   // of the mesh that have this material, then add the command
   std::vector<DrawElementsIndirectCommand> commands;
-  GLuint base_instance = 0;
-  std::for_each(mesh_buffer_info.begin(), mesh_buffer_info.end(),
-                [&commands, &base_instance](auto& cmd) {
-                  if (cmd.second.instance_count != 0) {
-                    cmd.second.base_instance = base_instance;
-                    commands.push_back(cmd.second);
-                    base_instance += cmd.second.instance_count;
-                  }
-                });
+  {
+    PROFILE_SCOPE("iterate commands");
+    GLuint base_instance = 0;
+    std::for_each(mesh_buffer_info.begin(), mesh_buffer_info.end(),
+                  [&commands, &base_instance](auto& cmd) {
+                    if (cmd.second.instance_count != 0) {
+                      cmd.second.base_instance = base_instance;
+                      commands.push_back(cmd.second);
+                      base_instance += cmd.second.instance_count;
+                    }
+                  });
+  }
 
-  batch_ssbo_buffer.Reset();
-  draw_indirect_buffer.Reset();
-  draw_indirect_buffer.SubData(sizeof(DrawElementsIndirectCommand) * commands.size(),
-                               commands.data());
-  batch_ssbo_buffer.SubData(sizeof(glm::mat4) * uniforms.size(), uniforms.data());
-  draw_indirect_buffer.Bind(GL_DRAW_INDIRECT_BUFFER);
-  batch_ssbo_buffer.BindBase(GL_SHADER_STORAGE_BUFFER, 0);
+  {
+    {
+      PROFILE_SCOPE("Reset");
+      batch_ssbo_buffer.Reset();
+      draw_indirect_buffer.Reset();
+    }
+    {
+      PROFILE_SCOPE("Subdata draw indirect");
+      draw_indirect_buffer.SubData(sizeof(DrawElementsIndirectCommand) * commands.size(),
+                                   commands.data());
+    }
+    {
+      static int s = 0;
+      s += uniforms.size();
+      std::string name = "subdata batch ssbo" + std::to_string(uniforms.size()) + "  " +
+                         std::to_string(batch_ssbo_buffer.Offset()) + "  " + std::to_string(s);
+      PROFILE_SCOPE(name);
+      // std::memcpy(batch_map_ptr, uniforms.data(), sizeof(glm::mat4) * uniforms.size());
+      batch_ssbo_buffer.SubData(sizeof(glm::mat4) * uniforms.size(), uniforms.data());
+    }
+    {
+      PROFILE_SCOPE("Bind dib");
 
-  // bind material
-  auto& material = MaterialManager::GetMaterial(material_id);
-  auto shader = ShaderManager::GetShader("batch");
-  shader->SetVec3("material.diffuse", material.diffuse);
-  shader->SetMat4("vp_matrix", cam_info.vp_matrix);
+      draw_indirect_buffer.Bind(GL_DRAW_INDIRECT_BUFFER);
+    }
+    {
+      PROFILE_SCOPE("Bind ssbo");
+      batch_ssbo_buffer.BindBase(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+  }
 
-  // mode, type, offest ptr, command count, stride (0 since tightly packed)
-  glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, commands.size(), 0);
-  stats.multi_draw_calls++;
+  {
+    PROFILE_SCOPE("Bind");
+    // bind material
+    auto& material = MaterialManager::GetMaterial(material_id);
+    auto shader = ShaderManager::GetShader("batch");
+    shader->SetVec3("material.diffuse", material.diffuse);
+    shader->SetMat4("vp_matrix", cam_info.vp_matrix);
+  }
 
-  for (auto& info : mesh_buffer_info) {
-    info.second.instance_count = 0;
+  {
+    PROFILE_SCOPE("Draw");
+    // mode, type, offest ptr, command count, stride (0 since tightly packed)
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, commands.size(), 0);
+    stats.multi_draw_calls++;
+  }
+
+  {
+    PROFILE_SCOPE("reset");
+    for (auto& info : mesh_buffer_info) {
+      info.second.instance_count = 0;
+    }
   }
 
   // clear instance count for future draw calls with diff materials
@@ -196,6 +238,7 @@ void DrawOpaqueHelper(MaterialID material_id, std::vector<glm::mat4>& uniforms) 
 }
 
 void Renderer::RenderOpaqueObjects() {
+  PROFILE_FUNCTION();
   auto shader = ShaderManager::GetShader("batch");
   EASSERT(shader.has_value());
   shader->Bind();

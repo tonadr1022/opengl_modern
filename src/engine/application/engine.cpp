@@ -13,6 +13,7 @@
 #include "engine/pch.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/shader_manager.h"
+#include "engine/util/profiler.h"
 #include "input.h"
 
 // Engine* Engine::instance_ = nullptr;
@@ -20,6 +21,7 @@
 namespace engine {
 
 Engine::Engine() {
+  PROFILE_FUNCTION();
   window_system_ = new WindowSystem;
   imgui_system_ = new ImGuiSystem;
   graphics_system_ = new GraphicsSystem;
@@ -62,20 +64,21 @@ void Engine::OnEvent(const Event& e) {
 // }
 
 void Engine::Run() {
+  PROFILE_FUNCTION();
   EASSERT(active_scene_ != nullptr);
   running_ = true;
 
   Timestep timestep;
-  util::Timer timer;
-  timer.Start();
-  double last_time = timer.GetElapsedSeconds();
+  Timer timer;
+  double last_time = timer.ElapsedSeconds();
   // const double sim_time = 1.0 / 60.0;
   while (running_ && !window_system_->ShouldClose()) {
+    PROFILE_SCOPE("Main Loop");
     Input::Update();
 
     if (draw_imgui_) imgui_system_->StartFrame();
 
-    auto current_time = timer.GetElapsedSeconds();
+    auto current_time = timer.ElapsedSeconds();
     double delta_time = current_time - last_time;
     last_time = current_time;
     // for now, give scene simulated time. eventually, have two functions, update and fixed update,
@@ -87,11 +90,12 @@ void Engine::Run() {
     //   frame_time -= dt;
     //   active_scene_->OnUpdate(timestep);
     // }
-    active_scene_->OnUpdate(timestep);
+    {
+      PROFILE_SCOPE("Scene Update");
+      active_scene_->OnUpdate(timestep);
+    }
     timestep.dt_actual = delta_time;
-
     graphics_system_->StartFrame(*active_scene_);
-
     graphics_system_->DrawOpaque(active_scene_->registry);
     graphics_system_->EndFrame();
 
@@ -101,6 +105,7 @@ void Engine::Run() {
     }
 
     window_system_->SwapBuffers();
+    FrameMark;
   }
 
   Shutdown();

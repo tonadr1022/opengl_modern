@@ -11,6 +11,7 @@
 #include <engine/resource/paths.h>
 #include <engine/resource/shader_manager.h>
 #include <engine/timestep.h>
+#include <engine/util/profiler.h>
 #include <imgui.h>
 
 #include <entt/core/hashed_string.hpp>
@@ -24,6 +25,7 @@
 using namespace engine;
 
 SceneMain::SceneMain() {
+  PROFILE_FUNCTION();
   glm::vec3 iter{0, 0, 0};
   engine::MeshID mesh_id = engine::MeshManager::LoadShape(engine::ShapeType::Cube);
   engine::MaterialData mat;
@@ -45,7 +47,7 @@ SceneMain::SceneMain() {
 
   for (iter.x = -40; iter.x <= 40; iter.x++) {
     for (iter.y = -40; iter.y <= 40; iter.y++) {
-      for (iter.z = -4; iter.z <= 10; iter.z++) {
+      for (iter.z = 0; iter.z <= 0; iter.z++) {
         entt::entity tri{};
         if (static_cast<int>(iter.z + iter.x) % 2 == 0) {
           tri = MakeDynamicEntity();

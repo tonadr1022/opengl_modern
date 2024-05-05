@@ -18,6 +18,9 @@ class Buffer {
   void Bind(uint32_t target) const;
   void BindBase(uint32_t target, uint32_t slot) const;
   void Reset() { offset_ = 0; };
+  void* Map(uint32_t access);
+  void* MapRange(uint32_t offset, uint32_t length_bytes, GLbitfield access);
+  void Unmap();
 
   ~Buffer();
   [[nodiscard]] uint32_t Offset() const { return offset_; }
@@ -25,6 +28,7 @@ class Buffer {
  private:
   uint32_t offset_{0};
   uint32_t id_{0};
+  bool mapped_{false};
 };
 
 }  // namespace engine::gfx

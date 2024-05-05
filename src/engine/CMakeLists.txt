@@ -34,6 +34,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 target_link_libraries(
   ${PROJECT_NAME}
   PRIVATE assimp::assimp
+          Tracy::TracyClient
           imgui::imgui
           GLEW::GLEW
           spdlog::spdlog

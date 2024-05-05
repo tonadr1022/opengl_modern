@@ -6,19 +6,27 @@
 #include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
 #include "engine/scene.h"
+#include "engine/util/profiler.h"
 
 namespace engine {
 
 using namespace component;
 
-void GraphicsSystem::Init() { gfx::Renderer::Init(); }
+void GraphicsSystem::Init() {
+  PROFILE_FUNCTION();
+  gfx::Renderer::Init();
+}
 void GraphicsSystem::Shutdown() { gfx::Renderer::Shutdown(); }
 
-void GraphicsSystem::StartFrame(Scene& scene) { gfx::Renderer::StartFrame(scene.GetViewInfo()); }
+void GraphicsSystem::StartFrame(Scene& scene) {
+  PROFILE_FUNCTION();
+  gfx::Renderer::StartFrame(scene.GetViewInfo());
+}
 
 void GraphicsSystem::InitScene(Scene& scene) {}
 
 void update_model_matrices(entt::registry& registry) {
+  PROFILE_FUNCTION();
   auto model_group = registry.view<Transform, ModelMatrix>();
   std::for_each(std::execution::par_unseq, model_group.begin(), model_group.end(),
                 [&model_group](auto entity) {
@@ -31,6 +39,7 @@ void update_model_matrices(entt::registry& registry) {
 }
 
 void submit_cmds(entt::registry& registry) {
+  PROFILE_FUNCTION();
   // auto group = registry.group<Mesh>(entt::get<Mesh, ModelMatrix, Material>);
   auto group = registry.view<Mesh, ModelMatrix, Material, DynamicEntity>();
   gfx::Renderer::SetBatchedObjectCount(group.size_hint());
@@ -48,6 +57,7 @@ void submit_dynamic_cmds(entt::registry& registry) {
 }
 
 void GraphicsSystem::DrawOpaque(entt::registry& registry) {
+  PROFILE_FUNCTION();
   // auto par_group = registry.group<Transform>(entt::get<Parent>);
   // for (auto entity : par_group) {
   //   auto [world_transform, parent] = par_group.get<Transform, Parent>(entity);
@@ -61,5 +71,8 @@ void GraphicsSystem::DrawOpaque(entt::registry& registry) {
   gfx::Renderer::RenderOpaqueObjects();
 }
 
-void GraphicsSystem::EndFrame() { gfx::Renderer::EndFrame(); }
+void GraphicsSystem::EndFrame() {
+  PROFILE_FUNCTION();
+  gfx::Renderer::EndFrame();
+}
 }  // namespace engine
