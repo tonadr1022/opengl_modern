@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <glm/vec2.hpp>
+#include <string>
 
 namespace engine::gfx {
 

@@ -8,9 +8,11 @@
 #include <assimp/Importer.hpp>
 #include <entt/core/hashed_string.hpp>
 #include <entt/entt.hpp>
+#include <filesystem>
 
 #include "engine/renderer/renderer.h"
 #include "engine/resource/data_types.h"
+#include "engine/resource/material_manager.h"
 #include "engine/resource/shapes/shapes.h"
 
 namespace engine {
@@ -45,8 +47,6 @@ MeshID ProcessMesh(const aiScene& scene, const aiMesh& mesh, std::vector<gfx::Ve
   auto mesh_id = ++curr_id;
   if (mesh.mMaterialIndex >= 0) {
     aiMaterial* ai_mat = scene.mMaterials[mesh.mMaterialIndex];
-    spdlog::info("name: {}", ai_mat->GetName().data);
-    spdlog::info("scene name: {}", scene.mName.data);
     exit(0);
   }
   return mesh_id;
@@ -68,31 +68,80 @@ MeshID MeshManager::LoadCube() {
   return id;
 };
 
-void MeshManager::Init(gfx::Renderer* renderer) { renderer_ = renderer; }
+void MeshManager::Init(gfx::Renderer* renderer) {
+  renderer_ = renderer;
+  importer = std::make_unique<Assimp::Importer>();
+}
+
+MeshManager::MeshManager(MaterialManager& material_manager) : material_manager_(material_manager) {}
 
 std::optional<MeshID> MeshManager::LoadModel(const std::string& path) {
-  EASSERT_MSG(renderer_, "not initialized");
-  spdlog::info("path: {}   directory: {}", path, path.find_last_of('/'));
-
-  Assimp::Importer importer;
-
-  uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
-  const aiScene* scene = importer.ReadFile(path, flags);
-  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    spdlog::error("Assimp error: {}", importer.GetErrorString());
+  if (!std::filesystem::exists(path)) {
+    spdlog::error("Path does not exist: {}", path);
     return std::nullopt;
   }
+  int slash_idx = path.find_last_of("/\\");
+  std::string directory = path.substr(0, slash_idx + 1);
+
+  uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
+  const aiScene* scene = importer->ReadFile(path, flags);
+
+  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+    spdlog::error("Assimp error: {}", importer->GetErrorString());
+    return std::nullopt;
+  }
+
   std::stack<aiNode*> mesh_stack;
   mesh_stack.push(scene->mRootNode);
   aiNode* curr_node;
+  spdlog::info("there are {} materials", scene->mNumMaterials);
+  aiString filename;
   for (int i = 0; i < scene->mNumMaterials; i++) {
     auto* material = scene->mMaterials[i];
-    aiString texture_filename;
-    if (material->GetTextureCount(aiTextureType_DIFFUSE)) {
-    }
 
-    int num_diffuse = material->GetTextureCount(aiTextureType_DIFFUSE);
-    spdlog::info("material {}, {}", material->GetName().data, num_diffuse);
+    auto get_texture_path = [&](aiTextureType type) -> std::optional<std::string> {
+      if (material->GetTextureCount(type)) {
+        material->GetTexture(type, 0, &filename);
+        if (filename.length > 0) return directory + filename.data;
+      }
+      return std::nullopt;
+    };
+
+    MaterialCreateInfo m;
+    m.albedo_path = get_texture_path(aiTextureType_DIFFUSE);
+    if (!m.albedo_path.has_value()) m.albedo_path = get_texture_path(aiTextureType_BASE_COLOR);
+    m.roughness_path = get_texture_path(aiTextureType_DIFFUSE_ROUGHNESS);
+    m.metalness_path = get_texture_path(aiTextureType_METALNESS);
+    m.ao_path = get_texture_path(aiTextureType_AMBIENT_OCCLUSION);
+    m.normal_path = get_texture_path(aiTextureType_NORMALS);
+    material_manager_.AddMaterial(m);
+
+    // if (m.albedo_path.has_value())
+    //   spdlog::info("diffuse_name {}", m.albedo_path.value());
+    // else
+    //   spdlog::info("no diffuse");
+    //
+    // if (m.metalness_path.has_value())
+    //   spdlog::info("m.metalness {}", m.metalness_path.value());
+    // else
+    //   spdlog::info("no m.metalness");
+    //
+    // if (m.roughness_path.has_value()) {
+    //   spdlog::info("roughness_path{}", m.roughness_path.value());
+    // } else {
+    //   spdlog::info("no roughness");
+    // }
+    //
+    // if (m.ao_path.has_value()) {
+    //   spdlog::info("ao_path{}", m.ao_path.value());
+    // } else {
+    //   spdlog::info("no ao");
+    // }
+    // if (m.normal_path.has_value()) {
+    //   spdlog::info("normal_path{}", m.normal_path.value());
+    // } else {
+    //   spdlog::info("no normal");
+    // }
   }
 
   while (!mesh_stack.empty()) {
@@ -110,6 +159,7 @@ std::optional<MeshID> MeshManager::LoadModel(const std::string& path) {
       mesh_stack.push(curr_node->mChildren[i]);
     }
   }
+  spdlog::info("done loading");
   return std::nullopt;
 }
 

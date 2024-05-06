@@ -12,6 +12,7 @@ class Event;
 struct System;
 class MaterialManager;
 class MeshManager;
+class WindowSystem;
 
 namespace gfx {
 struct RenderViewInfo;
@@ -38,9 +39,11 @@ class Scene {
   entt::registry registry;
 
  protected:
-  /** @brief engine class will ensure this exists on scene load */
+  /** @brief engine will ensure this exists on scene load */
   MaterialManager* material_manager_{nullptr};
-  /** @brief engine class will ensure this exists on scene load */
+  /** @brief engine will ensure this exists on scene load */
   MeshManager* mesh_manager_{nullptr};
+  /** @brief engine will ensure this exists on scene load */
+  WindowSystem* window_system_{nullptr};
 };
 }  // namespace engine

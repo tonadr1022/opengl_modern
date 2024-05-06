@@ -27,8 +27,6 @@ class Engine {
   void Stop();
   void LoadScene(std::unique_ptr<Scene> scene);
 
-  WindowSystem* window_system_{nullptr};
-
   static Engine& Get();
 
  private:
@@ -43,6 +41,7 @@ class Engine {
   void OnEvent(const Event& e);
   void Shutdown();
   bool draw_imgui_{true};
+  WindowSystem* window_system_{nullptr};
   GraphicsSystem* graphics_system_{nullptr};
   ImGuiSystem* imgui_system_{nullptr};
   MaterialManager* material_manager_{nullptr};

@@ -8,6 +8,8 @@
 #include "engine/pch.h"
 #include "engine/renderer/gl/buffer.h"
 #include "engine/renderer/gl/debug.h"
+#include "engine/renderer/gl/texture_2d.h"
+#include "engine/renderer/material.h"
 #include "engine/resource/paths.h"
 #include "engine/resource/shader_manager.h"
 #include "engine/util/profiler.h"
@@ -271,4 +273,19 @@ void Renderer::EndFrame() {
 
 void Renderer::Restart() { InitBuffers(); }
 
+void Renderer::SetMaterials(const std::vector<std::pair<MaterialID, MaterialData>>& materials) {
+  std::vector<BindlessMaterial> bindless_mats;
+  bindless_mats.reserve(materials.size());
+  BindlessMaterial bindless_mat;
+  for (const auto& pair : materials) {
+    bindless_mat.albedo_map_handle = pair.second.albedo_texture->BindlessHandle();
+    bindless_mat.normal_map_handle = pair.second.normal_texture->BindlessHandle();
+    bindless_mat.metalness_map_handle = pair.second.metalness_texture->BindlessHandle();
+    bindless_mat.ao_map_handle = pair.second.ao_texture->BindlessHandle();
+    bindless_mat.roughness_map_handle = pair.second.roughness_texture->BindlessHandle();
+    bindless_mat.base_color = pair.second.base_color;
+    bindless_mats.emplace_back(bindless_mat);
+  }
+  materials_buffer_->SubData(sizeof(BindlessMaterial) * bindless_mats.size(), bindless_mats.data());
+}
 }  // namespace engine::gfx

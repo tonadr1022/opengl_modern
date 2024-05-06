@@ -34,7 +34,8 @@ void UpdateMatrices(entt::registry &registry, FPSCamera &camera) {
 
   camera_matrices.view_matrix =
       glm::lookAt(camera.position, camera.position + camera.front, {0., 1., 0.});
-  auto dims = WindowSystem::Get().GetWindowDimensions();
+  auto *window_manager = registry.ctx().get<WindowSystem *>();
+  auto dims = window_manager->GetWindowDimensions();
   float aspect_ratio = static_cast<float>(dims.x) / static_cast<float>(dims.y);
   camera_matrices.projection_matrix =
       glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.near_plane, camera.far_plane);
@@ -112,8 +113,9 @@ bool CameraSystem::OnEvent(entt::registry &registry, const engine::Event &e) {
     case EventType::KeyPressed:
       if (e.key.code == KeyCode::M) {
         player.fps_focused = !player.fps_focused;
-        if (!player.fps_focused) engine::WindowSystem::Get().CenterCursor();
-        WindowSystem::Get().SetCursorVisible(!player.fps_focused);
+        auto *window_manager = registry.ctx().get<WindowSystem *>();
+        if (!player.fps_focused) window_manager->CenterCursor();
+        window_manager->SetCursorVisible(!player.fps_focused);
         return true;
       } else if (e.key.code == KeyCode::B) {
         Engine::Get().LoadScene(std::make_unique<Scene2>());

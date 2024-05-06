@@ -27,11 +27,11 @@ using namespace engine;
 
 SceneMain::SceneMain() {
   PROFILE_FUNCTION();
-  auto id = mesh_manager_->LoadModel("resources/models/sponza/sponza.obj");
+  auto id = mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
   bool start_fps_focus = true;
   auto player = registry.create();
   registry.emplace<Player>(player).fps_focused = start_fps_focus;
-  WindowSystem::Get().SetCursorVisible(!start_fps_focus);
+  window_system_->SetCursorVisible(!start_fps_focus);
 
   component::FPSCamera fps_cam;
   fps_cam.position = {2, 1, 1};

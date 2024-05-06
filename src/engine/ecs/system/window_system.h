@@ -1,13 +1,13 @@
 #pragma once
 
 #include <cstdint>
+#include <glm/fwd.hpp>
 
 struct GLFWwindow;
 namespace engine {
 
 class Engine;
 struct WindowSystem {
-  static WindowSystem& Get();
   void Init();
   void SwapBuffers();
   void SetVsync(bool state);
@@ -22,7 +22,6 @@ struct WindowSystem {
   [[nodiscard]] bool GetCursorVisible() const;
 
  private:
-  static WindowSystem* instance_;
   bool is_vsync_;
   GLFWwindow* glfw_window_;
   uint32_t framebuffer_width_;

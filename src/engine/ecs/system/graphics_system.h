@@ -4,6 +4,7 @@
 
 namespace engine {
 
+class MaterialManager;
 namespace gfx {
 struct RenderViewInfo;
 class Renderer;
@@ -13,7 +14,8 @@ class Scene;
 
 struct GraphicsSystem {
  public:
-  void Init(gfx::Renderer* renderer_);
+  GraphicsSystem(gfx::Renderer& renderer, MaterialManager& material_manager);
+  void Init();
   void Shutdown();
   void StartFrame(Scene& scene);
   void InitScene(Scene& scene);
@@ -23,8 +25,9 @@ struct GraphicsSystem {
   void EndFrame();
 
  private:
-  gfx::Renderer* renderer_{nullptr};
+  gfx::Renderer& renderer_;
   void submit_cmds(entt::registry& registry);
   void submit_dynamic_cmds(entt::registry& registry);
+  MaterialManager& material_manager_;
 };
 }  // namespace engine

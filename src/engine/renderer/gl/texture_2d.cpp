@@ -1,10 +1,19 @@
 #include "texture_2d.h"
 
+#include <filesystem>
+
 #include "engine/core/stb_image_impl.h"
 #include "engine/pch.h"
 
 namespace engine::gfx {
 Texture2D::Texture2D(const Texture2DCreateParams& params) {
+  bool has_tex =
+      std::filesystem::exists(params.path) && std::filesystem::is_regular_file(params.path);
+  if (!has_tex) {
+    spdlog::error("no texture at path: {}", params.path);
+    return;
+  }
+
   // https://www.khronos.org/opengl/wiki/Bindless_Texture
   glCreateTextures(GL_TEXTURE_2D, 1, &id_);
 
@@ -15,8 +24,12 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
   }
 
   int comp;
-  void* pixels = stbi_loadf(params.path.data(), &dims_.x, &dims_.y, &comp, 4);
-  EASSERT_MSG(pixels != nullptr, "Unable to load texture at: " + params.path);
+  int x;
+  int y;
+  void* pixels = stbi_load(params.path.c_str(), &x, &y, &comp, 4);
+  dims_.x = x;
+  dims_.y = y;
+  EASSERT_MSG(pixels != nullptr, "Failed to load texture");
 
   // TODO(tony): separate into sampler and/or set in params
   glTextureParameteri(id_, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -38,6 +51,7 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
                       GL_UNSIGNED_BYTE,  // type
                       pixels             // data
   );
+  stbi_image_free(pixels);
 
   if (params.generate_mipmaps) glGenerateTextureMipmap(id_);
 

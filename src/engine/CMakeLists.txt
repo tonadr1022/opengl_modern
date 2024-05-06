@@ -23,6 +23,7 @@ set(SOURCES
     pch.cpp
     util/timer.cpp
     renderer/gl/vertex_array.cpp
+    renderer/gl/texture_2d.cpp
     )
 
 

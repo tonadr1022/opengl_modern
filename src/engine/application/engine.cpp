@@ -26,11 +26,11 @@ Engine::Engine() {
   PROFILE_FUNCTION();
   window_system_ = new WindowSystem;
   imgui_system_ = new ImGuiSystem;
-  graphics_system_ = new GraphicsSystem;
-  mesh_manager_ = new MeshManager;
-  shader_manager_ = new ShaderManager;
   material_manager_ = new MaterialManager;
+  shader_manager_ = new ShaderManager;
+  mesh_manager_ = new MeshManager{*material_manager_};
   renderer_ = new gfx::Renderer{*shader_manager_};
+  graphics_system_ = new GraphicsSystem{*renderer_, *material_manager_};
 
   window_system_->Init();
   window_system_->SetUserPointer(this);
@@ -38,9 +38,8 @@ Engine::Engine() {
   // TODO(tony): global variable system
   window_system_->SetVsync(true);
 
-  graphics_system_->Init(renderer_);
+  graphics_system_->Init();
   mesh_manager_->Init(renderer_);
-
   imgui_system_->Init(window_system_->GetContext());
 
   Input::init_glfw_input_callbacks(window_system_->GetContext());
@@ -163,8 +162,10 @@ void Engine::Stop() { running_ = false; }
 
 void Engine::LoadScene(std::unique_ptr<Scene> scene) {
   active_scene_ = std::move(scene);
+  graphics_system_->InitScene(*scene);
   active_scene_->material_manager_ = material_manager_;
   active_scene_->mesh_manager_ = mesh_manager_;
+  active_scene_->window_system_ = window_system_;
 }
 
 }  // namespace engine

@@ -5,7 +5,9 @@
 #include "../../renderer/renderer.h"
 #include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
+#include "engine/renderer/material.h"
 #include "engine/renderer/renderer_types.h"
+#include "engine/resource/material_manager.h"
 #include "engine/scene.h"
 #include "engine/util/profiler.h"
 
@@ -14,19 +16,23 @@ namespace engine {
 using namespace component;
 using namespace gfx;
 
-void GraphicsSystem::Init(Renderer* renderer) {
-  renderer_ = renderer;
+void GraphicsSystem::Init() {
   PROFILE_FUNCTION();
-  renderer_->Init();
+  renderer_.Init();
 }
-void GraphicsSystem::Shutdown() { renderer_->Shutdown(); }
+void GraphicsSystem::Shutdown() { renderer_.Shutdown(); }
 
 void GraphicsSystem::StartFrame(Scene& scene) {
   PROFILE_FUNCTION();
-  renderer_->StartFrame(scene.GetViewInfo());
+  renderer_.StartFrame(scene.GetViewInfo());
 }
 
-void GraphicsSystem::InitScene(Scene& scene) {}
+void GraphicsSystem::InitScene(Scene& scene) {
+  renderer_.SetMaterials(material_manager_.GetAllMaterials());
+}
+
+GraphicsSystem::GraphicsSystem(gfx::Renderer& renderer, MaterialManager& material_manager)
+    : renderer_(renderer), material_manager_(material_manager) {}
 
 void update_model_matrices(entt::registry& registry) {
   PROFILE_FUNCTION();
@@ -44,10 +50,10 @@ void update_model_matrices(entt::registry& registry) {
 void GraphicsSystem::submit_cmds(entt::registry& registry) {
   PROFILE_FUNCTION();
   // auto group = registry.group<Mesh>(entt::get<Mesh, ModelMatrix, Material>);
-  auto group = registry.view<Mesh, ModelMatrix, Material, DynamicEntity>();
-  renderer_->SetBatchedObjectCount(group.size_hint());
-  group.each([this](const auto& mesh, const auto& model, const auto& material) {
-    renderer_->SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
+  auto group = registry.view<Mesh, ModelMatrix>();
+  renderer_.SetBatchedObjectCount(group.size_hint());
+  group.each([this](const auto& mesh, const auto& model) {
+    renderer_.SubmitDrawCommand(model.matrix, mesh.handle, 0);
   });
 }
 
@@ -71,11 +77,11 @@ void GraphicsSystem::DrawOpaque(entt::registry& registry) {
   submit_cmds(registry);
   submit_dynamic_cmds(registry);
 
-  renderer_->RenderOpaqueObjects();
+  renderer_.RenderOpaqueObjects();
 }
 
 void GraphicsSystem::EndFrame() {
   PROFILE_FUNCTION();
-  renderer_->EndFrame();
+  renderer_.EndFrame();
 }
 }  // namespace engine

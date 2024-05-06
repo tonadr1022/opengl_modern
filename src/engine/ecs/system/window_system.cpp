@@ -6,15 +6,9 @@
 
 namespace engine {
 
-WindowSystem* WindowSystem::instance_ = nullptr;
-
-WindowSystem& WindowSystem::Get() { return *instance_; }
-
 void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
-  Event e{.type = EventType::FrameBufferResize};
-  engine->OnEvent(e);
-  gfx::Renderer::Get().SetFrameBufferSize(width, height);
+  engine->OnFrameBufferResize(width, height);
 }
 
 void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
@@ -35,7 +29,7 @@ void WindowSystem::CenterCursor() {
 }
 
 void WindowSystem::SetCursorVisible(bool state) {
-  glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+  // glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
 bool WindowSystem::GetCursorVisible() const {
@@ -50,7 +44,6 @@ glm::vec2 WindowSystem::GetWindowDimensions() const {
 }
 
 void WindowSystem::Init() {
-  instance_ = this;
   glfwSetErrorCallback([](int error, const char* description) {
     spdlog::critical("GFLW error {}: {}\n", error, description);
   });

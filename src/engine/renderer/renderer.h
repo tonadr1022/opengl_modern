@@ -15,7 +15,8 @@ struct GLFWwindow;
 
 namespace engine {
 class ShaderManager;
-}
+}  // namespace engine
+
 namespace engine::gfx {
 
 struct RendererStats {
@@ -43,6 +44,7 @@ struct DrawElementsIndirectCommand {
 };
 
 struct RenderViewInfo;
+struct MaterialData;
 
 class Renderer {
  public:
@@ -58,6 +60,7 @@ class Renderer {
   void SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id);
   void AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices, std::vector<Index>& indices);
   void RenderOpaqueObjects();
+  void SetMaterials(const std::vector<std::pair<MaterialID, MaterialData>>& materials);
   const RendererStats& GetStats();
 
  private:

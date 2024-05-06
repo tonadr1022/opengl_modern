@@ -9,6 +9,10 @@ namespace engine {
 Scene::Scene() {
   mesh_manager_ = Engine::Get().mesh_manager_;
   material_manager_ = Engine::Get().material_manager_;
+  window_system_ = Engine::Get().window_system_;
+  registry.ctx().emplace<MeshManager*>(Engine::Get().mesh_manager_);
+  registry.ctx().emplace<MaterialManager*>(Engine::Get().material_manager_);
+  registry.ctx().emplace<WindowSystem*>(Engine::Get().window_system_);
   auto camera_matrices_entity = registry.create();
   registry.emplace<entt::tag<entt::hashed_string{"view_info"}>>(camera_matrices_entity);
   registry.emplace<gfx::RenderViewInfo>(camera_matrices_entity);

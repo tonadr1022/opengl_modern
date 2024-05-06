@@ -11,4 +11,5 @@ vcpkg
 imgui.ini
 
 resources/models/sponza
+resources/models
 result.json
