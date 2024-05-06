@@ -12,6 +12,8 @@
 #include "engine/ecs/system/window_system.h"
 #include "engine/pch.h"
 #include "engine/renderer/renderer.h"
+#include "engine/resource/material_manager.h"
+#include "engine/resource/mesh_manager.h"
 #include "engine/resource/shader_manager.h"
 #include "engine/util/profiler.h"
 #include "input.h"
@@ -25,6 +27,10 @@ Engine::Engine() {
   window_system_ = new WindowSystem;
   imgui_system_ = new ImGuiSystem;
   graphics_system_ = new GraphicsSystem;
+  mesh_manager_ = new MeshManager;
+  shader_manager_ = new ShaderManager;
+  material_manager_ = new MaterialManager;
+  renderer_ = new gfx::Renderer{*shader_manager_};
 
   window_system_->Init();
   window_system_->SetUserPointer(this);
@@ -32,7 +38,8 @@ Engine::Engine() {
   // TODO(tony): global variable system
   window_system_->SetVsync(true);
 
-  graphics_system_->Init();
+  graphics_system_->Init(renderer_);
+  mesh_manager_->Init(renderer_);
 
   imgui_system_->Init(window_system_->GetContext());
 
@@ -54,14 +61,6 @@ void Engine::OnEvent(const Event& e) {
   }
   active_scene_->OnEvent(e);
 }
-
-// Engine& Engine::Get() {
-//   if (instance_ == nullptr) {
-//     instance_ = new Engine;
-//   }
-//   EASSERT(instance_);
-//   return *instance_;
-// }
 
 void Engine::Run() {
   PROFILE_FUNCTION();
@@ -110,6 +109,7 @@ void Engine::Run() {
 
   Shutdown();
 }
+
 Engine* Engine::instance_ = nullptr;
 
 Engine& Engine::Get() {
@@ -119,8 +119,12 @@ Engine& Engine::Get() {
   return *instance_;
 }
 
+void Engine::OnFrameBufferResize(uint32_t width, uint32_t height) {
+  renderer_->SetFrameBufferSize(width, height);
+}
+
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {
-  imgui_system_->RenderRendererStats(gfx::Renderer::GetStats());
+  imgui_system_->RenderRendererStats(renderer_->GetStats());
   active_scene_->OnImGuiRender();
 
   ImGui::Begin("Settings");
@@ -130,7 +134,7 @@ void Engine::ImGuiSystemPerFrame(Timestep timestep) {
   }
 
   if (ImGui::Button("Recompile Shaders")) {
-    ShaderManager::RecompileShaders();
+    shader_manager_->RecompileShaders();
   }
 
   imgui_system_->FramerateSubMenu(timestep);
@@ -141,10 +145,15 @@ void Engine::ImGuiSystemPerFrame(Timestep timestep) {
 void Engine::Shutdown() {
   imgui_system_->Shutdown();
   graphics_system_->Shutdown();
+  renderer_->Shutdown();
   window_system_->Shutdown();
 
+  // for now, may switch unique pointers, but this works
+  delete material_manager_;
+  delete mesh_manager_;
   delete imgui_system_;
   delete graphics_system_;
+  delete renderer_;
   delete window_system_;
 }
 
@@ -152,6 +161,10 @@ Engine::~Engine() = default;
 
 void Engine::Stop() { running_ = false; }
 
-void Engine::LoadScene(std::unique_ptr<Scene> scene) { active_scene_ = std::move(scene); }
+void Engine::LoadScene(std::unique_ptr<Scene> scene) {
+  active_scene_ = std::move(scene);
+  active_scene_->material_manager_ = material_manager_;
+  active_scene_->mesh_manager_ = mesh_manager_;
+}
 
 }  // namespace engine

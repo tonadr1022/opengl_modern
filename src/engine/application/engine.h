@@ -11,6 +11,13 @@ struct GraphicsSystem;
 struct WindowSystem;
 struct ImGuiSystem;
 struct Event;
+class MaterialManager;
+class MeshManager;
+class ShaderManager;
+namespace gfx {
+
+class Renderer;
+}
 
 class Engine {
  public:
@@ -25,9 +32,11 @@ class Engine {
   static Engine& Get();
 
  private:
+  friend class Scene;
+  friend class Input;
   static Engine* instance_;
 
-  friend class Input;
+  void OnFrameBufferResize(uint32_t width, uint32_t height);
   friend void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height);
   friend void window_size_callback(GLFWwindow* glfw_window, int width, int height);
 
@@ -36,6 +45,10 @@ class Engine {
   bool draw_imgui_{true};
   GraphicsSystem* graphics_system_{nullptr};
   ImGuiSystem* imgui_system_{nullptr};
+  MaterialManager* material_manager_{nullptr};
+  ShaderManager* shader_manager_{nullptr};
+  MeshManager* mesh_manager_{nullptr};
+  gfx::Renderer* renderer_{nullptr};
 
   std::unique_ptr<Scene> active_scene_{nullptr};
   bool running_{false};

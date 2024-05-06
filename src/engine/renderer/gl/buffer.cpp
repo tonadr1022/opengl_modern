@@ -5,25 +5,23 @@
 
 namespace engine::gfx {
 
-Buffer Buffer::Create(uint32_t size_bytes, GLbitfield flags) {
-  Buffer buffer{};
-  glCreateBuffers(1, &buffer.id_);
-  glNamedBufferStorage(buffer.id_, size_bytes, nullptr, flags);
-  return buffer;
+Buffer::Buffer(uint32_t size_bytes, GLbitfield flags) {
+  glCreateBuffers(1, &id_);
+  glNamedBufferStorage(id_, size_bytes, nullptr, flags);
 }
 
-Buffer::Buffer(Buffer&& other) noexcept { *this = std::move(other); }
-
-Buffer& Buffer::operator=(Buffer&& other) noexcept {
-  if (&other == this) return *this;
-  this->~Buffer();
-  id_ = std::exchange(other.id_, 0);
-  offset_ = std::exchange(other.offset_, 0);
-  return *this;
-}
+// Buffer::Buffer(Buffer&& other) noexcept { *this = std::move(other); }
+//
+// Buffer& Buffer::operator=(Buffer&& other) noexcept {
+//   if (&other == this) return *this;
+//   this->~Buffer();
+//   id_ = std::exchange(other.id_, 0);
+//   offset_ = std::exchange(other.offset_, 0);
+//   return *this;
+// }
 
 Buffer::~Buffer() {
-  EASSERT(!mapped_);
+  EASSERT_MSG(!mapped_, "buffer can't be mapped on deletion");
   if (id_) glDeleteBuffers(1, &id_);
 }
 void Buffer::Bind(GLuint target) const { glBindBuffer(target, id_); }

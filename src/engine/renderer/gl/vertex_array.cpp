@@ -2,23 +2,21 @@
 
 #include "engine/pch.h"
 
-VertexArray VertexArray::Create() {
-  VertexArray vao{};
-  glCreateVertexArrays(1, &vao.id_);
-  return vao;
-}
-
-VertexArray::VertexArray(VertexArray&& other) noexcept { *this = std::move(other); }
+// VertexArray::VertexArray(VertexArray&& other) noexcept { *this = std::move(other); }
 
 void VertexArray::Bind() const { glBindVertexArray(id_); }
-VertexArray& VertexArray::operator=(VertexArray&& other) noexcept {
-  if (&other == this) return *this;
-  this->~VertexArray();
-  id_ = std::exchange(other.id_, 0);
-  return *this;
-}
+
+VertexArray::VertexArray() { glCreateVertexArrays(1, &id_); }
+
+// VertexArray& VertexArray::operator=(VertexArray&& other) noexcept {
+//   if (&other == this) return *this;
+//   this->~VertexArray();
+//   id_ = std::exchange(other.id_, 0);
+//   return *this;
+// }
 
 VertexArray::~VertexArray() {
+  spdlog::info("delete vao");
   if (id_) glDeleteVertexArrays(1, &id_);
 }
 

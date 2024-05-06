@@ -2,12 +2,13 @@
 
 #include "engine/application/engine.h"
 #include "engine/ecs/component/transform.h"
-#include "engine/renderer/renderer.h"
 #include "engine/timestep.h"
 
 namespace engine {
 
 Scene::Scene() {
+  mesh_manager_ = Engine::Get().mesh_manager_;
+  material_manager_ = Engine::Get().material_manager_;
   auto camera_matrices_entity = registry.create();
   registry.emplace<entt::tag<entt::hashed_string{"view_info"}>>(camera_matrices_entity);
   registry.emplace<gfx::RenderViewInfo>(camera_matrices_entity);

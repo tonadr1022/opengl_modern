@@ -2,12 +2,16 @@
 
 #include <entt/entity/registry.hpp>
 
+#include "engine/renderer/renderer_types.h"
+
 namespace engine {
 
 struct Timestep;
 class Engine;
 class Event;
 struct System;
+class MaterialManager;
+class MeshManager;
 
 namespace gfx {
 struct RenderViewInfo;
@@ -30,6 +34,13 @@ class Scene {
   // [[nodiscard]] Entity CreateEntity();
   // [[nodiscard]] Entity CreateEntity(std::string_view tag);
   // [[nodiscard]] Entity GetEntity(std::string_view tag);
+
   entt::registry registry;
+
+ protected:
+  /** @brief engine class will ensure this exists on scene load */
+  MaterialManager* material_manager_{nullptr};
+  /** @brief engine class will ensure this exists on scene load */
+  MeshManager* mesh_manager_{nullptr};
 };
 }  // namespace engine

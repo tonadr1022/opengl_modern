@@ -3,24 +3,28 @@
 #include <unordered_map>
 #include <vector>
 
+#include "engine/renderer/material.h"
 #include "engine/resource/data_types.h"
 
 namespace engine {
 
 struct Vertex;
-struct MaterialData;
+
+struct MaterialCreateInfo {
+  glm::vec3 base_color{1, 1, 1};
+  std::string albedo_path;
+};
 
 class MaterialManager {
  public:
-  [[nodiscard]] static MaterialID AddMaterial(const MaterialData& material);
-  static MaterialData& GetMaterial(MaterialID id);
-  static void ClearMaterials();
+  [[nodiscard]] MaterialID AddMaterial(const MaterialCreateInfo& material);
+  Material& GetMaterial(MaterialID id);
+  void ClearMaterials();
 
  private:
-  static std::vector<MaterialData> materials_;
-  static std::vector<MaterialID, size_t> material_index_map_;
-  static std::unordered_map<MaterialID, MaterialData> material_map_;
-  static uint32_t mat_counter_;
+  std::vector<Material> materials_;
+  std::unordered_map<MaterialID, Material> material_map_;
+  uint32_t material_counter_{0};
 };
 
 }  // namespace engine

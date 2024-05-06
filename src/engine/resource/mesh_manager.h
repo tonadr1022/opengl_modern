@@ -10,11 +10,19 @@ using MaterialID = uint32_t;
 using MeshID = uint32_t;
 using Index = uint32_t;
 
+namespace gfx {
+class Renderer;
+}
 enum class ShapeType { Cube };
 
 class MeshManager {
  public:
-  [[nodiscard]] static std::optional<MeshID> LoadModel(const std::string& path);
-  [[nodiscard]] static MeshID LoadShape(ShapeType type);
+  void Init(gfx::Renderer* renderer);
+  MeshID LoadCube();
+  [[nodiscard]] std::optional<MeshID> LoadModel(const std::string& path);
+  [[nodiscard]] MeshID LoadShape(ShapeType type);
+
+ private:
+  gfx::Renderer* renderer_{nullptr};
 };
 }  // namespace engine

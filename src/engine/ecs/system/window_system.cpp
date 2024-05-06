@@ -14,7 +14,7 @@ void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
   Event e{.type = EventType::FrameBufferResize};
   engine->OnEvent(e);
-  gfx::Renderer::SetFrameBufferSize(width, height);
+  gfx::Renderer::Get().SetFrameBufferSize(width, height);
 }
 
 void window_size_callback(GLFWwindow* glfw_window, int width, int height) {

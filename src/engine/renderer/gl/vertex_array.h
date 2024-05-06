@@ -1,16 +1,15 @@
 #pragma once
 
 struct VertexArray {
-  VertexArray() = default;
+  VertexArray();
   ~VertexArray();
-  VertexArray(VertexArray& other) = delete;
-  VertexArray& operator=(VertexArray& other) = delete;
-  VertexArray(VertexArray&& other) noexcept;
-  VertexArray& operator=(VertexArray&& other) noexcept;
+  // VertexArray(VertexArray& other) = delete;
+  // VertexArray& operator=(VertexArray& other) = delete;
+  // VertexArray(VertexArray&& other) noexcept;
+  // VertexArray& operator=(VertexArray&& other) noexcept;
   void Bind() const;
 
   [[nodiscard]] inline uint32_t Id() const { return id_; }
-  static VertexArray Create();
   void AttachVertexBuffer(uint32_t buffer_id, uint32_t binding_index, uint32_t offset,
                           size_t size) const;
   void AttachElementBuffer(uint32_t buffer_id) const;

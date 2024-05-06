@@ -15,7 +15,6 @@
 
 #include "components.h"
 #include "engine/application/event.h"
-#include "engine/renderer/renderer.h"
 #include "scene_2.h"
 
 using namespace engine;

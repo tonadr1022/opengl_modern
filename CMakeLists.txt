@@ -25,6 +25,7 @@ add_compile_definitions(TEXTURE_PATH="${CMAKE_SOURCE_DIR}/resources/textures/")
 add_compile_definitions(MODEL_PATH="${CMAKE_SOURCE_DIR}/resources/models/")
 add_compile_definitions(SRC_PATH="${CMAKE_SOURCE_DIR}/")
 
+include_directories(dep)
 include_directories(src)
 add_subdirectory(src)
 

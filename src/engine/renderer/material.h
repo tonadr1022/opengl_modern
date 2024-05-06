@@ -5,10 +5,14 @@
 
 namespace engine {
 
-struct MaterialData {
-  entt::hashed_string shader_id;
-  glm::vec3 diffuse;
-  glm::vec3 roughness_metallic;
+struct Material {
+  glm::vec3 base_color;
+  uint32_t albedo_map;
+};
+
+struct BindlessMaterial {
+  glm::vec3 base_color;
+  uint64_t albedo_map_handle;
 };
 
 }  // namespace engine
