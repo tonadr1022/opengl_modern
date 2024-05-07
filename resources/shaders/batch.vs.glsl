@@ -10,12 +10,12 @@ layout(location = 0) out VS_OUT {
     vec3 posWorldSpace;
     vec3 normal;
     vec2 texCoord;
-    // flat uint materialIndex;
+    flat uint materialIndex;
 } vs_out;
 
 struct UniformData {
     mat4 model;
-    // uint materialIndex;
+    uint materialIndex;
 };
 
 layout(std430, binding = 0) readonly buffer data {

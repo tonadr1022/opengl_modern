@@ -19,12 +19,12 @@ struct Material {
     uvec2 normal_map_handle;
 };
 
-layout(binding = 1, std430) readonly buffer data {
+layout(binding = 1, std430) readonly buffer Materials {
     Material materials[];
 };
 
 void main() {
-    Material material = materials[0];
+    Material material = materials[vs_in.materialIndex];
     const bool hasAlbedo = (material.albedo_map_handle.x != 0 || material.albedo_map_handle.y != 0);
     if (hasAlbedo) {
         o_color = texture(sampler2D(material.albedo_map_handle), vs_in.texCoord).rgba;
