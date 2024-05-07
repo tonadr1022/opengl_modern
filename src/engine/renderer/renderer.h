@@ -66,7 +66,7 @@ class Renderer {
   [[nodiscard]] MaterialID AddMaterial(const MaterialData& material_data);
   [[nodiscard]] const RendererStats& GetStats();
 
-  static constexpr const uint32_t MaxMaterials = 512;
+  static constexpr const uint32_t MaxMaterials = 64;
 
  private:
   ShaderManager& shader_manager_;
@@ -78,6 +78,7 @@ class Renderer {
   std::unique_ptr<Buffer> batch_element_buffer_{nullptr};
   std::unique_ptr<Buffer> batch_ssbo_uniform_buffer_{nullptr};
   std::unique_ptr<Buffer> draw_indirect_buffer_{nullptr};
+  // uint32_t materials_buffer_;
   // std::unique_ptr<VertexArray> batch_vao_{nullptr};
   uint32_t batch_vao_{0};
   void InitBuffers();
@@ -91,10 +92,11 @@ class Renderer {
 
   std::vector<MeshID> draw_cmd_mesh_ids_;
 
-  struct BatchUniform {
-    glm::mat4 model_matrix;
-    uint64_t material_index;
+  struct alignas(16) BatchUniform {
+    glm::mat4 model_matrix{};
+    uint64_t material_index{};
   };
+
   std::vector<BatchUniform> draw_cmd_uniforms_;
 
   // std::map<MeshID, DrawElementsIndirectCommand> mesh_buffer_info_;

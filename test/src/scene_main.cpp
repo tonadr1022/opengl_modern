@@ -28,12 +28,18 @@ using namespace engine;
 SceneMain::SceneMain() {
   PROFILE_FUNCTION();
   auto gear_mesh_materials =
-      mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
-  component::Transform t;
+      // mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
+      // mesh_manager_->LoadModel(
+      //     "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf");
+      mesh_manager_->LoadModel(
+          "/home/tony/personal/opengl_renderer/resources/models/sponza/sponza.obj");
   for (auto m : gear_mesh_materials) {
     auto ent = registry.create();
+    component::Transform t;
+    t.SetScale({.1, .1, .1});
     registry.emplace<component::MeshMaterial>(ent, m);
     registry.emplace<component::Transform>(ent, t);
+    registry.emplace<component::ModelMatrix>(ent);
   }
 
   bool start_fps_focus = true;

@@ -30,7 +30,6 @@ void Buffer::BindBase(GLuint target, GLuint slot) const { glBindBufferBase(targe
 
 uint32_t Buffer::SubData(size_t size_bytes, void* data) {
   glNamedBufferSubData(id_, offset_, size_bytes, data);
-
   offset_ += size_bytes;
   return num_allocs_++;
 }

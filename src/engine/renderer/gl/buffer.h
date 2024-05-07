@@ -16,6 +16,7 @@ class Buffer {
   [[nodiscard]] inline uint32_t Id() const { return id_; }
   /** @brief returns the index of the allocation on the gpu */
   uint32_t SubData(size_t size_bytes, void* data);
+  uint32_t NumAllocs() const { return num_allocs_; }
   void Bind(uint32_t target) const;
   void BindBase(uint32_t target, uint32_t slot) const;
   void ResetOffset();

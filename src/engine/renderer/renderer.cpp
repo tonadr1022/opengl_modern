@@ -19,9 +19,9 @@ namespace engine::gfx {
 
 namespace {
 
-constexpr uint32_t VertexBufferArrayMaxLength{10'000'000};
-constexpr uint32_t IndexBufferArrayMaxLength{10'000'000};
-constexpr uint32_t MaxDrawCommands{10'000'000};
+constexpr uint32_t VertexBufferArrayMaxLength{10'000'00};
+constexpr uint32_t IndexBufferArrayMaxLength{10'000'00};
+constexpr uint32_t MaxDrawCommands{10'000};
 
 struct CameraInfo {
   glm::mat4 view_matrix;
@@ -67,8 +67,11 @@ void Renderer::InitBuffers() {
       sizeof(DrawElementsIndirectCommand) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
   batch_ssbo_uniform_buffer_ =
       std::make_unique<Buffer>(sizeof(BatchUniform) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
-  materials_buffer_ =
-      std::make_unique<Buffer>(sizeof(BindlessMaterial) * MaxMaterials, GL_DYNAMIC_STORAGE_BIT);
+  materials_buffer_ = std::make_unique<Buffer>(sizeof(BindlessMaterial) * MaxMaterials,
+                                               GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
+  // glCreateBuffers(1, &materials_buffer_);
+  // glNamedBufferStorage(materials_buffer_, sizeof(BindlessMaterial) * MaxMaterials, nullptr,
+  //                      GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
 
   // Buffer::Create(sizeof(glm::mat4) * MaxDrawCommands,
   //                GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
@@ -99,9 +102,9 @@ void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, Materia
 const RendererStats& Renderer::GetStats() { return stats_; }
 
 void Renderer::Init() {
+  glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
-  spdlog::info("loaded shaders");
   InitBuffers();
   InitVaos();
 }
@@ -137,6 +140,7 @@ MeshID Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index
 
   // FOR NOW, renderer controls mesh ids since it allocates meshes linearly
   MeshID id = mesh_buffer_info_.size();
+  mesh_buffer_info_.emplace_back(cmd);
 
   // NEED TO BE CALLED AFTER BASE_VERTEX AND FIRST_INDEX ASSIGNMENT SINCE THIS INCREMENTS THEM
   batch_vertex_buffer_->SubData(sizeof(Vertex) * vertices.size(), vertices.data());
@@ -146,83 +150,6 @@ MeshID Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index
   // TODO(tony): change to vector so renderer controls ids
   return id;
 }
-
-// void Renderer::DrawOpaqueHelper(MaterialID material_id, std::vector<glm::mat4>& uniforms) {
-//   PROFILE_FUNCTION();
-//   // for each mesh that has an instance count with this material,
-//   // set base instance and increment it by the number of instances
-//   // of the mesh that have this material, then add the command
-//   std::vector<DrawElementsIndirectCommand> commands;
-//   {
-//     PROFILE_SCOPE("iterate commands");
-//     GLuint base_instance = 0;
-//     std::for_each(mesh_buffer_info_.begin(), mesh_buffer_info_.end(),
-//                   [&commands, &base_instance](auto& cmd) {
-//                     if (cmd.second.instance_count != 0) {
-//                       cmd.second.base_instance = base_instance;
-//                       commands.push_back(cmd.second);
-//                       base_instance += cmd.second.instance_count;
-//                     }
-//                   });
-//   }
-//
-//   {
-//     {
-//       PROFILE_SCOPE("Reset");
-//       batch_ssbo_buffer_->ResetOffset();
-//       draw_indirect_buffer_->ResetOffset();
-//     }
-//     {
-//       PROFILE_SCOPE("Subdata draw indirect");
-//       draw_indirect_buffer_->SubData(sizeof(DrawElementsIndirectCommand) * commands.size(),
-//                                      commands.data());
-//     }
-//     {
-//       static int s = 0;
-//       s += uniforms.size();
-//       std::string name = "subdata batch ssbo" + std::to_string(uniforms.size()) + "  " +
-//                          std::to_string(batch_ssbo_buffer_->Offset()) + "  " + std::to_string(s);
-//       PROFILE_SCOPE(name);
-//       // std::memcpy(batch_map_ptr, uniforms.data(), sizeof(glm::mat4) * uniforms.size());
-//       batch_ssbo_buffer_->SubData(sizeof(glm::mat4) * uniforms.size(), uniforms.data());
-//     }
-//     {
-//       PROFILE_SCOPE("Bind dib");
-//
-//       draw_indirect_buffer_->Bind(GL_DRAW_INDIRECT_BUFFER);
-//     }
-//     {
-//       PROFILE_SCOPE("Bind ssbo");
-//       batch_ssbo_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 0);
-//     }
-//   }
-//
-//   {
-//     PROFILE_SCOPE("Bind");
-//     // bind material
-//     // auto& material = MaterialManager::GetMaterial(material_id);
-//     auto shader = shader_manager_.GetShader("batch");
-//     shader->SetVec3("material.diffuse", glm::vec3{1, 0, 0});
-//     shader->SetMat4("vp_matrix", vp_matrix_);
-//   }
-//
-//   {
-//     PROFILE_SCOPE("Draw");
-//     // mode, type, offest ptr, command count, stride (0 since tightly packed)
-//     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, commands.size(), 0);
-//     stats_.multi_draw_calls++;
-//   }
-//
-//   {
-//     PROFILE_SCOPE("reset");
-//     for (auto& info : mesh_buffer_info_) {
-//       info.second.instance_count = 0;
-//     }
-//   }
-//
-//   // clear instance count for future draw calls with diff materials
-//   // TODO (tony): create buffer class with RAII
-// }
 
 void Renderer::RenderOpaqueObjects() {
   PROFILE_FUNCTION();
@@ -245,11 +172,12 @@ void Renderer::RenderOpaqueObjects() {
     auto& draw_cmd_info = mesh_buffer_info_[i];
     cmd.base_instance = base_instance;
     cmd.base_vertex = draw_cmd_info.base_vertex;
-    cmd.instance_count = 0;
+    cmd.instance_count = 1;
     cmd.count = draw_cmd_info.count;
     cmd.first_index = draw_cmd_info.first_index;
     cmds.emplace_back(cmd);
   }
+
   draw_indirect_buffer_->ResetOffset();
   draw_indirect_buffer_->SubData(sizeof(DrawElementsIndirectCommand) * cmds.size(), cmds.data());
 
@@ -257,57 +185,13 @@ void Renderer::RenderOpaqueObjects() {
 
   draw_indirect_buffer_->Bind(GL_DRAW_INDIRECT_BUFFER);
   batch_ssbo_uniform_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 0);
+  // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, materials_buffer_);
   materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 1);
   shader->SetMat4("vp_matrix", vp_matrix_);
 
   // mode, type, offest ptr, command count, stride (0 since tightly packed)
   glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, cmds.size(), 0);
   stats_.multi_draw_calls++;
-
-  for (auto& info : mesh_buffer_info_) {
-    // info.second.instance_count = 0;
-  }
-
-  // // sort user commands by material and mesh, must match mesh_buffer_info
-  // std::sort(user_draw_cmds_.begin(), user_draw_cmds_.end(),
-  //           [](const UserDrawCommand& lhs, const UserDrawCommand& rhs) {
-  //             if (lhs.material_id != rhs.material_id) return lhs.material_id < rhs.material_id;
-  //             return lhs.mesh_id < rhs.mesh_id;
-  //           });
-  //
-  // // accumulate per-material draw commands and uniforms
-  // // for each material, push all the uniforms of meshes using the material
-  // // into a vector, and increase the instance count of each mesh.
-  // // When the next material doesn't match, draw with the current uniforms
-  // // and material id.
-  // uniforms_.reserve(user_draw_cmds_.size());
-  //
-  // MaterialID curr_mat_id = user_draw_cmds_[0].material_id;
-  // for (const auto& user_draw_cmd : user_draw_cmds_) {
-  //   if (user_draw_cmd.material_id != curr_mat_id) {
-  //     stats_.material_swaps++;
-  //     // draw with this material and uniforms of objects that use this material
-  //     DrawOpaqueHelper(curr_mat_id, uniforms_);
-  //     curr_mat_id = user_draw_cmd.material_id;
-  //     uniforms_.clear();
-  //   }
-  //
-  //   // push uniform and inc instance count of mesh of current command
-  //   mesh_buffer_info_[user_draw_cmd.mesh_id].instance_count++;
-  //   uniforms_.push_back(user_draw_cmd_model_matrices_[user_draw_cmd.model_matrix_index]);
-  //
-  //   // uniforms.push_back(user_draw_cmd.model_matrix);
-  // }
-  // // if all materials are the same or the last commands used same material,
-  // // draw them
-  // if (!uniforms_.empty()) {
-  //   DrawOpaqueHelper(curr_mat_id, uniforms_);
-  // }
-  //
-  // // reset draw commands index
-  // user_draw_cmds_index_ = 0;
-  // stats_.meshes_drawn += user_draw_cmds_.size();
-  // uniforms_.clear();
 }
 
 void Renderer::EndFrame() {
@@ -322,8 +206,10 @@ MaterialID Renderer::AddMaterial(const MaterialData& material) {
   EASSERT_MSG(materials_buffer_ != nullptr, "buffer not initialized");
   // assign handles so material samplers, properties can be accessed in shaders
   BindlessMaterial bindless_mat;
-  if (material.albedo_texture != nullptr)
+  if (material.albedo_texture != nullptr) {
     bindless_mat.albedo_map_handle = material.albedo_texture->BindlessHandle();
+    spdlog::info("albedo handle {} ", bindless_mat.albedo_map_handle);
+  }
   if (material.normal_texture != nullptr)
     bindless_mat.normal_map_handle = material.normal_texture->BindlessHandle();
   if (material.metalness_texture != nullptr)
@@ -332,9 +218,31 @@ MaterialID Renderer::AddMaterial(const MaterialData& material) {
     bindless_mat.ao_map_handle = material.ao_texture->BindlessHandle();
   if (material.roughness_texture != nullptr)
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
-  bindless_mat.base_color = material.base_color;
+  // bindless_mat.base_color = material.base_color;
   // id is the index into the material buffer.
   MaterialID id = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
+
+  // static int offset = 0;
+  // static int mat_id = 0;
+  // static int num_allocs = 0;
+  // glNamedBufferSubData(materials_buffer_, offset, sizeof(BindlessMaterial), &bindless_mat);
+  // MaterialID id = mat_id;
+  // mat_id++;
+  // offset += sizeof(BindlessMaterial);
+  // num_allocs++;
+  //
+  // auto* ptr = static_cast<BindlessMaterial*>(glMapNamedBuffer(materials_buffer_, GL_READ_ONLY));
+  // for (int i = 0; i < num_allocs; i++) {
+  //   std::cout << ptr->albedo_map_handle << "  ";
+  //   ptr++;
+  // }
+  // glUnmapNamedBuffer(materials_buffer_);
+  auto* ptr = static_cast<BindlessMaterial*>(materials_buffer_->Map(GL_READ_ONLY));
+  for (int i = 0; i < materials_buffer_->NumAllocs(); i++) {
+    spdlog::info("{}", ptr->albedo_map_handle);
+    ptr++;
+  }
+  materials_buffer_->Unmap();
   return id;
 }
 

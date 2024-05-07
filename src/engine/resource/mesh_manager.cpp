@@ -160,6 +160,7 @@ std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& p
       v.position = aiVec3ToGLM(mesh.mVertices[i]);
       v.normal = aiVec3ToGLM(mesh.mNormals[i]);
       v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
+      vertices.emplace_back(v);
     }
 
     // process indices

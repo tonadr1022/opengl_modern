@@ -23,7 +23,6 @@
 namespace engine {
 
 Engine::Engine() {
-  PROFILE_FUNCTION();
   window_system_ = new WindowSystem;
   imgui_system_ = new ImGuiSystem;
   shader_manager_ = new ShaderManager;
@@ -104,7 +103,6 @@ void Engine::Run() {
     }
 
     window_system_->SwapBuffers();
-    FrameMark;
   }
 
   Shutdown();

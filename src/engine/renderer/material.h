@@ -11,12 +11,11 @@ namespace gfx {
 class Texture2D;
 
 struct BindlessMaterial {
-  glm::vec3 base_color;
-  uint64_t albedo_map_handle;
-  uint64_t roughness_map_handle;
-  uint64_t metalness_map_handle;
-  uint64_t ao_map_handle;
-  uint64_t normal_map_handle;
+  uint64_t albedo_map_handle{};
+  uint64_t roughness_map_handle{};
+  uint64_t metalness_map_handle{};
+  uint64_t ao_map_handle{};
+  uint64_t normal_map_handle{};
 };
 
 struct MaterialData {

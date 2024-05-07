@@ -23,11 +23,12 @@ layout(std430, binding = 0) readonly buffer data {
 };
 
 void main(void) {
-    mat4 model = uniforms[gl_BaseInstance + gl_InstanceID].model;
+    UniformData uniformData = uniforms[gl_DrawID];
+    mat4 model = uniformData.model;
     vec4 posWorldSpace = vp_matrix * model * vec4(aPosition, 1.0);
     vs_out.posWorldSpace = vec3(posWorldSpace);
     vs_out.texCoord = aTexCoord;
     vs_out.normal = aNormal;
-    // vs_out.materialIndex = uniforms[gl_BaseInstance + gl_InstanceID].materialIndex;
+    vs_out.materialIndex = uniformData.materialIndex;
     gl_Position = posWorldSpace;
 }

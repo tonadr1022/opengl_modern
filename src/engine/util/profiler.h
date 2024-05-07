@@ -9,7 +9,7 @@
 
 #include "engine/resource/paths.h"
 
-#define PROFILING 1
+// #define PROFILING 0
 #ifdef PROFILING
 #define PROFILE_SCOPE(name) ProfileTimer timer##__line__(name)
 #define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)

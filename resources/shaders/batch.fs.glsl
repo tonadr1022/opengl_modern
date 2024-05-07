@@ -11,7 +11,8 @@ layout(location = 0) in VS_OUT {
 layout(location = 0) out vec4 o_color;
 
 struct Material {
-    vec3 base_color;
+    // vec3 base_color;
+    // float pad;
     uvec2 albedo_map_handle;
     uvec2 roughness_map_handle;
     uvec2 metalness_map_handle;
@@ -29,7 +30,7 @@ void main() {
     if (hasAlbedo) {
         o_color = texture(sampler2D(material.albedo_map_handle), vs_in.texCoord).rgba;
     } else {
-        o_color = vec4(material.base_color, 1.0);
+        // o_color = vec4(material.base_color, 1.0);
+        o_color = vec4(1.0, 0.0, 1.0, 1.0);
     }
-    // o_color = vec4(1.0);
 }

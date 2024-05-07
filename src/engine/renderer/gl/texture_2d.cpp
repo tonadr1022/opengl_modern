@@ -13,16 +13,9 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
     spdlog::error("no texture at path: {}", params.path);
     return;
   }
-
+  stbi_set_flip_vertically_on_load(true);
   // https://www.khronos.org/opengl/wiki/Bindless_Texture
   glCreateTextures(GL_TEXTURE_2D, 1, &id_);
-
-  GLuint mip_levels = 1;
-  if (params.generate_mipmaps) {
-    mip_levels =
-        static_cast<GLuint>(glm::ceil(glm::log2(static_cast<float>(glm::min(dims_.x, dims_.y)))));
-  }
-
   int comp;
   int x;
   int y;
@@ -31,6 +24,11 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
   dims_.y = y;
   EASSERT_MSG(pixels != nullptr, "Failed to load texture");
 
+  GLuint mip_levels = 1;
+  if (params.generate_mipmaps) {
+    mip_levels =
+        static_cast<GLuint>(glm::ceil(glm::log2(static_cast<float>(glm::min(dims_.x, dims_.y)))));
+  }
   // TODO(tony): separate into sampler and/or set in params
   glTextureParameteri(id_, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTextureParameteri(id_, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -54,7 +52,6 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
   stbi_image_free(pixels);
 
   if (params.generate_mipmaps) glGenerateTextureMipmap(id_);
-
   // https://www.khronos.org/opengl/wiki/Bindless_Texture
   bindless_handle_ = glGetTextureHandleARB(id_);
   glMakeTextureHandleResidentARB(bindless_handle_);
