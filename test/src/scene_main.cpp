@@ -27,19 +27,25 @@ using namespace engine;
 
 SceneMain::SceneMain() {
   PROFILE_FUNCTION();
-  auto gear_mesh_materials =
-      // mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
-      // mesh_manager_->LoadModel(
-      //     "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf");
-      mesh_manager_->LoadModel(
-          "/home/tony/personal/opengl_renderer/resources/models/sponza/sponza.obj");
-  for (auto m : gear_mesh_materials) {
-    auto ent = registry.create();
-    component::Transform t;
-    t.SetScale({.1, .1, .1});
-    registry.emplace<component::MeshMaterial>(ent, m);
-    registry.emplace<component::Transform>(ent, t);
-    registry.emplace<component::ModelMatrix>(ent);
+  std::string model_string =
+      "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
+  auto gear_mesh_materials = mesh_manager_->LoadModel(model_string);
+  // mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
+  // mesh_manager_->LoadModel(
+  //     "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf");
+  // mesh_manager_->LoadModel(
+  //     "/home/tony/personal/opengl_renderer/resources/models/sponza/sponza.obj");
+  glm::vec3 iter{0};
+  for (iter.x = -1; iter.x <= 1; iter.x++) {
+    for (auto m : gear_mesh_materials) {
+      component::Transform t;
+      auto ent = registry.create();
+
+      t.SetTranslation({iter.x * 2, iter.y, iter.z});
+      registry.emplace<component::MeshMaterial>(ent, m);
+      registry.emplace<component::Transform>(ent, t);
+      registry.emplace<component::ModelMatrix>(ent);
+    }
   }
 
   bool start_fps_focus = true;

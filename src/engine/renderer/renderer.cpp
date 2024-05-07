@@ -19,9 +19,9 @@ namespace engine::gfx {
 
 namespace {
 
-constexpr uint32_t VertexBufferArrayMaxLength{10'000'00};
-constexpr uint32_t IndexBufferArrayMaxLength{10'000'00};
-constexpr uint32_t MaxDrawCommands{10'000};
+constexpr uint32_t VertexBufferArrayMaxLength{10'000'000};
+constexpr uint32_t IndexBufferArrayMaxLength{10'000'000};
+constexpr uint32_t MaxDrawCommands{10'000'000};
 
 struct CameraInfo {
   glm::mat4 view_matrix;
@@ -121,7 +121,7 @@ void Renderer::StartFrame(const RenderViewInfo& camera_matrices) {
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
-  glClearColor(0.1, 0.1, 0.0, 1.0);
+  glClearColor(0, 0, 0.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
@@ -239,9 +239,10 @@ MaterialID Renderer::AddMaterial(const MaterialData& material) {
   // glUnmapNamedBuffer(materials_buffer_);
   auto* ptr = static_cast<BindlessMaterial*>(materials_buffer_->Map(GL_READ_ONLY));
   for (int i = 0; i < materials_buffer_->NumAllocs(); i++) {
-    spdlog::info("{}", ptr->albedo_map_handle);
+    spdlog::info("handle: {}", ptr->albedo_map_handle);
     ptr++;
   }
+  spdlog::warn("done");
   materials_buffer_->Unmap();
   return id;
 }

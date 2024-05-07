@@ -66,7 +66,7 @@ class Renderer {
   [[nodiscard]] MaterialID AddMaterial(const MaterialData& material_data);
   [[nodiscard]] const RendererStats& GetStats();
 
-  static constexpr const uint32_t MaxMaterials = 64;
+  static constexpr const uint32_t MaxMaterials = 100;
 
  private:
   ShaderManager& shader_manager_;

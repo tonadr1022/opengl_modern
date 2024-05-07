@@ -14,6 +14,7 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
     return;
   }
   stbi_set_flip_vertically_on_load(true);
+
   // https://www.khronos.org/opengl/wiki/Bindless_Texture
   glCreateTextures(GL_TEXTURE_2D, 1, &id_);
   int comp;

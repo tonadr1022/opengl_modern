@@ -29,6 +29,7 @@ void main() {
     const bool hasAlbedo = (material.albedo_map_handle.x != 0 || material.albedo_map_handle.y != 0);
     if (hasAlbedo) {
         o_color = texture(sampler2D(material.albedo_map_handle), vs_in.texCoord).rgba;
+        // o_color = vec4(1.0);
     } else {
         // o_color = vec4(material.base_color, 1.0);
         o_color = vec4(1.0, 0.0, 1.0, 1.0);
