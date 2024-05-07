@@ -26,8 +26,6 @@ struct GraphicsSystem {
 
  private:
   gfx::Renderer& renderer_;
-  void submit_cmds(entt::registry& registry);
-  void submit_dynamic_cmds(entt::registry& registry);
   MaterialManager& material_manager_;
 };
 }  // namespace engine

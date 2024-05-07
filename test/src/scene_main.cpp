@@ -27,7 +27,15 @@ using namespace engine;
 
 SceneMain::SceneMain() {
   PROFILE_FUNCTION();
-  auto id = mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
+  auto gear_mesh_materials =
+      mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
+  component::Transform t;
+  for (auto m : gear_mesh_materials) {
+    auto ent = registry.create();
+    registry.emplace<component::MeshMaterial>(ent, m);
+    registry.emplace<component::Transform>(ent, t);
+  }
+
   bool start_fps_focus = true;
   auto player = registry.create();
   registry.emplace<Player>(player).fps_focused = start_fps_focus;

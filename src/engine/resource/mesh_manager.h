@@ -9,6 +9,9 @@
 namespace engine {
 
 class MaterialManager;
+namespace component {
+struct MeshMaterial;
+}
 
 using MaterialID = uint32_t;
 using MeshID = uint32_t;
@@ -23,9 +26,9 @@ class MeshManager {
  public:
   explicit MeshManager(MaterialManager& material_manager);
   void Init(gfx::Renderer* renderer);
-  MeshID LoadCube();
-  [[nodiscard]] std::optional<MeshID> LoadModel(const std::string& path);
-  [[nodiscard]] MeshID LoadShape(ShapeType type);
+  [[nodiscard]] component::MeshMaterial LoadCube();
+  [[nodiscard]] std::vector<component::MeshMaterial> LoadModel(const std::string& path);
+  [[nodiscard]] component::MeshMaterial LoadShape(ShapeType type);
 
   std::unique_ptr<Assimp::Importer> importer;
 

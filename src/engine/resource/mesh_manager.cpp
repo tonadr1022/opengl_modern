@@ -10,6 +10,7 @@
 #include <entt/entt.hpp>
 #include <filesystem>
 
+#include "engine/ecs/component/renderer_components.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/data_types.h"
 #include "engine/resource/material_manager.h"
@@ -22,39 +23,38 @@ namespace {
 glm::vec3 aiVec3ToGLM(const aiVector3f& vec) { return {vec.x, vec.y, vec.z}; }
 glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
 
-MeshID ProcessMesh(const aiScene& scene, const aiMesh& mesh, std::vector<gfx::Vertex>& vertices,
-                   std::vector<gfx::Index>& indices) {
-  EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
-              "Mesh needs positions, normals, and texture coords");
-  vertices.reserve(mesh.mNumVertices);
-
-  gfx::Vertex v;
-  // process vertices
-  for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
-    v.position = aiVec3ToGLM(mesh.mVertices[i]);
-    v.normal = aiVec3ToGLM(mesh.mNormals[i]);
-    v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
-  }
-
-  // process indices
-  for (uint32_t i = 0; i < mesh.mNumFaces; i++) {
-    for (uint32_t j = 0; j < mesh.mFaces[i].mNumIndices; j++) {
-      indices.push_back(mesh.mFaces[i].mIndices[j]);
-    }
-  }
-
-  static int curr_id = 0;
-  auto mesh_id = ++curr_id;
-  if (mesh.mMaterialIndex >= 0) {
-    aiMaterial* ai_mat = scene.mMaterials[mesh.mMaterialIndex];
-    exit(0);
-  }
-  return mesh_id;
-}
+// void ProcessMesh(const aiScene& scene, const aiMesh& mesh, std::vector<gfx::Vertex>& vertices,
+//                  std::vector<gfx::Index>& indices) {
+//   EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
+//               "Mesh needs positions, normals, and texture coords");
+//
+//   vertices.reserve(mesh.mNumVertices);
+//
+//   gfx::Vertex v;
+//   // process vertices
+//   for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
+//     v.position = aiVec3ToGLM(mesh.mVertices[i]);
+//     v.normal = aiVec3ToGLM(mesh.mNormals[i]);
+//     v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
+//   }
+//
+//   // process indices
+//   for (uint32_t i = 0; i < mesh.mNumFaces; i++) {
+//     for (uint32_t j = 0; j < mesh.mFaces[i].mNumIndices; j++) {
+//       indices.push_back(mesh.mFaces[i].mIndices[j]);
+//     }
+//   }
+//
+//   static int curr_id = 0;
+//   auto mesh_id = ++curr_id;
+//   if (mesh.mMaterialIndex >= 0) {
+//     aiMaterial* ai_mat = scene.mMaterials[mesh.mMaterialIndex];
+//   }
+// }
 
 }  // namespace
 
-MeshID MeshManager::LoadCube() {
+component::MeshMaterial MeshManager::LoadCube() {
   std::vector<gfx::Vertex> vertices;
   for (const auto& vertex : gfx::shape::CubeVertices) {
     vertices.emplace_back(vertex);
@@ -63,9 +63,8 @@ MeshID MeshManager::LoadCube() {
   for (const auto& index : gfx::shape::CubeIndices) {
     indices.emplace_back(index);
   }
-  auto id = entt::hashed_string{"cube"};
-  renderer_->AddBatchedMesh(id, vertices, indices);
-  return id;
+  MeshID id = renderer_->AddBatchedMesh(vertices, indices);
+  return {.mesh_handle = id, .material_handle = material_manager_.GetDefaultMaterialId()};
 };
 
 void MeshManager::Init(gfx::Renderer* renderer) {
@@ -75,10 +74,10 @@ void MeshManager::Init(gfx::Renderer* renderer) {
 
 MeshManager::MeshManager(MaterialManager& material_manager) : material_manager_(material_manager) {}
 
-std::optional<MeshID> MeshManager::LoadModel(const std::string& path) {
+std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& path) {
   if (!std::filesystem::exists(path)) {
     spdlog::error("Path does not exist: {}", path);
-    return std::nullopt;
+    return {};
   }
   int slash_idx = path.find_last_of("/\\");
   std::string directory = path.substr(0, slash_idx + 1);
@@ -88,17 +87,19 @@ std::optional<MeshID> MeshManager::LoadModel(const std::string& path) {
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     spdlog::error("Assimp error: {}", importer->GetErrorString());
-    return std::nullopt;
+    return {};
   }
 
-  std::stack<aiNode*> mesh_stack;
-  mesh_stack.push(scene->mRootNode);
-  aiNode* curr_node;
-  spdlog::info("there are {} materials", scene->mNumMaterials);
+  // in sync with scene materials, material manager has different ids.
+  // each index contains the material id
+  std::vector<MaterialID> material_ids;
+  material_ids.resize(scene->mNumMaterials);
   aiString filename;
-  for (int i = 0; i < scene->mNumMaterials; i++) {
-    auto* material = scene->mMaterials[i];
+  for (int ai_scene_mat_idx = 0; ai_scene_mat_idx < scene->mNumMaterials; ai_scene_mat_idx++) {
+    auto* material = scene->mMaterials[ai_scene_mat_idx];
 
+    // returns full path if texture exists.
+    // TODO(tony): other texture meta data?
     auto get_texture_path = [&](aiTextureType type) -> std::optional<std::string> {
       if (material->GetTextureCount(type)) {
         material->GetTexture(type, 0, &filename);
@@ -114,56 +115,71 @@ std::optional<MeshID> MeshManager::LoadModel(const std::string& path) {
     m.metalness_path = get_texture_path(aiTextureType_METALNESS);
     m.ao_path = get_texture_path(aiTextureType_AMBIENT_OCCLUSION);
     m.normal_path = get_texture_path(aiTextureType_NORMALS);
-    material_manager_.AddMaterial(m);
 
-    // if (m.albedo_path.has_value())
-    //   spdlog::info("diffuse_name {}", m.albedo_path.value());
-    // else
-    //   spdlog::info("no diffuse");
-    //
-    // if (m.metalness_path.has_value())
-    //   spdlog::info("m.metalness {}", m.metalness_path.value());
-    // else
-    //   spdlog::info("no m.metalness");
-    //
-    // if (m.roughness_path.has_value()) {
-    //   spdlog::info("roughness_path{}", m.roughness_path.value());
-    // } else {
-    //   spdlog::info("no roughness");
-    // }
-    //
-    // if (m.ao_path.has_value()) {
-    //   spdlog::info("ao_path{}", m.ao_path.value());
-    // } else {
-    //   spdlog::info("no ao");
-    // }
-    // if (m.normal_path.has_value()) {
-    //   spdlog::info("normal_path{}", m.normal_path.value());
-    // } else {
-    //   spdlog::info("no normal");
-    // }
+    // add material and get id. associate it with the scene in the vector so that
+    // meshes can access the real material id.
+    MaterialID material_id = material_manager_.AddMaterial(m);
+    material_ids[ai_scene_mat_idx] = material_id;
   }
 
-  while (!mesh_stack.empty()) {
-    curr_node = mesh_stack.top();
-    mesh_stack.pop();
-    std::vector<gfx::Vertex> vertices;
-    std::vector<gfx::Index> indices;
-    for (uint32_t i = 0; i < curr_node->mNumMeshes; i++) {
-      aiMesh* mesh = scene->mMeshes[curr_node->mMeshes[i]];
-      MeshID id = ProcessMesh(*scene, *mesh, vertices, indices);
-      renderer_->AddBatchedMesh(id, vertices, indices);
+  // TODO(tony): scene graph instead of straight vector
+
+  // while (!mesh_stack.empty()) {
+  //   curr_node = mesh_stack.top();
+  //   mesh_stack.pop();
+  //   std::vector<gfx::Vertex> vertices;
+  //   std::vector<gfx::Index> indices;
+  //   for (uint32_t i = 0; i < curr_node->mNumMeshes; i++) {
+  //     aiMesh* mesh = scene->mMeshes[curr_node->mMeshes[i]];
+  //     MeshID id = ProcessMesh(*scene, *mesh, vertices, indices);
+  //     renderer_->AddBatchedMesh(id, vertices, indices);
+  //   }
+  //   // push children to stack
+  //   for (uint32_t i = 0; i < curr_node->mNumChildren; i++) {
+  //     mesh_stack.push(curr_node->mChildren[i]);
+  //   }
+  // }
+
+  std::vector<component::MeshMaterial> mesh_materials;
+  mesh_materials.reserve(scene->mNumMeshes);
+  std::vector<gfx::Vertex> vertices;
+  std::vector<gfx::Index> indices;
+  component::MeshMaterial mesh_material;
+  for (int i = 0; i < scene->mNumMeshes; i++) {
+    aiMesh& mesh = *scene->mMeshes[i];
+    EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
+                "Mesh needs positions, normals, and texture coords");
+
+    vertices.clear();
+    vertices.reserve(mesh.mNumVertices);
+    indices.clear();
+
+    gfx::Vertex v;
+    // process vertices
+    for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
+      v.position = aiVec3ToGLM(mesh.mVertices[i]);
+      v.normal = aiVec3ToGLM(mesh.mNormals[i]);
+      v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
     }
-    // push children to stack
-    for (uint32_t i = 0; i < curr_node->mNumChildren; i++) {
-      mesh_stack.push(curr_node->mChildren[i]);
+
+    // process indices
+    for (uint32_t i = 0; i < mesh.mNumFaces; i++) {
+      for (uint32_t j = 0; j < mesh.mFaces[i].mNumIndices; j++) {
+        indices.push_back(mesh.mFaces[i].mIndices[j]);
+      }
     }
+
+    MaterialID mat_id = (mesh.mMaterialIndex >= 0) ? material_ids[mesh.mMaterialIndex]
+                                                   : material_manager_.GetDefaultMaterialId();
+    MeshID mesh_id = renderer_->AddBatchedMesh(vertices, indices);
+    mesh_material.material_handle = mat_id;
+    mesh_material.mesh_handle = mesh_id;
+    mesh_materials.emplace_back(mesh_material);
   }
-  spdlog::info("done loading");
-  return std::nullopt;
+  return mesh_materials;
 }
 
-MeshID MeshManager::LoadShape(ShapeType type) {
+component::MeshMaterial MeshManager::LoadShape(ShapeType type) {
   switch (type) {
     case ShapeType::Cube:
       return LoadCube();

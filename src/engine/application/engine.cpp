@@ -26,10 +26,10 @@ Engine::Engine() {
   PROFILE_FUNCTION();
   window_system_ = new WindowSystem;
   imgui_system_ = new ImGuiSystem;
-  material_manager_ = new MaterialManager;
   shader_manager_ = new ShaderManager;
-  mesh_manager_ = new MeshManager{*material_manager_};
   renderer_ = new gfx::Renderer{*shader_manager_};
+  material_manager_ = new MaterialManager{*renderer_};
+  mesh_manager_ = new MeshManager{*material_manager_};
   graphics_system_ = new GraphicsSystem{*renderer_, *material_manager_};
 
   window_system_->Init();
@@ -39,6 +39,7 @@ Engine::Engine() {
   window_system_->SetVsync(true);
 
   graphics_system_->Init();
+  material_manager_->Init();
   mesh_manager_->Init(renderer_);
   imgui_system_->Init(window_system_->GetContext());
 

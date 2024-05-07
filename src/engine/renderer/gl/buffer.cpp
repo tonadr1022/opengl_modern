@@ -5,9 +5,9 @@
 
 namespace engine::gfx {
 
-Buffer::Buffer(uint32_t size_bytes, GLbitfield flags) {
+Buffer::Buffer(uint32_t size_bytes, GLbitfield flags, void* data) {
   glCreateBuffers(1, &id_);
-  glNamedBufferStorage(id_, size_bytes, nullptr, flags);
+  glNamedBufferStorage(id_, size_bytes, data, flags);
 }
 
 // Buffer::Buffer(Buffer&& other) noexcept { *this = std::move(other); }
@@ -28,14 +28,21 @@ void Buffer::Bind(GLuint target) const { glBindBuffer(target, id_); }
 
 void Buffer::BindBase(GLuint target, GLuint slot) const { glBindBufferBase(target, slot, id_); }
 
-void Buffer::SubData(size_t size_bytes, void* data) {
+uint32_t Buffer::SubData(size_t size_bytes, void* data) {
   glNamedBufferSubData(id_, offset_, size_bytes, data);
+
   offset_ += size_bytes;
+  return num_allocs_++;
 }
 
 void* Buffer::Map(uint32_t access) {
   mapped_ = true;
   return glMapNamedBuffer(id_, access);
+}
+
+void Buffer::ResetOffset() {
+  num_allocs_ = 0;
+  offset_ = 0;
 }
 
 void* Buffer::MapRange(uint32_t offset, uint32_t length_bytes, GLbitfield access) {

@@ -1,9 +1,11 @@
 #include "material_manager.h"
 
 #include <memory>
+#include <vector>
 
 #include "engine/renderer/gl/texture_2d.h"
 #include "engine/renderer/material.h"
+#include "engine/renderer/renderer.h"
 #include "engine/resource/data_types.h"
 
 namespace engine {
@@ -75,9 +77,16 @@ MaterialID MaterialManager::AddMaterial(const MaterialCreateInfo& material_creat
     }
   }
 
-  MaterialID id = ++material_counter_;
+  MaterialID id = renderer_.AddMaterial(material);
   material_map_.emplace(id, material);
   return id;
+}
+
+MaterialManager::MaterialManager(gfx::Renderer& renderer) : renderer_(renderer) {}
+void MaterialManager::Init() {
+  gfx::MaterialData default_material;
+  default_material.base_color = {0, 1, 0};
+  default_material_id_ = renderer_.AddMaterial(default_material);
 }
 
 gfx::MaterialData& MaterialManager::GetMaterial(MaterialID id) {
@@ -89,6 +98,7 @@ gfx::MaterialData& MaterialManager::GetMaterial(MaterialID id) {
 void MaterialManager::ClearMaterials() {
   material_map_.clear();
   material_counter_ = 0;
+  // TODO(tony): clear from renderer
 }
 
 std::vector<std::pair<MaterialID, gfx::MaterialData>> MaterialManager::GetAllMaterials() const {

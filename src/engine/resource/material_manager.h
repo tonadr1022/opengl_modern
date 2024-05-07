@@ -13,6 +13,9 @@
 namespace engine {
 
 struct Vertex;
+namespace gfx {
+class Renderer;
+}
 
 struct MaterialCreateInfo {
   glm::vec3 base_color{1, 1, 1};
@@ -25,15 +28,18 @@ struct MaterialCreateInfo {
 
 class MaterialManager {
  public:
+  explicit MaterialManager(gfx::Renderer& renderer);
+  void Init();
   [[nodiscard]] MaterialID AddMaterial(const MaterialCreateInfo& material);
   gfx::MaterialData& GetMaterial(MaterialID id);
   void RemoveMaterial(MaterialID id);
+  inline MaterialID GetDefaultMaterialId() const { return default_material_id_; };
   void ClearMaterials();
-
   [[nodiscard]] std::vector<std::pair<MaterialID, gfx::MaterialData>> GetAllMaterials() const;
 
  private:
-  std::vector<gfx::MaterialData> materials_;
+  MaterialID default_material_id_;
+  gfx::Renderer& renderer_;
   std::unordered_map<std::string, std::unique_ptr<gfx::Texture2D>> texture_map_;
   std::unordered_map<MaterialID, gfx::MaterialData> material_map_;
   uint32_t material_counter_{0};

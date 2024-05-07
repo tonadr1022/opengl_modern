@@ -20,6 +20,7 @@ std::optional<Shader> ShaderManager::GetShader(entt::hashed_string name) {
 
 bool CheckShaderModuleCompilationSuccess(uint32_t shader_id, const char *shaderPath) {
   int success;
+  spdlog::info("checking shader id {}", shader_id);
   glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
   if (!success) {
     char buffer[512];
@@ -61,6 +62,7 @@ std::optional<ShaderManager::ShaderProgramData> ShaderManager::CompileProgram(
     }
     uint32_t shader_id = CompileShader(create_info.shaderType, src.value().c_str());
     if (!CheckShaderModuleCompilationSuccess(shader_id, create_info.shaderPath.c_str())) {
+      spdlog::info("error: {}", create_info.shaderPath.c_str());
       return std::nullopt;
     }
     shader_ids.push_back(shader_id);

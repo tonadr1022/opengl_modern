@@ -7,12 +7,17 @@ using MeshID = uint32_t;
 
 namespace component {
 
-struct Mesh {
-  MeshID handle;
-};
+// struct Mesh {
+//   MeshID handle;
+// };
+//
+// struct Material {
+//   MaterialID handle;
+// };
 
-struct Material {
-  MaterialID handle;
+struct MeshMaterial {
+  MeshID mesh_handle;
+  MaterialID material_handle;
 };
 
 }  // namespace component

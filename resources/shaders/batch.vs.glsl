@@ -10,10 +10,12 @@ layout(location = 0) out VS_OUT {
     vec3 posWorldSpace;
     vec3 normal;
     vec2 texCoord;
+    // flat uint materialIndex;
 } vs_out;
 
 struct UniformData {
     mat4 model;
+    // uint materialIndex;
 };
 
 layout(std430, binding = 0) readonly buffer data {
@@ -26,5 +28,6 @@ void main(void) {
     vs_out.posWorldSpace = vec3(posWorldSpace);
     vs_out.texCoord = aTexCoord;
     vs_out.normal = aNormal;
+    // vs_out.materialIndex = uniforms[gl_BaseInstance + gl_InstanceID].materialIndex;
     gl_Position = posWorldSpace;
 }

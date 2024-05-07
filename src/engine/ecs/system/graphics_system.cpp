@@ -27,9 +27,7 @@ void GraphicsSystem::StartFrame(Scene& scene) {
   renderer_.StartFrame(scene.GetViewInfo());
 }
 
-void GraphicsSystem::InitScene(Scene& scene) {
-  renderer_.SetMaterials(material_manager_.GetAllMaterials());
-}
+void GraphicsSystem::InitScene(Scene& scene) {}
 
 GraphicsSystem::GraphicsSystem(gfx::Renderer& renderer, MaterialManager& material_manager)
     : renderer_(renderer), material_manager_(material_manager) {}
@@ -47,24 +45,6 @@ void update_model_matrices(entt::registry& registry) {
                 });
 }
 
-void GraphicsSystem::submit_cmds(entt::registry& registry) {
-  PROFILE_FUNCTION();
-  // auto group = registry.group<Mesh>(entt::get<Mesh, ModelMatrix, Material>);
-  auto group = registry.view<Mesh, ModelMatrix>();
-  renderer_.SetBatchedObjectCount(group.size_hint());
-  group.each([this](const auto& mesh, const auto& model) {
-    renderer_.SubmitDrawCommand(model.matrix, mesh.handle, 0);
-  });
-}
-
-void GraphicsSystem::submit_dynamic_cmds(entt::registry& registry) {
-  // auto group = registry.group<Mesh>(entt::get<ModelMatrix, Material>);
-  // renderer_->SetBatchedObjectCount(group.size());
-  // group.each([](const auto& mesh, const auto& model, const auto& material) {
-  //   renderer_->SubmitDrawCommand(model.matrix, mesh.handle, material.handle);
-  // });
-}
-
 void GraphicsSystem::DrawOpaque(entt::registry& registry) {
   PROFILE_FUNCTION();
   // auto par_group = registry.group<Transform>(entt::get<Parent>);
@@ -72,10 +52,13 @@ void GraphicsSystem::DrawOpaque(entt::registry& registry) {
   //   auto [world_transform, parent] = par_group.get<Transform, Parent>(entity);
   // }
 
-  // update model matrices
+  // TODO(tony): model matrix update in physics system along with scene graph
   update_model_matrices(registry);
-  submit_cmds(registry);
-  submit_dynamic_cmds(registry);
+  auto draw_cmd_group = registry.view<ModelMatrix, MeshMaterial>();
+  draw_cmd_group.each([this](auto& model_matrix, auto& mesh_material) {
+    renderer_.SubmitDrawCommand(model_matrix.matrix, mesh_material.mesh_handle,
+                                mesh_material.material_handle);
+  });
 
   renderer_.RenderOpaqueObjects();
 }
