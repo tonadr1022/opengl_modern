@@ -62,7 +62,7 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
 void Texture2D::MakeNonResident() const { glMakeTextureHandleNonResidentARB(bindless_handle_); }
 
 Texture2D::~Texture2D() {
-  // glMakeTextureHandleNonResidentARB(bindless_handle_);
+  glMakeTextureHandleNonResidentARB(bindless_handle_);
   glDeleteTextures(1, &id_);
 }
 

@@ -37,7 +37,7 @@ void SceneMain::Init() {
   //     "/home/tony/personal/opengl_renderer/resources/models/sponza/sponza.obj");
   glm::vec3 iter{0};
   auto scale = glm::vec3(.01);
-  int c = 10;
+  int c = 1;
   for (iter.z = -c; iter.z <= c; iter.z++) {
     for (iter.x = -c; iter.x <= c; iter.x++) {
       for (auto m : gear_mesh_materials) {
