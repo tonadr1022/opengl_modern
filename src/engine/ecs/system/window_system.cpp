@@ -25,11 +25,10 @@ void WindowSystem::CenterCursor() {
   glfwGetWindowSize(glfw_window_, &width, &height);
   glfwSetCursorPos(glfw_window_, static_cast<float>(width) / 2.0f,
                    static_cast<float>(height) / 2.0f);
-  // glfwSetCursorPos(glfw_window_, framebuffer_width_ / 2.0f, framebuffer_height_ / 2.0f);
 }
 
 void WindowSystem::SetCursorVisible(bool state) {
-  // glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+  glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
 bool WindowSystem::GetCursorVisible() const {
@@ -88,6 +87,7 @@ void WindowSystem::Init() {
     spdlog::critical("Failed to initialize glew");
     glfwTerminate();
   }
+  TracyGpuContext;
 
   // query all available extensions
   std::vector<std::string> opengl_extensions;
@@ -97,7 +97,9 @@ void WindowSystem::Init() {
   for (int i = 0; i < extension_count; i++) {
     opengl_extensions.emplace_back(reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i)));
   }
-  std::cout << opengl_extensions.size() << "\n";
+  // for (const auto& ext : opengl_extensions) {
+  //   std::cout << ext << "\n";
+  // }
 }
 
 void WindowSystem::SetUserPointer(void* ptr) { glfwSetWindowUserPointer(glfw_window_, ptr); }

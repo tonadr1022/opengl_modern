@@ -34,7 +34,7 @@ class MaterialManager {
   gfx::MaterialData& GetMaterial(MaterialID id);
   void RemoveMaterial(MaterialID id);
   inline MaterialID GetDefaultMaterialId() const { return default_material_id_; };
-  void ClearMaterials();
+  void ClearAll();
   [[nodiscard]] std::vector<std::pair<MaterialID, gfx::MaterialData>> GetAllMaterials() const;
 
  private:

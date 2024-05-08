@@ -22,7 +22,9 @@ Buffer::Buffer(uint32_t size_bytes, GLbitfield flags, void* data) {
 
 Buffer::~Buffer() {
   EASSERT_MSG(!mapped_, "buffer can't be mapped on deletion");
-  if (id_) glDeleteBuffers(1, &id_);
+  if (id_) {
+    glDeleteBuffers(1, &id_);
+  }
 }
 void Buffer::Bind(GLuint target) const { glBindBuffer(target, id_); }
 

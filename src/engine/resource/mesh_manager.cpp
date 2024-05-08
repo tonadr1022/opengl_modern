@@ -75,6 +75,8 @@ void MeshManager::Init(gfx::Renderer* renderer) {
 MeshManager::MeshManager(MaterialManager& material_manager) : material_manager_(material_manager) {}
 
 std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& path) {
+  ZoneScopedNC("load model", tracy::Color::Red);
+  spdlog::info("loading {}", path);
   if (!std::filesystem::exists(path)) {
     spdlog::error("Path does not exist: {}", path);
     return {};
@@ -145,37 +147,40 @@ std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& p
   std::vector<gfx::Vertex> vertices;
   std::vector<gfx::Index> indices;
   component::MeshMaterial mesh_material;
-  for (int i = 0; i < scene->mNumMeshes; i++) {
-    aiMesh& mesh = *scene->mMeshes[i];
-    EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
-                "Mesh needs positions, normals, and texture coords");
+  {
+    ZoneScopedN("geometry load");
+    for (int i = 0; i < scene->mNumMeshes; i++) {
+      aiMesh& mesh = *scene->mMeshes[i];
+      EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
+                  "Mesh needs positions, normals, and texture coords");
 
-    vertices.clear();
-    vertices.reserve(mesh.mNumVertices);
-    indices.clear();
+      vertices.clear();
+      vertices.reserve(mesh.mNumVertices);
+      indices.clear();
 
-    gfx::Vertex v;
-    // process vertices
-    for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
-      v.position = aiVec3ToGLM(mesh.mVertices[i]);
-      v.normal = aiVec3ToGLM(mesh.mNormals[i]);
-      v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
-      vertices.emplace_back(v);
-    }
-
-    // process indices
-    for (uint32_t i = 0; i < mesh.mNumFaces; i++) {
-      for (uint32_t j = 0; j < mesh.mFaces[i].mNumIndices; j++) {
-        indices.push_back(mesh.mFaces[i].mIndices[j]);
+      gfx::Vertex v;
+      // process vertices
+      for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
+        v.position = aiVec3ToGLM(mesh.mVertices[i]);
+        v.normal = aiVec3ToGLM(mesh.mNormals[i]);
+        v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
+        vertices.emplace_back(v);
       }
-    }
 
-    MaterialID mat_id = (mesh.mMaterialIndex >= 0) ? material_ids[mesh.mMaterialIndex]
-                                                   : material_manager_.GetDefaultMaterialId();
-    MeshID mesh_id = renderer_->AddBatchedMesh(vertices, indices);
-    mesh_material.material_handle = mat_id;
-    mesh_material.mesh_handle = mesh_id;
-    mesh_materials.emplace_back(mesh_material);
+      // process indices
+      for (uint32_t i = 0; i < mesh.mNumFaces; i++) {
+        for (uint32_t j = 0; j < mesh.mFaces[i].mNumIndices; j++) {
+          indices.push_back(mesh.mFaces[i].mIndices[j]);
+        }
+      }
+
+      MaterialID mat_id = (mesh.mMaterialIndex >= 0) ? material_ids[mesh.mMaterialIndex]
+                                                     : material_manager_.GetDefaultMaterialId();
+      MeshID mesh_id = renderer_->AddBatchedMesh(vertices, indices);
+      mesh_material.material_handle = mat_id;
+      mesh_material.mesh_handle = mesh_id;
+      mesh_materials.emplace_back(mesh_material);
+    }
   }
   return mesh_materials;
 }

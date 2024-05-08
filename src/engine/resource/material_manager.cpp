@@ -99,8 +99,9 @@ gfx::MaterialData& MaterialManager::GetMaterial(MaterialID id) {
   return it->second;
 }
 
-void MaterialManager::ClearMaterials() {
+void MaterialManager::ClearAll() {
   material_map_.clear();
+  texture_map_.clear();
   material_counter_ = 0;
   // TODO(tony): clear from renderer
 }

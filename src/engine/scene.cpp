@@ -18,6 +18,8 @@ Scene::Scene() {
   registry.emplace<gfx::RenderViewInfo>(camera_matrices_entity);
 }
 
+void Scene::Init() {}
+
 void Scene::OnEvent(const Event& e) {}
 
 void Scene::OnUpdate(Timestep timestep) {}

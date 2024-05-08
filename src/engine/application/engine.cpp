@@ -15,7 +15,6 @@
 #include "engine/resource/material_manager.h"
 #include "engine/resource/mesh_manager.h"
 #include "engine/resource/shader_manager.h"
-#include "engine/util/profiler.h"
 #include "input.h"
 
 // Engine* Engine::instance_ = nullptr;
@@ -54,6 +53,8 @@ void Engine::OnEvent(const Event& e) {
       } else if (e.key.code == KeyCode::G && e.key.control) {
         draw_imgui_ = !draw_imgui_;
         return;
+      } else if (e.key.code == KeyCode::P) {
+        // window_system_->SetCursorVisible(!window_system_->GetCursorVisible());
       }
     default:
       break;
@@ -62,7 +63,7 @@ void Engine::OnEvent(const Event& e) {
 }
 
 void Engine::Run() {
-  PROFILE_FUNCTION();
+  ZoneScoped;
   EASSERT(active_scene_ != nullptr);
   running_ = true;
 
@@ -71,7 +72,6 @@ void Engine::Run() {
   double last_time = timer.ElapsedSeconds();
   // const double sim_time = 1.0 / 60.0;
   while (running_ && !window_system_->ShouldClose()) {
-    PROFILE_SCOPE("Main Loop");
     Input::Update();
 
     if (draw_imgui_) imgui_system_->StartFrame();
@@ -89,20 +89,33 @@ void Engine::Run() {
     //   active_scene_->OnUpdate(timestep);
     // }
     {
-      PROFILE_SCOPE("Scene Update");
+      ZoneScopedN("scene update");
       active_scene_->OnUpdate(timestep);
     }
-    timestep.dt_actual = delta_time;
-    graphics_system_->StartFrame(*active_scene_);
-    graphics_system_->DrawOpaque(active_scene_->registry);
-    graphics_system_->EndFrame();
-
-    if (draw_imgui_) {
-      ImGuiSystemPerFrame(timestep);
-      imgui_system_->EndFrame();
+    {
+      ZoneScopedN("Graphics Update");
+      timestep.dt_actual = delta_time;
+      graphics_system_->StartFrame(*active_scene_);
+      graphics_system_->DrawOpaque(active_scene_->registry);
+      graphics_system_->EndFrame();
     }
 
-    window_system_->SwapBuffers();
+    {
+      ZoneScopedN("imgui");
+      if (draw_imgui_) {
+        ImGuiSystemPerFrame(timestep);
+        imgui_system_->EndFrame();
+      }
+    }
+
+    {
+      ZoneScopedN("swap buffers");
+      TracyGpuZone("swap");
+
+      window_system_->SwapBuffers();
+      TracyGpuCollect;
+    }
+    FrameMark;
   }
 
   Shutdown();
@@ -160,11 +173,18 @@ Engine::~Engine() = default;
 void Engine::Stop() { running_ = false; }
 
 void Engine::LoadScene(std::unique_ptr<Scene> scene) {
+  ZoneScopedN("load scene");
+  bool scene_exists = active_scene_ != nullptr;
+
+  if (scene_exists) {
+    material_manager_->ClearAll();
+    graphics_system_->InitScene(*scene);
+  }
   active_scene_ = std::move(scene);
-  graphics_system_->InitScene(*scene);
   active_scene_->material_manager_ = material_manager_;
   active_scene_->mesh_manager_ = mesh_manager_;
   active_scene_->window_system_ = window_system_;
+  active_scene_->Init();
 }
 
 }  // namespace engine

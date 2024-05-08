@@ -11,7 +11,6 @@
 #include <engine/resource/paths.h>
 #include <engine/resource/shader_manager.h>
 #include <engine/timestep.h>
-#include <engine/util/profiler.h>
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
@@ -25,10 +24,11 @@
 
 using namespace engine;
 
-SceneMain::SceneMain() {
-  PROFILE_FUNCTION();
+void SceneMain::Init() {
   std::string model_string =
-      "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
+
+      "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
+  // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
   auto gear_mesh_materials = mesh_manager_->LoadModel(model_string);
   // mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
   // mesh_manager_->LoadModel(
@@ -36,15 +36,19 @@ SceneMain::SceneMain() {
   // mesh_manager_->LoadModel(
   //     "/home/tony/personal/opengl_renderer/resources/models/sponza/sponza.obj");
   glm::vec3 iter{0};
-  for (iter.x = -1; iter.x <= 1; iter.x++) {
-    for (auto m : gear_mesh_materials) {
-      component::Transform t;
-      auto ent = registry.create();
-
-      t.SetTranslation({iter.x * 2, iter.y, iter.z});
-      registry.emplace<component::MeshMaterial>(ent, m);
-      registry.emplace<component::Transform>(ent, t);
-      registry.emplace<component::ModelMatrix>(ent);
+  auto scale = glm::vec3(.01);
+  int c = 10;
+  for (iter.z = -c; iter.z <= c; iter.z++) {
+    for (iter.x = -c; iter.x <= c; iter.x++) {
+      for (auto m : gear_mesh_materials) {
+        component::Transform t;
+        t.SetScale(scale);
+        auto ent = registry.create();
+        t.SetTranslation({iter.x * 50, iter.y, iter.z * 50});
+        registry.emplace<component::MeshMaterial>(ent, m);
+        registry.emplace<component::Transform>(ent, t);
+        registry.emplace<component::ModelMatrix>(ent);
+      }
     }
   }
 
@@ -54,12 +58,11 @@ SceneMain::SceneMain() {
   window_system_->SetCursorVisible(!start_fps_focus);
 
   component::FPSCamera fps_cam;
-  fps_cam.position = {2, 1, 1};
+  fps_cam.position = {0, 0, 1};
   registry.emplace<component::FPSCamera>(player, fps_cam);
 }
 
 // SceneMain::SceneMain() {
-//   PROFILE_FUNCTION();
 //   glm::vec3 iter{0, 0, 0};
 //   engine::MeshID mesh_id = mesh_manager_->LoadShape(engine::ShapeType::Cube);
 //   MaterialCreateInfo mat_create_info;

@@ -9,7 +9,7 @@
 
 class SceneMain : public engine::Scene {
  public:
-  SceneMain();
+  void Init() override;
   void OnImGuiRender() override;
   void OnEvent(const engine::Event& e) override;
   void OnUpdate(engine::Timestep timestep) override;

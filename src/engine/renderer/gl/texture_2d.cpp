@@ -7,6 +7,7 @@
 
 namespace engine::gfx {
 Texture2D::Texture2D(const Texture2DCreateParams& params) {
+  ZoneScopedN("tex load");
   bool has_tex =
       std::filesystem::exists(params.path) && std::filesystem::is_regular_file(params.path);
   if (!has_tex) {

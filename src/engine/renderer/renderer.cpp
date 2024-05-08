@@ -12,7 +12,6 @@
 #include "engine/renderer/material.h"
 #include "engine/resource/paths.h"
 #include "engine/resource/shader_manager.h"
-#include "engine/util/profiler.h"
 #include "renderer_types.h"
 
 namespace engine::gfx {
@@ -54,8 +53,6 @@ void Renderer::InitVaos() {
   glVertexArrayAttribBinding(batch_vao_, 0, 0);
   glVertexArrayAttribBinding(batch_vao_, 1, 0);
   glVertexArrayAttribBinding(batch_vao_, 2, 0);
-  glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
-  glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
 }
 
 void Renderer::InitBuffers() {
@@ -107,6 +104,8 @@ void Renderer::Init() {
   LoadShaders();
   InitBuffers();
   InitVaos();
+  glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
+  glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
 }
 
 void Renderer::Shutdown() {}
@@ -121,7 +120,7 @@ void Renderer::StartFrame(const RenderViewInfo& camera_matrices) {
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
-  glClearColor(0, 0, 0.0, 1.0);
+  glClearColor(0.6, 0.6, 0.6, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
@@ -139,8 +138,8 @@ MeshID Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index
   cmd.instance_count = 0;
 
   // FOR NOW, renderer controls mesh ids since it allocates meshes linearly
-  MeshID id = mesh_buffer_info_.size();
-  mesh_buffer_info_.emplace_back(cmd);
+  MeshID id = draw_elements_indirect_cmds_.size();
+  draw_elements_indirect_cmds_.emplace_back(cmd);
 
   // NEED TO BE CALLED AFTER BASE_VERTEX AND FIRST_INDEX ASSIGNMENT SINCE THIS INCREMENTS THEM
   batch_vertex_buffer_->SubData(sizeof(Vertex) * vertices.size(), vertices.data());
@@ -152,9 +151,8 @@ MeshID Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index
 }
 
 void Renderer::RenderOpaqueObjects() {
-  PROFILE_FUNCTION();
+  ZoneScopedN("Render RenderOpaqueObjects");
   auto shader = shader_manager_.GetShader("batch");
-  EASSERT(shader.has_value());
   shader->Bind();
   glBindVertexArray(batch_vao_);
   batch_ssbo_uniform_buffer_->ResetOffset();
@@ -166,15 +164,16 @@ void Renderer::RenderOpaqueObjects() {
   DrawElementsIndirectCommand cmd;
   size_t base_instance{0};
 
-  size_t num_draw_cmds = draw_cmd_uniforms_.size();
-
-  for (size_t i = 0; i < num_draw_cmds; i++) {
-    auto& draw_cmd_info = mesh_buffer_info_[i];
+  EASSERT_MSG(draw_cmd_mesh_ids_.size() == draw_cmd_uniforms_.size(), "need same size");
+  for (auto draw_cmd_mesh_id : draw_cmd_mesh_ids_) {
+    auto& draw_cmd_info = draw_elements_indirect_cmds_[draw_cmd_mesh_id];
     cmd.base_instance = base_instance;
     cmd.base_vertex = draw_cmd_info.base_vertex;
     cmd.instance_count = 1;
     cmd.count = draw_cmd_info.count;
     cmd.first_index = draw_cmd_info.first_index;
+    stats_.indices += cmd.count;
+    stats_.multi_draw_cmds_buffer_count++;
     cmds.emplace_back(cmd);
   }
 
@@ -200,7 +199,11 @@ void Renderer::EndFrame() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::Restart() { InitBuffers(); }
+void Renderer::Reset() {
+  InitBuffers();
+  glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
+  glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
+}
 
 MaterialID Renderer::AddMaterial(const MaterialData& material) {
   EASSERT_MSG(materials_buffer_ != nullptr, "buffer not initialized");
@@ -208,7 +211,6 @@ MaterialID Renderer::AddMaterial(const MaterialData& material) {
   BindlessMaterial bindless_mat;
   if (material.albedo_texture != nullptr) {
     bindless_mat.albedo_map_handle = material.albedo_texture->BindlessHandle();
-    spdlog::info("albedo handle {} ", bindless_mat.albedo_map_handle);
   }
   if (material.normal_texture != nullptr)
     bindless_mat.normal_map_handle = material.normal_texture->BindlessHandle();
@@ -222,28 +224,13 @@ MaterialID Renderer::AddMaterial(const MaterialData& material) {
   // id is the index into the material buffer.
   MaterialID id = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
 
-  // static int offset = 0;
-  // static int mat_id = 0;
-  // static int num_allocs = 0;
-  // glNamedBufferSubData(materials_buffer_, offset, sizeof(BindlessMaterial), &bindless_mat);
-  // MaterialID id = mat_id;
-  // mat_id++;
-  // offset += sizeof(BindlessMaterial);
-  // num_allocs++;
-  //
-  // auto* ptr = static_cast<BindlessMaterial*>(glMapNamedBuffer(materials_buffer_, GL_READ_ONLY));
-  // for (int i = 0; i < num_allocs; i++) {
-  //   std::cout << ptr->albedo_map_handle << "  ";
+  // auto* ptr = static_cast<BindlessMaterial*>(materials_buffer_->Map(GL_READ_ONLY));
+  // for (int i = 0; i < materials_buffer_->NumAllocs(); i++) {
+  //   spdlog::info("handle: {}", ptr->albedo_map_handle);
   //   ptr++;
   // }
-  // glUnmapNamedBuffer(materials_buffer_);
-  auto* ptr = static_cast<BindlessMaterial*>(materials_buffer_->Map(GL_READ_ONLY));
-  for (int i = 0; i < materials_buffer_->NumAllocs(); i++) {
-    spdlog::info("handle: {}", ptr->albedo_map_handle);
-    ptr++;
-  }
-  spdlog::warn("done");
-  materials_buffer_->Unmap();
+  // spdlog::warn("done");
+  // materials_buffer_->Unmap();
   return id;
 }
 

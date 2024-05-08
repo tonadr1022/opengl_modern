@@ -24,9 +24,7 @@ struct RendererStats {
   uint32_t vertices;
   uint32_t indices;
   uint32_t multi_draw_calls;
-  uint32_t meshes_drawn;
-  uint32_t material_swaps;
-  uint32_t shader_swaps;
+  uint32_t multi_draw_cmds_buffer_count;
   uint32_t num_meshes;
 };
 
@@ -54,7 +52,7 @@ class Renderer {
   void Shutdown();
   void StartFrame(const RenderViewInfo& camera_matrices);
   void EndFrame();
-  void Restart();
+  void Reset();
   void SetBatchedObjectCount(uint32_t count);
   void SetFrameBufferSize(uint32_t width, uint32_t height);
   void SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id);
@@ -100,7 +98,7 @@ class Renderer {
   std::vector<BatchUniform> draw_cmd_uniforms_;
 
   // std::map<MeshID, DrawElementsIndirectCommand> mesh_buffer_info_;
-  std::vector<DrawElementsIndirectCommand> mesh_buffer_info_;
+  std::vector<DrawElementsIndirectCommand> draw_elements_indirect_cmds_;
   uint32_t framebuffer_width_{1}, frame_buffer_height_{1};
 
   void* batch_map_ptr_{nullptr};
