@@ -1,7 +1,5 @@
 #include "texture_2d.h"
 
-#include <filesystem>
-
 #include "engine/core/stb_image_impl.h"
 #include "engine/pch.h"
 

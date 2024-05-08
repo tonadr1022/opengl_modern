@@ -24,6 +24,7 @@ set(SOURCES
     util/timer.cpp
     renderer/gl/vertex_array.cpp
     renderer/gl/texture_2d.cpp
+    ${CMAKE_SOURCE_DIR}/dep/imgui_file/ImGuiFileDialog.cpp
     )
 
 

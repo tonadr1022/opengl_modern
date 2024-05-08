@@ -2,6 +2,7 @@
 
 #include "engine/application/engine.h"
 #include "engine/ecs/component/transform.h"
+#include "engine/ecs/system/isystem.h"
 #include "engine/timestep.h"
 
 namespace engine {
@@ -30,6 +31,9 @@ void Scene::OnImGuiRender() {};
 
 Scene::~Scene() { registry.clear(); }
 
+void Scene::InitSystems(std::vector<ecs::ISystem*>& systems) {
+  for (auto& sys : systems) sys->registry = &registry;
+}
 gfx::RenderViewInfo Scene::GetViewInfo() {
   auto view = registry.view<entt::tag<entt::hashed_string{"view_info"}>>();
   auto& view_info = registry.get<gfx::RenderViewInfo>(view.front());

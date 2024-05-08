@@ -23,35 +23,6 @@ namespace {
 glm::vec3 aiVec3ToGLM(const aiVector3f& vec) { return {vec.x, vec.y, vec.z}; }
 glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
 
-// void ProcessMesh(const aiScene& scene, const aiMesh& mesh, std::vector<gfx::Vertex>& vertices,
-//                  std::vector<gfx::Index>& indices) {
-//   EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
-//               "Mesh needs positions, normals, and texture coords");
-//
-//   vertices.reserve(mesh.mNumVertices);
-//
-//   gfx::Vertex v;
-//   // process vertices
-//   for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
-//     v.position = aiVec3ToGLM(mesh.mVertices[i]);
-//     v.normal = aiVec3ToGLM(mesh.mNormals[i]);
-//     v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
-//   }
-//
-//   // process indices
-//   for (uint32_t i = 0; i < mesh.mNumFaces; i++) {
-//     for (uint32_t j = 0; j < mesh.mFaces[i].mNumIndices; j++) {
-//       indices.push_back(mesh.mFaces[i].mIndices[j]);
-//     }
-//   }
-//
-//   static int curr_id = 0;
-//   auto mesh_id = ++curr_id;
-//   if (mesh.mMaterialIndex >= 0) {
-//     aiMaterial* ai_mat = scene.mMaterials[mesh.mMaterialIndex];
-//   }
-// }
-
 }  // namespace
 
 component::MeshMaterial MeshManager::LoadCube() {
@@ -151,8 +122,9 @@ std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& p
     ZoneScopedN("geometry load");
     for (int i = 0; i < scene->mNumMeshes; i++) {
       aiMesh& mesh = *scene->mMeshes[i];
-      EASSERT_MSG(mesh.HasPositions() && mesh.HasNormals() && mesh.HasTextureCoords(0),
-                  "Mesh needs positions, normals, and texture coords");
+      EASSERT_MSG(mesh.HasPositions(), "need positions");
+      EASSERT_MSG(mesh.HasNormals(), "need normals");
+      EASSERT_MSG(mesh.HasTextureCoords(0), "need tex coords");
 
       vertices.clear();
       vertices.reserve(mesh.mNumVertices);

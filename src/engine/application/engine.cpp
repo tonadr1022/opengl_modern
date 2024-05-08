@@ -135,10 +135,12 @@ void Engine::OnFrameBufferResize(uint32_t width, uint32_t height) {
 }
 
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {
+  ImGui::Begin("Renderer", nullptr, ImGuiWindowFlags_NoNavFocus);
   imgui_system_->RenderRendererStats(renderer_->GetStats());
+  ImGui::End();
   active_scene_->OnImGuiRender();
 
-  ImGui::Begin("Settings");
+  ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoNavFocus);
   bool vsync = window_system_->GetVsync();
   if (ImGui::Checkbox("Vsync", &vsync)) {
     window_system_->SetVsync(vsync);

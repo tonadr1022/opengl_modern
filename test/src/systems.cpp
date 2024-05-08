@@ -4,6 +4,8 @@
 #include <engine/application/input.h>
 #include <engine/application/key_codes.h>
 #include <engine/ecs/component/camera.h>
+#include <engine/ecs/component/renderer_components.h>
+#include <engine/ecs/component/transform.h>
 #include <engine/ecs/system/window_system.h>
 #include <engine/pch.h>
 #include <engine/timestep.h>
@@ -43,11 +45,11 @@ void UpdateMatrices(entt::registry &registry, FPSCamera &camera) {
 
 }  // namespace
 
-void CameraSystem::OnUpdate(entt::registry &registry, engine::Timestep timestep) {
-  entt::entity player_entity = registry.view<Player>().front();
-  auto &player = registry.get<Player>(player_entity);
+void CameraSystem::OnUpdate(engine::Timestep timestep) {
+  entt::entity player_entity = registry->view<Player>().front();
+  auto &player = registry->get<Player>(player_entity);
   if (!player.fps_focused) return;
-  auto &camera = registry.get<component::FPSCamera>(player_entity);
+  auto &camera = registry->get<component::FPSCamera>(player_entity);
 
   float movement_offset = camera.movement_speed * static_cast<float>(timestep.dt_actual);
   glm::vec3 movement(0.f);
@@ -84,12 +86,12 @@ void CameraSystem::OnUpdate(entt::registry &registry, engine::Timestep timestep)
   front.z = glm::sin(glm::radians(camera.yaw)) * glm::cos(glm::radians(camera.pitch));
   camera.front = glm::normalize(front);
 
-  UpdateMatrices(registry, camera);
+  UpdateMatrices(*registry, camera);
 }
 
-void CameraSystem::OnImGui(entt::registry &registry) {
-  auto player_entity = registry.view<Player>().front();
-  auto &camera = registry.get<component::FPSCamera>(player_entity);
+void CameraSystem::OnImGui() {
+  auto player_entity = registry->view<Player>().front();
+  auto &camera = registry->get<component::FPSCamera>(player_entity);
   auto &position = camera.position;
   auto &front = camera.front;
   ImGui::Text("Yaw: %.1f, Pitch: %.1f", camera.yaw, camera.pitch);
@@ -105,15 +107,15 @@ void CameraSystem::OnImGui(entt::registry &registry) {
                      FPSCamera::MaxMouseSensitivity);
 }
 
-bool CameraSystem::OnEvent(entt::registry &registry, const engine::Event &e) {
-  auto player_entity = registry.view<Player>().front();
-  auto &camera = registry.get<component::FPSCamera>(player_entity);
-  auto &player = registry.get<Player>(player_entity);
+bool CameraSystem::OnEvent(const engine::Event &e) {
+  auto player_entity = registry->view<Player>().front();
+  auto &camera = registry->get<component::FPSCamera>(player_entity);
+  auto &player = registry->get<Player>(player_entity);
   switch (e.type) {
     case EventType::KeyPressed:
       if (e.key.code == KeyCode::M) {
         player.fps_focused = !player.fps_focused;
-        auto *window_manager = registry.ctx().get<WindowSystem *>();
+        auto *window_manager = registry->ctx().get<WindowSystem *>();
         if (!player.fps_focused) window_manager->CenterCursor();
         window_manager->SetCursorVisible(!player.fps_focused);
         return true;
@@ -128,6 +130,41 @@ bool CameraSystem::OnEvent(entt::registry &registry, const engine::Event &e) {
     default:
       return false;
   }
+}
+
+void LoadCamera(entt::registry &registry, engine::WindowSystem &window_system) {
+  bool start_fps_focus = true;
+  auto player = registry.create();
+  registry.emplace<Player>(player).fps_focused = start_fps_focus;
+  window_system.SetCursorVisible(!start_fps_focus);
+  component::FPSCamera fps_cam;
+  fps_cam.position = {0, 0, 1};
+  registry.emplace<component::FPSCamera>(player, fps_cam);
+}
+
+void ModelViewerLoadModel(entt::registry &registry, engine::component::Transform &transform,
+                          const std::vector<engine::component::MeshMaterial> &mesh_material) {
+  for (const auto &mesh_mat : mesh_material) {
+    auto ent = registry.create();
+    registry.emplace<component::MeshMaterial>(ent, mesh_mat);
+    registry.emplace<component::Transform>(ent, transform);
+    registry.emplace<component::ModelMatrix>(ent);
+  }
+}
+
+namespace {
+std::vector<std::string> paths;
+bool loaded{false};
+}  // namespace
+std::vector<std::string> &GetModelPaths() {
+  if (loaded) return paths;
+  std::ifstream file("/home/tony/models_paths.txt");
+  std::string line;
+  while (std::getline(file, line)) {  // Read each line from the file
+    paths.push_back(line);
+  }
+  loaded = true;
+  return paths;
 }
 
 }  // namespace ecs

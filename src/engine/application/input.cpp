@@ -61,6 +61,8 @@ void Input::init_glfw_input_callbacks(GLFWwindow* window) {
 
 void Input::keypress_cb(GLFWwindow* window, int key, int scancode, int action, int mods) {
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+  // if (ImGui::GetIO().WantCaptureKeyboard) spdlog::info("imgui want");
+
   //  ImGuiIO& io = ImGui::GetIO();
   //  if (action == GLFW_PRESS) {
   //    io.KeysDown[key] = true;

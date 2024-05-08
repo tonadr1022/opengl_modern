@@ -18,6 +18,10 @@ void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
   e.window_size.y = height;
   engine->OnEvent(e);
 }
+std::string WindowSystem::GetClipboardText() {
+  const char* test = glfwGetClipboardString(glfw_window_);
+  return test;
+}
 
 void WindowSystem::CenterCursor() {
   int width;
@@ -28,7 +32,7 @@ void WindowSystem::CenterCursor() {
 }
 
 void WindowSystem::SetCursorVisible(bool state) {
-  glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+  // glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
 bool WindowSystem::GetCursorVisible() const {

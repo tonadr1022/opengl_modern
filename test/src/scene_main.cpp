@@ -12,6 +12,7 @@
 #include <engine/resource/shader_manager.h>
 #include <engine/timestep.h>
 #include <imgui.h>
+#include <imgui_file/ImGuiFileDialog.h>
 #include <spdlog/spdlog.h>
 
 #include <entt/core/hashed_string.hpp>
@@ -20,13 +21,14 @@
 
 #include "components.h"
 #include "engine/ecs/component/transform.h"
+#include "engine/ecs/system/isystem.h"
 #include "systems.h"
 
-using namespace engine;
-
 void SceneMain::Init() {
-  std::string model_string =
+  std::vector<engine::ecs::ISystem*> systems = {&camera_system_};
+  InitSystems(systems);
 
+  std::string model_string =
       "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
   auto gear_mesh_materials = mesh_manager_->LoadModel(model_string);
@@ -41,25 +43,17 @@ void SceneMain::Init() {
   for (iter.z = -c; iter.z <= c; iter.z++) {
     for (iter.x = -c; iter.x <= c; iter.x++) {
       for (auto m : gear_mesh_materials) {
-        component::Transform t;
+        engine::component::Transform t;
         t.SetScale(scale);
         auto ent = registry.create();
         t.SetTranslation({iter.x * 50, iter.y, iter.z * 50});
-        registry.emplace<component::MeshMaterial>(ent, m);
-        registry.emplace<component::Transform>(ent, t);
-        registry.emplace<component::ModelMatrix>(ent);
+        registry.emplace<engine::component::MeshMaterial>(ent, m);
+        registry.emplace<engine::component::Transform>(ent, t);
+        registry.emplace<engine::component::ModelMatrix>(ent);
       }
     }
   }
-
-  bool start_fps_focus = true;
-  auto player = registry.create();
-  registry.emplace<Player>(player).fps_focused = start_fps_focus;
-  window_system_->SetCursorVisible(!start_fps_focus);
-
-  component::FPSCamera fps_cam;
-  fps_cam.position = {0, 0, 1};
-  registry.emplace<component::FPSCamera>(player, fps_cam);
+  ecs::LoadCamera(registry, *window_system_);
 }
 
 // SceneMain::SceneMain() {
@@ -111,12 +105,60 @@ void SceneMain::Init() {
 //   registry.emplace<component::FPSCamera>(player, fps_cam);
 // }
 
-void SceneMain::OnEvent(const engine::Event& e) { camera_system_.OnEvent(registry, e); }
+void SceneMain::OnEvent(const engine::Event& e) { camera_system_.OnEvent(e); }
 
-void SceneMain::OnUpdate(engine::Timestep timestep) { camera_system_.OnUpdate(registry, timestep); }
+void SceneMain::OnUpdate(engine::Timestep timestep) { camera_system_.OnUpdate(timestep); }
+
+void drawGui(void (*func)(const std::string&, const std::string&)) {
+  // open Dialog Simple
+}
+
+void DrawImGuiDropdown(const char* label, std::vector<std::string>& items, int& currentItemIndex) {
+  if (ImGui::BeginCombo(label, items[currentItemIndex].data())) {
+    for (int i = 0; i < items.size(); i++) {
+      bool is_selected = (currentItemIndex == i);
+      if (ImGui::Selectable(items[i].data(), is_selected)) currentItemIndex = i;
+
+      if (is_selected)
+        ImGui::SetItemDefaultFocus();  // Set the initial focus when opening the combo
+    }
+    ImGui::EndCombo();
+  }
+}
 
 void SceneMain::OnImGuiRender() {
-  ImGui::Begin("Scene");
-  camera_system_.OnImGui(registry);
+  ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoNavFocus);
+
+  camera_system_.OnImGui();
+
+  if (ImGui::Button("Open File Dialog")) {
+    IGFD::FileDialogConfig config;
+    config.path = ".";
+    ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf,.obj,.fbx",
+                                            config);
+  }
+  auto& strings = ecs::GetModelPaths();
+  static int i = 0;
+  DrawImGuiDropdown("dropdown", strings, i);
+  if (ImGui::Button("Load")) {
+    auto v = registry.view<engine::component::Transform>();
+    registry.destroy(v.begin(), v.end());
+    engine::component::Transform t;
+    auto mesh_materials = mesh_manager_->LoadModel(strings[i]);
+    ecs::ModelViewerLoadModel(registry, t, mesh_materials);
+  }
+  if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
+    if (ImGuiFileDialog::Instance()->IsOk()) {  // action if OK
+      std::string file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
+      std::string file_path = ImGuiFileDialog::Instance()->GetCurrentPath();
+      auto v = registry.view<engine::component::Transform>();
+      registry.destroy(v.begin(), v.end());
+      engine::component::Transform t;
+      auto mesh_materials = mesh_manager_->LoadModel(file_path_name);
+      ecs::ModelViewerLoadModel(registry, t, mesh_materials);
+    }
+    ImGuiFileDialog::Instance()->Close();
+  }
+
   ImGui::End();
 }

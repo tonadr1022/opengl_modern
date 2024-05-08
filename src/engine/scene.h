@@ -18,12 +18,17 @@ namespace gfx {
 struct RenderViewInfo;
 }
 
+namespace ecs {
+struct ISystem;
+}
+
 class Scene {
   friend class Engine;
 
  public:
   Scene();
   virtual void Init();
+  void InitSystems(std::vector<ecs::ISystem*>& systems);
   virtual ~Scene();
   virtual void OnUpdate(Timestep timestep);
   virtual void OnFixedUpdate(Timestep timestep);
