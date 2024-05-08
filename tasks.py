@@ -13,7 +13,13 @@ BUILD_MODES = ["Debug", "Release", "RelWithDebInfo"]
 
 def cmake_generate(mode):
     print(f"Running CMake in {mode} mode")
-    cmake_command = ["cmake", f"-DCMAKE_BUILD_TYPE={mode}", "../.."]
+    cmake_command = [
+        "cmake",
+        f"-DCMAKE_BUILD_TYPE={mode}",
+        '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=mold"',
+        '-DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=mold"',
+        "../..",
+    ]
     cmake_process = subprocess.Popen(cmake_command)
     cmake_process.wait()
 
