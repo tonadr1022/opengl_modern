@@ -25,10 +25,18 @@ set(SOURCES
     renderer/gl/vertex_array.cpp
     renderer/gl/texture_2d.cpp
     ${CMAKE_SOURCE_DIR}/dep/imgui_file/ImGuiFileDialog.cpp
+    # demo/testing
+
+    test/systems.cpp
+    test/main.cpp
+    test/scene_main.cpp
+    test/scene_2.cpp
+
     )
 
 
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
+# add_library(${PROJECT_NAME} STATIC ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}/pch.h)

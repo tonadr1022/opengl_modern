@@ -30,7 +30,7 @@ include_directories(dep)
 include_directories(src)
 add_subdirectory(src)
 
-add_subdirectory(test)
+# add_subdirectory(test)
 
 # wayland environment variables nvidia to avoid integrated gpu
 # __NV_PRIME_RENDER_OFFLOAD=1

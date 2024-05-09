@@ -1,27 +1,24 @@
 #include "scene_main.h"
 
-#include <engine/application/event.h>
-#include <engine/application/key_codes.h>
-#include <engine/ecs/component/camera.h>
-#include <engine/ecs/component/renderer_components.h>
-#include <engine/ecs/system/window_system.h>
-#include <engine/renderer/material.h>
-#include <engine/resource/material_manager.h>
-#include <engine/resource/mesh_manager.h>
-#include <engine/resource/paths.h>
-#include <engine/resource/shader_manager.h>
-#include <engine/timestep.h>
 #include <imgui.h>
 #include <imgui_file/ImGuiFileDialog.h>
-#include <spdlog/spdlog.h>
 
-#include <entt/core/hashed_string.hpp>
 #include <entt/entt.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "components.h"
+#include "engine/application/event.h"
+#include "engine/application/key_codes.h"
+#include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
 #include "engine/ecs/system/isystem.h"
+#include "engine/ecs/system/window_system.h"
+#include "engine/pch.h"
+#include "engine/renderer/material.h"
+#include "engine/resource/material_manager.h"
+#include "engine/resource/mesh_manager.h"
+#include "engine/resource/paths.h"
+#include "engine/resource/shader_manager.h"
+#include "engine/timestep.h"
 #include "systems.h"
 
 void SceneMain::Init() {
@@ -29,8 +26,8 @@ void SceneMain::Init() {
   InitSystems(systems);
 
   std::string model_string =
-      "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
-  // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
+      // "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
+      "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
   auto gear_mesh_materials = mesh_manager_->LoadModel(model_string);
   // mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
   // mesh_manager_->LoadModel(
