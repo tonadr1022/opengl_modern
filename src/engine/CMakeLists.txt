@@ -25,8 +25,10 @@ set(SOURCES
     renderer/gl/vertex_array.cpp
     renderer/gl/texture_2d.cpp
     ${CMAKE_SOURCE_DIR}/dep/imgui_file/ImGuiFileDialog.cpp
-    # demo/testing
 
+    # FOR NOW, I'm not separating into a separate library because
+    # compilation and linking takes longer
+    # when it is.
     test/systems.cpp
     test/main.cpp
     test/scene_main.cpp
