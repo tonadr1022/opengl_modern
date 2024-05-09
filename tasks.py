@@ -15,8 +15,10 @@ def cmake_generate(mode):
     print(f"Running CMake in {mode} mode")
     cmake_command = [
         "cmake",
+        "-G Ninja",
         '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"',
         '-DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"',
+        "-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS:FILEPATH=/usr/local/bin/clang-scan-deps",
         f"-DCMAKE_BUILD_TYPE={mode}",
         "../..",
     ]

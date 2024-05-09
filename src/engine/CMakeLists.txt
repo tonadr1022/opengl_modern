@@ -1,5 +1,11 @@
 project(opengl_modern)
 
+add_library(foo)
+target_sources(foo
+    PUBLIC FILE_SET CXX_MODULES FILES
+    util/load_file.cpp
+    )
+
 set(SOURCES
     scene.cpp
     application/engine.cpp
@@ -17,7 +23,6 @@ set(SOURCES
     renderer/gl/buffer.cpp
     ecs/component/transform.cpp
     ecs/system/imgui_system.cpp
-    util/load_file.cpp
     util/imgui_extensions.cpp
     core/e_assert.cpp
     pch.cpp
@@ -43,4 +48,5 @@ target_link_libraries(
           glm::glm
           glfw
           EnTT::EnTT
-          fmt::fmt)
+          fmt::fmt
+          foo)

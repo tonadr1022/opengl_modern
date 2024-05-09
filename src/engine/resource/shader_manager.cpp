@@ -3,7 +3,8 @@
 #include <spdlog/spdlog.h>
 
 #include "engine/renderer/gl/shader.h"
-#include "engine/util/load_file.h"
+
+import util;
 
 namespace engine {
 
@@ -54,7 +55,7 @@ std::optional<ShaderManager::ShaderProgramData> ShaderManager::CompileProgram(
     entt::hashed_string name, const std::vector<ShaderCreateInfo> &create_info_vec) {
   std::vector<uint32_t> shader_ids;
   for (const auto &create_info : create_info_vec) {
-    auto src = util::LoadFromFile(create_info.shaderPath);
+    auto src = LoadFromFile(create_info.shaderPath);
     if (!src.has_value()) {
       spdlog::error("Failed to load from file {}", create_info.shaderPath);
       return std::nullopt;

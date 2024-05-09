@@ -1,8 +1,11 @@
-#include "load_file.h"
+module;
+#include <optional>
+#include <string>
 
-namespace engine::util {
+namespace util {
 
-std::optional<std::string> LoadFromFile(const std::string& path) {
+export module util;
+export std::optional<std::string> LoadFromFile(const std::string& path) {
   std::ifstream file_stream(path);
   std::string line;
   std::stringstream s_stream;
@@ -13,4 +16,4 @@ std::optional<std::string> LoadFromFile(const std::string& path) {
   return s_stream.str();
 }
 
-}  // namespace engine::util
+}  // namespace util
