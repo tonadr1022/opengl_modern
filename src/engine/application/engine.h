@@ -1,15 +1,12 @@
 #pragma once
 
-#include <memory>
-
-struct GLFWwindow;
+#include "engine/core/base.h"
 namespace engine {
 
-struct Timestep;
 class Scene;
-struct GraphicsSystem;
-struct WindowSystem;
-struct ImGuiSystem;
+struct GraphicsManager;
+struct WindowManager;
+struct ImGuiManager;
 struct Event;
 class MaterialManager;
 class MeshManager;
@@ -41,9 +38,9 @@ class Engine {
   void OnEvent(const Event& e);
   void Shutdown();
   bool draw_imgui_{true};
-  WindowSystem* window_system_{nullptr};
-  GraphicsSystem* graphics_system_{nullptr};
-  ImGuiSystem* imgui_system_{nullptr};
+  WindowManager* window_manager_{nullptr};
+  GraphicsManager* graphics_system_{nullptr};
+  ImGuiManager* imgui_system_{nullptr};
   MaterialManager* material_manager_{nullptr};
   ShaderManager* shader_manager_{nullptr};
   MeshManager* mesh_manager_{nullptr};

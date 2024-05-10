@@ -2,17 +2,17 @@
 
 #include <entt/entity/registry.hpp>
 
+#include "engine/core/base.h"
 #include "engine/renderer/renderer_types.h"
 
 namespace engine {
 
-struct Timestep;
 class Engine;
 class Event;
 struct System;
 class MaterialManager;
 class MeshManager;
-class WindowSystem;
+class WindowManager;
 
 namespace gfx {
 struct RenderViewInfo;
@@ -27,29 +27,22 @@ class Scene {
 
  public:
   Scene();
-  virtual void Init();
-  void InitSystems(std::vector<ecs::ISystem*>& systems);
   virtual ~Scene();
   virtual void OnUpdate(Timestep timestep);
   virtual void OnFixedUpdate(Timestep timestep);
   virtual void OnImGuiRender();
   virtual void OnEvent(const Event& e);
-  gfx::RenderViewInfo GetViewInfo();
+  // TODO(tony): make entity class or a factory
   entt::entity MakeDynamicEntity();
   entt::entity MakeStaticEntity();
 
-  // [[nodiscard]] Entity CreateEntity();
-  // [[nodiscard]] Entity CreateEntity(std::string_view tag);
-  // [[nodiscard]] Entity GetEntity(std::string_view tag);
-
   entt::registry registry;
+  // each scene contains state for how the renderer should render the scene
+  // including camera matrices, renderer settings, etc
+  gfx::RenderViewInfo render_view_info;
 
  protected:
-  /** @brief engine will ensure this exists on scene load */
-  MaterialManager* material_manager_{nullptr};
-  /** @brief engine will ensure this exists on scene load */
-  MeshManager* mesh_manager_{nullptr};
-  /** @brief engine will ensure this exists on scene load */
-  WindowSystem* window_system_{nullptr};
+  // Helper function so scenes don't need to include engine
+  void LoadScene(std::unique_ptr<Scene> scene);
 };
 }  // namespace engine

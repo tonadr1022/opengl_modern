@@ -10,7 +10,14 @@
 
 namespace engine {
 
-MaterialID MaterialManager::AddMaterial(const MaterialCreateInfo& material_create_info) {
+MaterialManager& MaterialManager::Get() { return *instance_; }
+MaterialManager* MaterialManager::instance_ = nullptr;
+MaterialManager::MaterialManager() {
+  EASSERT_MSG(instance_ = nullptr, "Cannot create two material managers.");
+  instance_ = this;
+}
+
+MaterialHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_create_info) {
   gfx::Texture2DCreateParams create_params;
   create_params.generate_mipmaps = true;
   create_params.bindless = true;
@@ -19,7 +26,7 @@ MaterialID MaterialManager::AddMaterial(const MaterialCreateInfo& material_creat
   gfx::MaterialData material;
   material.base_color = material_create_info.base_color;
   if (material_create_info.albedo_path.has_value()) {
-    create_params.path = material_create_info.albedo_path.value();
+    create_params.filepath = material_create_info.albedo_path.value();
     auto it = texture_map_.find(material_create_info.albedo_path.value());
     if (it != texture_map_.end()) {
       material.albedo_texture = it->second.get();
@@ -34,7 +41,7 @@ MaterialID MaterialManager::AddMaterial(const MaterialCreateInfo& material_creat
   }
 
   if (material_create_info.metalness_path.has_value()) {
-    create_params.path = material_create_info.metalness_path.value();
+    create_params.filepath = material_create_info.metalness_path.value();
     auto it = texture_map_.find(material_create_info.metalness_path.value());
     if (it != texture_map_.end()) {
       material.metalness_texture = it->second.get();
@@ -46,7 +53,7 @@ MaterialID MaterialManager::AddMaterial(const MaterialCreateInfo& material_creat
   }
 
   if (material_create_info.roughness_path.has_value()) {
-    create_params.path = material_create_info.roughness_path.value();
+    create_params.filepath = material_create_info.roughness_path.value();
     auto it = texture_map_.find(material_create_info.roughness_path.value());
     if (it != texture_map_.end()) {
       material.roughness_texture = it->second.get();
@@ -58,7 +65,7 @@ MaterialID MaterialManager::AddMaterial(const MaterialCreateInfo& material_creat
   }
 
   if (material_create_info.normal_path.has_value()) {
-    create_params.path = material_create_info.normal_path.value();
+    create_params.filepath = material_create_info.normal_path.value();
     auto it = texture_map_.find(material_create_info.normal_path.value());
     if (it != texture_map_.end()) {
       material.normal_texture = it->second.get();
@@ -69,7 +76,7 @@ MaterialID MaterialManager::AddMaterial(const MaterialCreateInfo& material_creat
     }
   }
   if (material_create_info.ao_path.has_value()) {
-    create_params.path = material_create_info.ao_path.value();
+    create_params.filepath = material_create_info.ao_path.value();
     auto it = texture_map_.find(material_create_info.ao_path.value());
     if (it != texture_map_.end()) {
       material.ao_texture = it->second.get();
@@ -80,12 +87,11 @@ MaterialID MaterialManager::AddMaterial(const MaterialCreateInfo& material_creat
     }
   }
 
-  MaterialID id = renderer_.AddMaterial(material);
+  MaterialHandle id = gfx::Renderer::Get().AddMaterial(material);
   material_map_.emplace(id, material);
   return id;
 }
 
-MaterialManager::MaterialManager(gfx::Renderer& renderer) : renderer_(renderer) {}
 void MaterialManager::Init() {
   gfx::MaterialData default_material;
   default_material.base_color = {0, 1, 1};
@@ -93,7 +99,7 @@ void MaterialManager::Init() {
   // material_map_.emplace(default_material_id_, default_material);
 }
 
-gfx::MaterialData& MaterialManager::GetMaterial(MaterialID id) {
+gfx::MaterialData& MaterialManager::GetMaterial(MaterialHandle id) {
   auto it = material_map_.find(id);
   EASSERT(it != material_map_.end());
   return it->second;
@@ -106,7 +112,7 @@ void MaterialManager::ClearAll() {
   // TODO(tony): clear from renderer
 }
 
-std::vector<std::pair<MaterialID, gfx::MaterialData>> MaterialManager::GetAllMaterials() const {
+std::vector<std::pair<MaterialHandle, gfx::MaterialData>> MaterialManager::GetAllMaterials() const {
   return {material_map_.begin(), material_map_.end()};
 }
 

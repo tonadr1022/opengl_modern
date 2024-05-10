@@ -3,18 +3,17 @@
 #include <imgui.h>
 
 #include "../scene.h"
-#include "../timestep.h"
 #include "../util/timer.h"
 #include "engine/application/event.h"
 #include "engine/application/key_codes.h"
-#include "engine/ecs/system/graphics_system.h"
-#include "engine/ecs/system/imgui_system.h"
-#include "engine/ecs/system/window_system.h"
-#include "engine/pch.h"
+#include "engine/core/base.h"
+#include "engine/ecs/system/imgui_manager.h"
+#include "engine/graphics_manager.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/material_manager.h"
 #include "engine/resource/mesh_manager.h"
 #include "engine/resource/shader_manager.h"
+#include "engine/window_manager.h"
 #include "input.h"
 
 // Engine* Engine::instance_ = nullptr;
@@ -22,26 +21,24 @@
 namespace engine {
 
 Engine::Engine() {
-  window_system_ = new WindowSystem;
-  imgui_system_ = new ImGuiSystem;
+  window_manager_ = new WindowManager;
+  imgui_system_ = new ImGuiManager;
   shader_manager_ = new ShaderManager;
-  renderer_ = new gfx::Renderer{*shader_manager_};
-  material_manager_ = new MaterialManager{*renderer_};
-  mesh_manager_ = new MeshManager{*material_manager_};
-  graphics_system_ = new GraphicsSystem{*renderer_, *material_manager_};
+  renderer_ = new gfx::Renderer;
+  material_manager_ = new MaterialManager;
+  mesh_manager_ = new MeshManager;
+  graphics_system_ = new GraphicsManager;
 
-  window_system_->Init();
-  window_system_->SetUserPointer(this);
-
+  window_manager_->Init();
+  window_manager_->SetUserPointer(this);
   // TODO(tony): global variable system
-  window_system_->SetVsync(true);
-
+  window_manager_->SetVsync(true);
   graphics_system_->Init();
   material_manager_->Init();
   mesh_manager_->Init(renderer_);
-  imgui_system_->Init(window_system_->GetContext());
+  imgui_system_->Init(window_manager_->GetContext());
 
-  Input::init_glfw_input_callbacks(window_system_->GetContext());
+  Input::init_glfw_input_callbacks(window_manager_->GetContext());
 }
 
 void Engine::OnEvent(const Event& e) {
@@ -67,34 +64,31 @@ void Engine::Run() {
   EASSERT(active_scene_ != nullptr);
   running_ = true;
 
-  Timestep timestep;
   Timer timer;
   double last_time = timer.ElapsedSeconds();
+  Timestep timestep;
   // const double sim_time = 1.0 / 60.0;
-  while (running_ && !window_system_->ShouldClose()) {
-    Input::Update();
+  while (running_ && !window_manager_->ShouldClose()) {
+    {
+      ZoneScopedN("input update");
+      Input::Update();
+    }
 
-    if (draw_imgui_) imgui_system_->StartFrame();
-
+    {
+      ZoneScopedN("ImGui Start frame");
+      if (draw_imgui_) imgui_system_->StartFrame();
+    }
     auto current_time = timer.ElapsedSeconds();
     double delta_time = current_time - last_time;
     last_time = current_time;
-    // for now, give scene simulated time. eventually, have two functions, update and fixed update,
-    // or do all fixed update in physics system that doesn't exist.
     double frame_time = delta_time;
-    // while (frame_time >= 0) {
-    //   double dt = std::min(frame_time, sim_time);
-    //   timestep.dt_actual = dt;
-    //   frame_time -= dt;
-    //   active_scene_->OnUpdate(timestep);
-    // }
     {
       ZoneScopedN("scene update");
       active_scene_->OnUpdate(timestep);
     }
     {
       ZoneScopedN("Graphics Update");
-      timestep.dt_actual = delta_time;
+      timestep = delta_time;
       graphics_system_->StartFrame(*active_scene_);
       graphics_system_->DrawOpaque(active_scene_->registry);
       graphics_system_->EndFrame();
@@ -112,7 +106,7 @@ void Engine::Run() {
       ZoneScopedN("swap buffers");
       TracyGpuZone("swap");
 
-      window_system_->SwapBuffers();
+      window_manager_->SwapBuffers();
       TracyGpuCollect;
     }
     FrameMark;
@@ -141,9 +135,9 @@ void Engine::ImGuiSystemPerFrame(Timestep timestep) {
   active_scene_->OnImGuiRender();
 
   ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoNavFocus);
-  bool vsync = window_system_->GetVsync();
+  bool vsync = window_manager_->GetVsync();
   if (ImGui::Checkbox("Vsync", &vsync)) {
-    window_system_->SetVsync(vsync);
+    window_manager_->SetVsync(vsync);
   }
 
   if (ImGui::Button("Recompile Shaders")) {
@@ -159,15 +153,15 @@ void Engine::Shutdown() {
   imgui_system_->Shutdown();
   graphics_system_->Shutdown();
   renderer_->Shutdown();
-  window_system_->Shutdown();
+  window_manager_->Shutdown();
 
-  // for now, may switch unique pointers, but this works
+  //  may switch unique pointers, but this works for now, lifetime is well defined
   delete material_manager_;
   delete mesh_manager_;
   delete imgui_system_;
   delete graphics_system_;
   delete renderer_;
-  delete window_system_;
+  delete window_manager_;
 }
 
 Engine::~Engine() = default;
@@ -176,17 +170,13 @@ void Engine::Stop() { running_ = false; }
 
 void Engine::LoadScene(std::unique_ptr<Scene> scene) {
   ZoneScopedN("load scene");
+  // reset resources and renderer state only if scene already exists
   bool scene_exists = active_scene_ != nullptr;
-
   if (scene_exists) {
     material_manager_->ClearAll();
     graphics_system_->InitScene(*scene);
   }
   active_scene_ = std::move(scene);
-  active_scene_->material_manager_ = material_manager_;
-  active_scene_->mesh_manager_ = mesh_manager_;
-  active_scene_->window_system_ = window_system_;
-  active_scene_->Init();
 }
 
 }  // namespace engine

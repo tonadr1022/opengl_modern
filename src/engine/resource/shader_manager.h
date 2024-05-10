@@ -19,6 +19,7 @@ struct ShaderCreateInfo {
 
 class ShaderManager {
  public:
+  static ShaderManager& Get();
   std::optional<gfx::Shader> GetShader(entt::hashed_string name);
   std::optional<gfx::Shader> AddShader(entt::hashed_string name,
                                        const std::vector<ShaderCreateInfo>& create_info_vec);
@@ -26,6 +27,11 @@ class ShaderManager {
   void RecompileShaders();
 
  private:
+  // static class only to be created by engine
+  friend class Engine;
+  ShaderManager();
+  static ShaderManager* instance_;
+
   struct ShaderProgramData {
     std::string name;
     uint32_t program_id;

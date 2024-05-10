@@ -30,11 +30,20 @@ struct CameraInfo {
 
 }  // namespace
 
-Renderer::Renderer(ShaderManager& shader_manager) : shader_manager_(shader_manager) {}
-void Renderer::LoadShaders() {
-  shader_manager_.AddShader("batch", {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
-                                      {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
+Renderer* Renderer::instance_{nullptr};
+Renderer& Renderer::Get() { return *instance_; }
+Renderer::Renderer() {
+  EASSERT_MSG(instance_ = nullptr, "Cannot create two renderers .");
+  instance_ = this;
 }
+
+void Renderer::LoadShaders() {
+  ShaderManager::Get().AddShader("batch",
+                                 {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
+                                  {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
+}
+
+Renderer::~Renderer() = default;
 
 void Renderer::InitVaos() {
   // batch_vao_ = std::make_unique<VertexArray>();
@@ -86,7 +95,8 @@ void Renderer::SetBatchedObjectCount(uint32_t count) {
   draw_cmd_uniforms_.reserve(count);
 }
 
-void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id) {
+void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id,
+                                 MaterialHandle material_id) {
   draw_cmd_mesh_ids_.emplace_back(mesh_id);
   draw_cmd_uniforms_.emplace_back(model, material_id);
   // user_draw_cmds_[user_draw_cmds_index_] = UserDrawCommand{
@@ -110,10 +120,10 @@ void Renderer::Init() {
 
 void Renderer::Shutdown() {}
 
-void Renderer::StartFrame(const RenderViewInfo& camera_matrices) {
+void Renderer::StartFrame(const RenderViewInfo& view_info) {
   memset(&stats_, 0, sizeof(stats_));
-  view_matrix_ = camera_matrices.view_matrix;
-  projection_matrix_ = camera_matrices.projection_matrix;
+  view_matrix_ = view_info.view_matrix;
+  projection_matrix_ = view_info.projection_matrix;
   vp_matrix_ = projection_matrix_ * view_matrix_;
   draw_cmd_uniforms_.clear();
   draw_cmd_mesh_ids_.clear();
@@ -152,7 +162,7 @@ MeshID Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index
 
 void Renderer::RenderOpaqueObjects() {
   ZoneScopedN("Render RenderOpaqueObjects");
-  auto shader = shader_manager_.GetShader("batch");
+  auto shader = ShaderManager::Get().GetShader("batch");
   shader->Bind();
   glBindVertexArray(batch_vao_);
   batch_ssbo_uniform_buffer_->ResetOffset();
@@ -205,7 +215,7 @@ void Renderer::Reset() {
   glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
 }
 
-MaterialID Renderer::AddMaterial(const MaterialData& material) {
+MaterialHandle Renderer::AddMaterial(const MaterialData& material) {
   EASSERT_MSG(materials_buffer_ != nullptr, "buffer not initialized");
   // assign handles so material samplers, properties can be accessed in shaders
   BindlessMaterial bindless_mat;
@@ -222,7 +232,7 @@ MaterialID Renderer::AddMaterial(const MaterialData& material) {
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
   // bindless_mat.base_color = material.base_color;
   // id is the index into the material buffer.
-  MaterialID id = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
+  MaterialHandle id = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
 
   // auto* ptr = static_cast<BindlessMaterial*>(materials_buffer_->Map(GL_READ_ONLY));
   // for (int i = 0; i < materials_buffer_->NumAllocs(); i++) {

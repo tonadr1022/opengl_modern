@@ -1,8 +1,7 @@
-#include "window_system.h"
+#include "window_manager.h"
 
 #include "engine/application/engine.h"
 #include "engine/application/event.h"
-#include "engine/renderer/renderer.h"
 
 namespace engine {
 
@@ -18,12 +17,15 @@ void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
   e.window_size.y = height;
   engine->OnEvent(e);
 }
-std::string WindowSystem::GetClipboardText() {
-  const char* test = glfwGetClipboardString(glfw_window_);
-  return test;
+
+WindowManager& WindowManager::Get() { return *instance_; }
+WindowManager* WindowManager::instance_ = nullptr;
+WindowManager::WindowManager() {
+  EASSERT_MSG(instance_ = nullptr, "Cannot create two window managers.");
+  instance_ = this;
 }
 
-void WindowSystem::CenterCursor() {
+void WindowManager::CenterCursor() {
   int width;
   int height;
   glfwGetWindowSize(glfw_window_, &width, &height);
@@ -31,22 +33,22 @@ void WindowSystem::CenterCursor() {
                    static_cast<float>(height) / 2.0f);
 }
 
-void WindowSystem::SetCursorVisible(bool state) {
-  // glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+void WindowManager::SetCursorVisibility(bool state) {
+  glfwSetInputMode(glfw_window_, GLFW_CURSOR, state ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
-bool WindowSystem::GetCursorVisible() const {
+bool WindowManager::GetCursorVisibility() const {
   return glfwGetInputMode(glfw_window_, GLFW_CURSOR) != 0;
 }
 
-glm::vec2 WindowSystem::GetWindowDimensions() const {
+glm::vec2 WindowManager::GetWindowDimensions() const {
   int w;
   int h;
   glfwGetWindowSize(glfw_window_, &w, &h);
   return {w, h};
 }
 
-void WindowSystem::Init() {
+void WindowManager::Init() {
   glfwSetErrorCallback([](int error, const char* description) {
     spdlog::critical("GFLW error {}: {}\n", error, description);
   });
@@ -106,16 +108,16 @@ void WindowSystem::Init() {
   // }
 }
 
-void WindowSystem::SetUserPointer(void* ptr) { glfwSetWindowUserPointer(glfw_window_, ptr); }
+void WindowManager::SetUserPointer(void* ptr) { glfwSetWindowUserPointer(glfw_window_, ptr); }
 
-void WindowSystem::SwapBuffers() { glfwSwapBuffers(glfw_window_); }
+void WindowManager::SwapBuffers() { glfwSwapBuffers(glfw_window_); }
 
-void WindowSystem::SetVsync(bool state) {
+void WindowManager::SetVsync(bool state) {
   is_vsync_ = state;
   glfwSwapInterval(state);
 };
 
-void WindowSystem::Shutdown() { glfwSetWindowShouldClose(glfw_window_, true); }
+void WindowManager::Shutdown() { glfwSetWindowShouldClose(glfw_window_, true); }
 
-bool WindowSystem::ShouldClose() { return glfwWindowShouldClose(glfw_window_); }
+bool WindowManager::ShouldClose() { return glfwWindowShouldClose(glfw_window_); }
 }  // namespace engine

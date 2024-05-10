@@ -12,20 +12,14 @@ class Renderer;
 
 class Scene;
 
-struct GraphicsSystem {
+struct GraphicsManager {
  public:
-  GraphicsSystem(gfx::Renderer& renderer, MaterialManager& material_manager);
   void Init();
   void Shutdown();
   void StartFrame(Scene& scene);
   void InitScene(Scene& scene);
-
   void UpdateTransforms(entt::registry& registry);
   void DrawOpaque(entt::registry& registry);
   void EndFrame();
-
- private:
-  gfx::Renderer& renderer_;
-  MaterialManager& material_manager_;
 };
 }  // namespace engine

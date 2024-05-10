@@ -6,7 +6,7 @@ import shutil
 
 BUILD_DIR_NAME = "build"
 PROJECT_NAME = "opengl_modern"
-EXECUTABLE_NAME = "opengl_renderer"
+EXECUTABLE_NAME = "opengl_modern"
 COMPILE_DB_NAME = "compile_commands.json"
 BUILD_MODES = ["Debug", "Release", "RelWithDebInfo"]
 
@@ -15,6 +15,8 @@ def cmake_generate(mode):
     print(f"Running CMake in {mode} mode")
     cmake_command = [
         "cmake",
+        "-G Ninja",
+        '-DCMAKE_CXX_FLAGS="-ftime-trace"',
         '-DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"',
         '-DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"',
         f"-DCMAKE_BUILD_TYPE={mode}",
@@ -50,17 +52,7 @@ def run(build_dir):
 
 def cmake_build(mode):
     print(f"Building in {mode} mode")
-    if platform.system() == "Windows":
-        parallel_flag = "/m:"
-    else:
-        parallel_flag = "-j"
-    cmake_build_command = [
-        "cmake",
-        "--build",
-        ".",
-        "--",
-        f"{parallel_flag}{str(os.cpu_count())}",
-    ]
+    cmake_build_command = ["ninja"]
     build_process = subprocess.Popen(cmake_build_command)
     build_process.wait()
 

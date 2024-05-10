@@ -1,17 +1,14 @@
 #include "texture_2d.h"
 
+#include <glm/common.hpp>
+#include <glm/exponential.hpp>
+
 #include "engine/core/stb_image_impl.h"
-#include "engine/pch.h"
 
 namespace engine::gfx {
 Texture2D::Texture2D(const Texture2DCreateParams& params) {
   ZoneScopedN("tex load");
-  bool has_tex =
-      std::filesystem::exists(params.path) && std::filesystem::is_regular_file(params.path);
-  if (!has_tex) {
-    spdlog::error("no texture at path: {}", params.path);
-    return;
-  }
+
   stbi_set_flip_vertically_on_load(true);
 
   // https://www.khronos.org/opengl/wiki/Bindless_Texture
@@ -19,9 +16,12 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
   int comp;
   int x;
   int y;
-  void* pixels = stbi_load(params.path.c_str(), &x, &y, &comp, 4);
+  void* pixels = stbi_load(params.filepath.c_str(), &x, &y, &comp, 4);
   dims_.x = x;
   dims_.y = y;
+  if (pixels == nullptr) {
+    spdlog::error("Failed to load texture at path {}", params.filepath);
+  }
   EASSERT_MSG(pixels != nullptr, "Failed to load texture");
 
   GLuint mip_levels = 1;
@@ -58,6 +58,8 @@ Texture2D::Texture2D(const Texture2DCreateParams& params) {
 }
 
 void Texture2D::MakeNonResident() const { glMakeTextureHandleNonResidentARB(bindless_handle_); }
+
+bool Texture2D::IsValid() const { return id_ != 0; }
 
 Texture2D::~Texture2D() {
   glMakeTextureHandleNonResidentARB(bindless_handle_);

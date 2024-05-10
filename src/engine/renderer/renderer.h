@@ -3,22 +3,20 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <map>
-#include <memory>
 #include <unordered_map>
 #include <vector>
 
-#include "engine/renderer/gl/vertex_array.h"
 #include "engine/resource/data_types.h"
-#include "gl/buffer.h"
 
 struct GLFWwindow;
 
 namespace engine {
-class ShaderManager;
-}  // namespace engine
 
+class Engine;
+}
 namespace engine::gfx {
+
+struct Buffer;
 
 struct RendererStats {
   uint32_t vertices;
@@ -30,7 +28,7 @@ struct RendererStats {
 
 struct UserDrawCommand {
   MeshID mesh_id;
-  MaterialID material_id;
+  MaterialHandle material_id;
   glm::mat4 model_matrix;
 };
 
@@ -47,30 +45,33 @@ struct MaterialData;
 
 class Renderer {
  public:
-  explicit Renderer(ShaderManager& shader_manager);
+  static Renderer& Get();
+  ~Renderer();
   void Init();
   void Shutdown();
-  void StartFrame(const RenderViewInfo& camera_matrices);
+  void StartFrame(const RenderViewInfo& view_info);
   void EndFrame();
   void Reset();
   void SetBatchedObjectCount(uint32_t count);
   void SetFrameBufferSize(uint32_t width, uint32_t height);
-  void SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialID material_id);
+  void SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id, MaterialHandle material_id);
   [[nodiscard]] MeshID AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index>& indices);
   // [[nodiscard]] MeshID AddBatchedMesh(MeshID id, std::vector<Vertex>& vertices,
   //                                     std::vector<Index>& indices);
   void RenderOpaqueObjects();
   void SetMaterials(const std::vector<MaterialData>& materials);
-  [[nodiscard]] MaterialID AddMaterial(const MaterialData& material_data);
+  [[nodiscard]] MaterialHandle AddMaterial(const MaterialData& material_data);
   [[nodiscard]] const RendererStats& GetStats();
 
   static constexpr const uint32_t MaxMaterials = 100;
 
  private:
-  ShaderManager& shader_manager_;
+  friend class engine::Engine;
+  Renderer();
+  static Renderer* instance_;
 
   std::unique_ptr<Buffer> materials_buffer_{nullptr};
-  std::unordered_map<MaterialID, int> material_id_to_index_;
+  std::unordered_map<MaterialHandle, int> material_id_to_index_;
 
   std::unique_ptr<Buffer> batch_vertex_buffer_{nullptr};
   std::unique_ptr<Buffer> batch_element_buffer_{nullptr};
@@ -103,7 +104,7 @@ class Renderer {
 
   void* batch_map_ptr_{nullptr};
 
-  void DrawOpaqueHelper(MaterialID material_id, std::vector<glm::mat4>& uniforms);
+  void DrawOpaqueHelper(MaterialHandle material_id, std::vector<glm::mat4>& uniforms);
   RendererStats stats_{0};
 };
 

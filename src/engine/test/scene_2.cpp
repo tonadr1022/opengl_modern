@@ -1,17 +1,13 @@
 #include "scene_2.h"
 
-#include <engine/application/event.h>
-#include <engine/pch.h>
-
+#include "engine/application/event.h"
 #include "scene_main.h"
 
-using namespace engine;
-
-void Scene2::OnEvent(const Event& e) {
+void Scene2::OnEvent(const engine::Event& e) {
   switch (e.type) {
-    case EventType::KeyPressed:
-      if (e.key.code == KeyCode::B) {
-        Engine::Get().LoadScene(std::make_unique<SceneMain>());
+    case engine::EventType::KeyPressed:
+      if (e.key.code == engine::KeyCode::B) {
+        LoadScene(std::make_unique<SceneMain>());
       }
     default:
       break;

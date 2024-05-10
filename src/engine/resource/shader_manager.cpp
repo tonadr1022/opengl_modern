@@ -9,6 +9,13 @@ namespace engine {
 
 using gfx::Shader;
 
+ShaderManager *ShaderManager::instance_ = nullptr;
+ShaderManager &ShaderManager::Get() { return *instance_; }
+ShaderManager::ShaderManager() {
+  EASSERT_MSG(instance_ = nullptr, "Cannot create two shader managers.");
+  instance_ = this;
+}
+
 std::optional<Shader> ShaderManager::GetShader(entt::hashed_string name) {
   auto it = shader_data_.find(name);
   if (it == shader_data_.end()) {

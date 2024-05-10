@@ -1,23 +1,13 @@
 #pragma once
 
-#include <cstdint>
+#include "engine/core/base.h"
 namespace engine {
-using MaterialID = uint32_t;
-using MeshID = uint32_t;
 
 namespace component {
 
-// struct Mesh {
-//   MeshID handle;
-// };
-//
-// struct Material {
-//   MaterialID handle;
-// };
-
-struct MeshMaterial {
-  MeshID mesh_handle;
-  MaterialID material_handle;
+struct Mesh {
+  AssetHandle mesh_handle;
+  AssetHandle material_handle;
 };
 
 }  // namespace component

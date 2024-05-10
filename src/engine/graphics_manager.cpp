@@ -1,27 +1,28 @@
-#include "graphics_system.h"
+#include "graphics_manager.h"
 
 #include <entt/entity/registry.hpp>
 
-#include "../../renderer/renderer.h"
 #include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
+#include "engine/renderer/renderer.h"
 #include "engine/resource/material_manager.h"
 #include "engine/scene.h"
 
 namespace engine {
 
-using namespace component;
-using namespace gfx;
+using component::MeshMaterial;
+using component::ModelMatrix;
+using component::Transform;
+using gfx::Renderer;
 
-void GraphicsSystem::Init() { renderer_.Init(); }
-void GraphicsSystem::Shutdown() { renderer_.Shutdown(); }
+void GraphicsManager::Init() { Renderer::Get().Init(); }
+void GraphicsManager::Shutdown() { Renderer::Get().Shutdown(); }
 
-void GraphicsSystem::StartFrame(Scene& scene) { renderer_.StartFrame(scene.GetViewInfo()); }
+void GraphicsManager::StartFrame(Scene& scene) {
+  Renderer::Get().StartFrame(scene.render_view_info);
+}
 
-void GraphicsSystem::InitScene(Scene& scene) { renderer_.Reset(); }
-
-GraphicsSystem::GraphicsSystem(gfx::Renderer& renderer, MaterialManager& material_manager)
-    : renderer_(renderer), material_manager_(material_manager) {}
+void GraphicsManager::InitScene(Scene& /*scene*/) { Renderer::Get().Reset(); }
 
 void update_model_matrices(entt::registry& registry) {
   ZoneScopedN("update model matrices");
@@ -37,7 +38,7 @@ void update_model_matrices(entt::registry& registry) {
   });
 }
 
-void GraphicsSystem::DrawOpaque(entt::registry& registry) {
+void GraphicsManager::DrawOpaque(entt::registry& registry) {
   // auto par_group = registry.group<Transform>(entt::get<Parent>);
   // for (auto entity : par_group) {
   //   auto [world_transform, parent] = par_group.get<Transform, Parent>(entity);
@@ -48,14 +49,15 @@ void GraphicsSystem::DrawOpaque(entt::registry& registry) {
   {
     ZoneScopedN("submit cmds");
     auto draw_cmd_group = registry.view<ModelMatrix, MeshMaterial>();
-    draw_cmd_group.each([this](auto& model_matrix, auto& mesh_material) {
-      renderer_.SubmitDrawCommand(model_matrix.matrix, mesh_material.mesh_handle,
-                                  mesh_material.material_handle);
+    auto& renderer = Renderer::Get();
+    draw_cmd_group.each([this, &renderer](auto& model_matrix, auto& mesh_material) {
+      renderer.SubmitDrawCommand(model_matrix.matrix, mesh_material.mesh_handle,
+                                 mesh_material.material_handle);
     });
   }
 
-  renderer_.RenderOpaqueObjects();
+  Renderer::Get().RenderOpaqueObjects();
 }
 
-void GraphicsSystem::EndFrame() { renderer_.EndFrame(); }
+void GraphicsManager::EndFrame() { Renderer::Get().EndFrame(); }
 }  // namespace engine

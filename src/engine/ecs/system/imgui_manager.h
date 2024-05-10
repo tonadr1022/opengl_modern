@@ -1,13 +1,13 @@
 #pragma once
 
+#include "engine/core/base.h"
 namespace engine {
 
-struct Timestep;
 namespace gfx {
 struct RendererStats;
 }
 
-struct ImGuiSystem {
+struct ImGuiManager {
  public:
   void Init(GLFWwindow* window);
   void Shutdown();

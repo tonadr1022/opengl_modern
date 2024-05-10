@@ -3,37 +3,25 @@
 #include <imgui.h>
 #include <imgui_file/ImGuiFileDialog.h>
 
-#include <entt/entt.hpp>
-
-#include "components.h"
 #include "engine/application/event.h"
-#include "engine/application/key_codes.h"
 #include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
-#include "engine/ecs/system/isystem.h"
-#include "engine/ecs/system/window_system.h"
-#include "engine/pch.h"
-#include "engine/renderer/material.h"
-#include "engine/resource/material_manager.h"
 #include "engine/resource/mesh_manager.h"
-#include "engine/resource/paths.h"
-#include "engine/resource/shader_manager.h"
-#include "engine/timestep.h"
+#include "engine/test/scene_2.h"
+#include "engine/window_manager.h"
 #include "systems.h"
 
-void SceneMain::Init() {
-  std::vector<engine::ecs::ISystem*> systems = {&camera_system_};
-  InitSystems(systems);
+SceneMain::SceneMain() : camera_system(registry, render_view_info) {
+  camera_system.enabled = false;
+  camera_system.camera_mode = engine::CameraMode::FPS;
+  player_entity_ = registry.create();
+  camera_system.InitDefaultCamera(player_entity_);
 
   std::string model_string =
-      // "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
-      "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
-  auto gear_mesh_materials = mesh_manager_->LoadModel(model_string);
-  // mesh_manager_->LoadModel(GET_PATH("resources/models/Gear1/Gear1.gltf"));
-  // mesh_manager_->LoadModel(
-  //     "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf");
-  // mesh_manager_->LoadModel(
-  //     "/home/tony/personal/opengl_renderer/resources/models/sponza/sponza.obj");
+      "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
+  // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
+  auto gear_mesh_materials = engine::MeshManager::Get().LoadModel(model_string);
+
   glm::vec3 iter{0};
   auto scale = glm::vec3(.01);
   int c = 1;
@@ -50,7 +38,84 @@ void SceneMain::Init() {
       }
     }
   }
-  ecs::LoadCamera(registry, *window_system_);
+}
+
+using engine::EventType;
+using engine::KeyCode;
+void SceneMain::OnEvent(const engine::Event& e) {
+  switch (e.type) {
+    case EventType::KeyPressed:
+      if (e.key.code == KeyCode::M) {
+        camera_system.enabled = !camera_system.enabled;
+        if (!camera_system.enabled) engine::WindowManager::Get().CenterCursor();
+        engine::WindowManager::Get().SetCursorVisibility(!camera_system.enabled);
+        break;
+      } else if (e.key.code == KeyCode::B) {
+        LoadScene(std::make_unique<Scene2>());
+        break;
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+void SceneMain::OnUpdate(Timestep timestep) {
+  if (camera_system.enabled) camera_system.OnUpdate(timestep);
+}
+
+void DrawImGuiDropdown(const char* label, std::vector<std::string>& items, int& currentItemIndex) {
+  if (ImGui::BeginCombo(label, items[currentItemIndex].data())) {
+    for (int i = 0; i < items.size(); i++) {
+      bool is_selected = (currentItemIndex == i);
+      if (ImGui::Selectable(items[i].data(), is_selected)) currentItemIndex = i;
+
+      // Set the initial focus when opening the combo
+      if (is_selected) ImGui::SetItemDefaultFocus();
+    }
+    ImGui::EndCombo();
+  }
+}
+
+// TODO(tony): clean up and separate
+void SceneMain::OnImGuiRender() {
+  ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoNavFocus);
+  if (ImGui::TreeNode("Systems")) {
+    ImGui::Checkbox("Camera", &camera_system.enabled);
+  }
+
+  camera_system.OnImGui();
+
+  if (ImGui::Button("Open File Dialog")) {
+    IGFD::FileDialogConfig config;
+    config.path = ".";
+    ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf,.obj,.fbx",
+                                            config);
+  }
+  auto& strings = GetModelPaths();
+  static int i = 0;
+  DrawImGuiDropdown("dropdown", strings, i);
+  if (ImGui::Button("Load")) {
+    auto v = registry.view<engine::component::Transform>();
+    registry.destroy(v.begin(), v.end());
+    engine::component::Transform t;
+    auto mesh_materials = engine::MeshManager::Get().LoadModel(strings[i]);
+    ModelViewerLoadModel(registry, t, mesh_materials);
+  }
+  if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
+    if (ImGuiFileDialog::Instance()->IsOk()) {  // action if OK
+      std::string file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
+      std::string file_path = ImGuiFileDialog::Instance()->GetCurrentPath();
+      auto v = registry.view<engine::component::Transform>();
+      registry.destroy(v.begin(), v.end());
+      engine::component::Transform t;
+      auto mesh_materials = engine::MeshManager::Get().LoadModel(file_path_name);
+      ModelViewerLoadModel(registry, t, mesh_materials);
+    }
+    ImGuiFileDialog::Instance()->Close();
+  }
+
+  ImGui::End();
 }
 
 // SceneMain::SceneMain() {
@@ -101,61 +166,3 @@ void SceneMain::Init() {
 //   fps_cam.position = {2, 1, 1};
 //   registry.emplace<component::FPSCamera>(player, fps_cam);
 // }
-
-void SceneMain::OnEvent(const engine::Event& e) { camera_system_.OnEvent(e); }
-
-void SceneMain::OnUpdate(engine::Timestep timestep) { camera_system_.OnUpdate(timestep); }
-
-void drawGui(void (*func)(const std::string&, const std::string&)) {
-  // open Dialog Simple
-}
-
-void DrawImGuiDropdown(const char* label, std::vector<std::string>& items, int& currentItemIndex) {
-  if (ImGui::BeginCombo(label, items[currentItemIndex].data())) {
-    for (int i = 0; i < items.size(); i++) {
-      bool is_selected = (currentItemIndex == i);
-      if (ImGui::Selectable(items[i].data(), is_selected)) currentItemIndex = i;
-
-      if (is_selected)
-        ImGui::SetItemDefaultFocus();  // Set the initial focus when opening the combo
-    }
-    ImGui::EndCombo();
-  }
-}
-
-void SceneMain::OnImGuiRender() {
-  ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoNavFocus);
-
-  camera_system_.OnImGui();
-
-  if (ImGui::Button("Open File Dialog")) {
-    IGFD::FileDialogConfig config;
-    config.path = ".";
-    ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf,.obj,.fbx",
-                                            config);
-  }
-  auto& strings = ecs::GetModelPaths();
-  static int i = 0;
-  DrawImGuiDropdown("dropdown", strings, i);
-  if (ImGui::Button("Load")) {
-    auto v = registry.view<engine::component::Transform>();
-    registry.destroy(v.begin(), v.end());
-    engine::component::Transform t;
-    auto mesh_materials = mesh_manager_->LoadModel(strings[i]);
-    ecs::ModelViewerLoadModel(registry, t, mesh_materials);
-  }
-  if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
-    if (ImGuiFileDialog::Instance()->IsOk()) {  // action if OK
-      std::string file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
-      std::string file_path = ImGuiFileDialog::Instance()->GetCurrentPath();
-      auto v = registry.view<engine::component::Transform>();
-      registry.destroy(v.begin(), v.end());
-      engine::component::Transform t;
-      auto mesh_materials = mesh_manager_->LoadModel(file_path_name);
-      ecs::ModelViewerLoadModel(registry, t, mesh_materials);
-    }
-    ImGuiFileDialog::Instance()->Close();
-  }
-
-  ImGui::End();
-}

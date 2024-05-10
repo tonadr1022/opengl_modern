@@ -1,5 +1,7 @@
 #include "shader.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "engine/pch.h"
 
 namespace engine::gfx {

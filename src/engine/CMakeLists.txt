@@ -10,16 +10,18 @@ set(SOURCES
     resource/texture_manager.cpp
     renderer/gl/shader.cpp
     application/input.cpp
-    ecs/system/graphics_system.cpp
-    ecs/system/window_system.cpp
+    graphics_manager.cpp
+    window_manager.cpp
+    ecs/system/camera_system.cpp
     ecs/entity/entity.cpp
     renderer/gl/debug.cpp
     renderer/gl/buffer.cpp
     ecs/component/transform.cpp
-    ecs/system/imgui_system.cpp
+    ecs/system/imgui_manager.cpp
     util/load_file.cpp
     util/imgui_extensions.cpp
     core/e_assert.cpp
+    ecs/component/camera.cpp
     pch.cpp
     util/timer.cpp
     renderer/gl/vertex_array.cpp

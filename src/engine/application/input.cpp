@@ -5,7 +5,6 @@
 #include "engine/application/engine.h"
 #include "engine/application/event.h"
 #include "engine/application/mouse_codes.h"
-#include "engine/pch.h"
 
 namespace engine {
 
@@ -26,6 +25,7 @@ void Input::Update() {
   glfwGetCursorPos(glfw_window_, &x, &y);
   prev_cursor_pos_ = cursor_pos_;
   cursor_pos_ = {x, y};
+  scroll_offset_ = 0;
   // cursor_offset_ = {0, 0};
 
   glfwPollEvents();
@@ -109,7 +109,7 @@ void Input::mouse_pos_cb(GLFWwindow* window, double xpos, double ypos) {
   //
   // cursor_pos_.x = static_cast<float>(xpos);
   // cursor_pos_.y = static_cast<float>(ypos);
-  //
+
   // cursor_offset_.x = static_cast<float>(xpos) - prev_cursor_offset_.x;
   // cursor_offset_.y = prev_cursor_offset_.y - static_cast<float>(ypos);
   // prev_cursor_offset_ = glm::vec2(xpos, ypos);
@@ -122,8 +122,10 @@ void Input::mouse_pos_cb(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void Input::mouse_scroll_cb(GLFWwindow* window, double xoffset, double yoffset) {
+  // TODO(tony): clean up, one or the other between polling and events?
   ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
   Event e{.type = EventType::MouseScrolled};
+  scroll_offset_ = yoffset;
   e.scroll.offset = yoffset;
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
   engine->OnEvent(e);

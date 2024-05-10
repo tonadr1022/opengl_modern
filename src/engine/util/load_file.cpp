@@ -1,5 +1,7 @@
 #include "load_file.h"
 
+#include <fstream>
+
 namespace engine::util {
 
 std::optional<std::string> LoadFromFile(const std::string& path) {

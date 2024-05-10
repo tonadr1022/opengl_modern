@@ -1,19 +1,21 @@
 #pragma once
 
-#include <engine/application/engine.h>
-#include <engine/ecs/component/transform.h>
-#include <engine/scene.h>
+#include <entt/entity/fwd.hpp>
 
-#include "engine/timestep.h"
-#include "systems.h"
+#include "engine/application/engine.h"
+#include "engine/core/base.h"
+#include "engine/ecs/system/camera_system.h"
+#include "engine/scene.h"
 
 class SceneMain : public engine::Scene {
  public:
-  void Init() override;
+  SceneMain();
   void OnImGuiRender() override;
   void OnEvent(const engine::Event& e) override;
-  void OnUpdate(engine::Timestep timestep) override;
+  void OnUpdate(Timestep timestep) override;
+
+  engine::ecs::CameraSystem camera_system;
 
  private:
-  ecs::CameraSystem camera_system_;
+  entt::entity player_entity_{};
 };

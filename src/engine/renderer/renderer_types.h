@@ -5,8 +5,8 @@
 namespace engine::gfx {
 
 struct RenderViewInfo {
-  glm::mat4 view_matrix{};
-  glm::mat4 projection_matrix{};
+  glm::mat4 view_matrix;
+  glm::mat4 projection_matrix;
 };
 
 }  // namespace engine::gfx

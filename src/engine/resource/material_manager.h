@@ -28,20 +28,25 @@ struct MaterialCreateInfo {
 
 class MaterialManager {
  public:
-  explicit MaterialManager(gfx::Renderer& renderer);
+  static MaterialManager& Get();
   void Init();
-  [[nodiscard]] MaterialID AddMaterial(const MaterialCreateInfo& material);
-  gfx::MaterialData& GetMaterial(MaterialID id);
-  void RemoveMaterial(MaterialID id);
-  inline MaterialID GetDefaultMaterialId() const { return default_material_id_; };
+  [[nodiscard]] MaterialHandle AddMaterial(const MaterialCreateInfo& material);
+  gfx::MaterialData& GetMaterial(MaterialHandle id);
+  void RemoveMaterial(MaterialHandle id);
+  inline MaterialHandle GetDefaultMaterialId() const { return default_material_id_; };
   void ClearAll();
-  [[nodiscard]] std::vector<std::pair<MaterialID, gfx::MaterialData>> GetAllMaterials() const;
+  [[nodiscard]] std::vector<std::pair<MaterialHandle, gfx::MaterialData>> GetAllMaterials() const;
 
  private:
-  MaterialID default_material_id_;
-  gfx::Renderer& renderer_;
+  // static class only to be created once by engine
+  friend class Engine;
+  MaterialManager();
+  static MaterialManager* instance_;
+
+  MaterialHandle default_material_id_;
+
   std::unordered_map<std::string, std::unique_ptr<gfx::Texture2D>> texture_map_;
-  std::unordered_map<MaterialID, gfx::MaterialData> material_map_;
+  std::unordered_map<MaterialHandle, gfx::MaterialData> material_map_;
   uint32_t material_counter_{0};
 };
 

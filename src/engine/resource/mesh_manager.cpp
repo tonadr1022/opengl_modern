@@ -1,4 +1,3 @@
-
 #include "mesh_manager.h"
 
 #include <assimp/material.h>
@@ -7,14 +6,10 @@
 
 #include <assimp/Importer.hpp>
 #include <entt/core/hashed_string.hpp>
-#include <entt/entt.hpp>
-#include <filesystem>
 
-#include "engine/ecs/component/renderer_components.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/data_types.h"
 #include "engine/resource/material_manager.h"
-#include "engine/resource/shapes/shapes.h"
 
 namespace engine {
 
@@ -25,33 +20,35 @@ glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
 
 }  // namespace
 
-component::MeshMaterial MeshManager::LoadCube() {
-  std::vector<gfx::Vertex> vertices;
-  for (const auto& vertex : gfx::shape::CubeVertices) {
-    vertices.emplace_back(vertex);
-  }
-  std::vector<gfx::Index> indices;
-  for (const auto& index : gfx::shape::CubeIndices) {
-    indices.emplace_back(index);
-  }
-  MeshID id = renderer_->AddBatchedMesh(vertices, indices);
-  return {.mesh_handle = id, .material_handle = material_manager_.GetDefaultMaterialId()};
-};
+MeshManager::~MeshManager() = default;
+MeshManager* MeshManager::instance_{nullptr};
+MeshManager& MeshManager::Get() { return *instance_; }
+MeshManager::MeshManager() {
+  EASSERT_MSG(instance_ = nullptr, "Cannot create two mesh managers.");
+  instance_ = this;
+}
+
+// component::MeshMaterial MeshManager::LoadCube() {
+//   std::vector<gfx::Vertex> vertices;
+//   for (const auto& vertex : gfx::shape::CubeVertices) {
+//     vertices.emplace_back(vertex);
+//   }
+//   std::vector<gfx::Index> indices;
+//   for (const auto& index : gfx::shape::CubeIndices) {
+//     indices.emplace_back(index);
+//   }
+//   MeshID id = renderer_->AddBatchedMesh(vertices, indices);
+//   return {.mesh_handle = id, .material_handle = MaterialManager::Get().GetDefaultMaterialId()};
+// };
 
 void MeshManager::Init(gfx::Renderer* renderer) {
   renderer_ = renderer;
   importer = std::make_unique<Assimp::Importer>();
 }
 
-MeshManager::MeshManager(MaterialManager& material_manager) : material_manager_(material_manager) {}
-
 std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& path) {
   ZoneScopedNC("load model", tracy::Color::Red);
   spdlog::info("loading {}", path);
-  if (!std::filesystem::exists(path)) {
-    spdlog::error("Path does not exist: {}", path);
-    return {};
-  }
   int slash_idx = path.find_last_of("/\\");
   std::string directory = path.substr(0, slash_idx + 1);
 
@@ -59,13 +56,13 @@ std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& p
   const aiScene* scene = importer->ReadFile(path, flags);
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    spdlog::error("Assimp error: {}", importer->GetErrorString());
+    spdlog::error("Path: {}\nAssimp error: {}", path, importer->GetErrorString());
     return {};
   }
 
   // in sync with scene materials, material manager has different ids.
   // each index contains the material id
-  std::vector<MaterialID> material_ids;
+  std::vector<MaterialHandle> material_ids;
   material_ids.resize(scene->mNumMaterials);
   aiString filename;
   for (int ai_scene_mat_idx = 0; ai_scene_mat_idx < scene->mNumMaterials; ai_scene_mat_idx++) {
@@ -91,7 +88,7 @@ std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& p
 
     // add material and get id. associate it with the scene in the vector so that
     // meshes can access the real material id.
-    MaterialID material_id = material_manager_.AddMaterial(m);
+    MaterialHandle material_id = MaterialManager::Get().AddMaterial(m);
     material_ids[ai_scene_mat_idx] = material_id;
   }
 
@@ -146,8 +143,9 @@ std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& p
         }
       }
 
-      MaterialID mat_id = (mesh.mMaterialIndex >= 0) ? material_ids[mesh.mMaterialIndex]
-                                                     : material_manager_.GetDefaultMaterialId();
+      MaterialHandle mat_id = (mesh.mMaterialIndex >= 0)
+                                  ? material_ids[mesh.mMaterialIndex]
+                                  : MaterialManager::Get().GetDefaultMaterialId();
       MeshID mesh_id = renderer_->AddBatchedMesh(vertices, indices);
       mesh_material.material_handle = mat_id;
       mesh_material.mesh_handle = mesh_id;
@@ -157,10 +155,10 @@ std::vector<component::MeshMaterial> MeshManager::LoadModel(const std::string& p
   return mesh_materials;
 }
 
-component::MeshMaterial MeshManager::LoadShape(ShapeType type) {
-  switch (type) {
-    case ShapeType::Cube:
-      return LoadCube();
-  }
-}
+// component::MeshMaterial MeshManager::LoadShape(ShapeType type) {
+//   switch (type) {
+//     case ShapeType::Cube:
+//       return LoadCube();
+//   }
+// }
 }  // namespace engine

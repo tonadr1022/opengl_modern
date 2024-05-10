@@ -41,7 +41,9 @@ class Input {
   static bool IsMousePressed(MouseButton key);
   static bool IsMouseReleased(MouseButton key);
   static bool MouseMoved();
+  static bool IsMouseScroll();
 
+  inline static double GetScrollOffset() { return scroll_offset_; };
   inline static glm::vec2 GetCursorOffset() { return cursor_pos_ - prev_cursor_pos_; };
 
  private:
@@ -52,6 +54,7 @@ class Input {
   // inline static glm::vec2 prev_cursor_offset_{0, 0};
   inline static glm::vec2 cursor_pos_{0, 0};
   inline static glm::vec2 prev_cursor_pos_{0, 0};
+  inline static double scroll_offset_{0};
 
   // static inline glm::vec2 mouse_screen_pos_;
   // static inline glm::vec2 mouse_screen_offset_;

@@ -1,5 +1,5 @@
 
-#include "imgui_system.h"
+#include "imgui_manager.h"
 
 #include <engine/renderer/renderer_types.h>
 #include <imgui.h>
@@ -7,7 +7,6 @@
 #include <imgui_impl_opengl3.h>
 
 #include "engine/renderer/renderer.h"
-#include "engine/timestep.h"
 #include "engine/util/imgui_extensions.h"
 
 namespace engine {
@@ -87,7 +86,7 @@ void SetImGuiStyle() {
 }
 }  // namespace
 
-void ImGuiSystem::Init(GLFWwindow* glfw_window) {
+void ImGuiManager::Init(GLFWwindow* glfw_window) {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
@@ -99,26 +98,26 @@ void ImGuiSystem::Init(GLFWwindow* glfw_window) {
   ImGui_ImplOpenGL3_Init();
 }
 
-void ImGuiSystem::Shutdown() {
+void ImGuiManager::Shutdown() {
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 }
 
-void ImGuiSystem::StartFrame() {
+void ImGuiManager::StartFrame() {
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 }
 
-void ImGuiSystem::EndFrame() {
+void ImGuiManager::EndFrame() {
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   ImGui::EndFrame();
   // ImGui::UpdatePlatformWindows();
 }
 
-void ImGuiSystem::RenderRendererStats(const gfx::RendererStats& stats) {
+void ImGuiManager::RenderRendererStats(const gfx::RendererStats& stats) {
   ImGui::BeginChild("Stats");
   ImGui::Text("Vertices: %i", stats.vertices);
   ImGui::Text("Indices: %i", stats.indices);
@@ -127,10 +126,14 @@ void ImGuiSystem::RenderRendererStats(const gfx::RendererStats& stats) {
   ImGui::EndChild();
 }
 
-void ImGuiSystem::FramerateSubMenu(Timestep timestep) {
+void ImGuiManager::FramerateSubMenu(Timestep timestep) {
   ImGui::BeginChild("Framerate");
-  ImGui::PlotVar("Frametime (ms)", timestep.dt_actual * 1000.0f, 0.f, .05f * 1000.f, 240,
-                 ImVec2(300, 100));
+
+  static bool show_graph{false};
+  ImGui::Checkbox("Show Graph", &show_graph);
+  if (show_graph) {
+    ImGui::PlotVar("Frametime (ms)", timestep * 1000.0f, 0.f, .05f * 1000.f, 240, ImVec2(300, 100));
+  }
 
   constexpr const double AvgFramesToCount = 30;
 
@@ -138,7 +141,7 @@ void ImGuiSystem::FramerateSubMenu(Timestep timestep) {
   static int acc_count = 0;
   acc_count++;
   static double avg_frame_rate = 999999;
-  accumulated += timestep.dt_actual;
+  accumulated += timestep;
   if (acc_count >= AvgFramesToCount) {
     avg_frame_rate = accumulated / acc_count;
     acc_count = 0;
@@ -149,8 +152,8 @@ void ImGuiSystem::FramerateSubMenu(Timestep timestep) {
   static int fake_lag = 0;
   static double frame_time_exp = 0;
   static double alpha = .01;
-  frame_time_exp = alpha * timestep.dt_actual + (1.0 - alpha) * frame_time_exp;
-  alpha = glm::clamp(timestep.dt_actual, 0.0, 1.0);
+  frame_time_exp = alpha * timestep + (1.0 - alpha) * frame_time_exp;
+  alpha = glm::clamp(timestep, 0.0, 1.0);
 
   ImGui::Text("ImGui Calculated: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
               ImGui::GetIO().Framerate);

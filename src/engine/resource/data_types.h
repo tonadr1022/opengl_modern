@@ -6,7 +6,7 @@
 
 namespace engine {
 
-using MaterialID = uint32_t;
+using MaterialHandle = uint32_t;
 using MeshID = uint32_t;
 
 namespace gfx {
