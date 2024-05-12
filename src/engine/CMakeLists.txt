@@ -5,8 +5,9 @@ set(SOURCES
     application/engine.cpp
     renderer/renderer.cpp
     resource/shader_manager.cpp
-    resource/mesh_manager.cpp
+    resource/model_loader.cpp
     resource/material_manager.cpp
+    resource/resource_manager.cpp
     resource/texture_manager.cpp
     renderer/gl/shader.cpp
     application/input.cpp

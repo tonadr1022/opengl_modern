@@ -12,7 +12,7 @@ using gfx::Shader;
 ShaderManager *ShaderManager::instance_ = nullptr;
 ShaderManager &ShaderManager::Get() { return *instance_; }
 ShaderManager::ShaderManager() {
-  EASSERT_MSG(instance_ = nullptr, "Cannot create two shader managers.");
+  EASSERT_MSG(instance_ == nullptr, "Cannot create two shader managers.");
   instance_ = this;
 }
 

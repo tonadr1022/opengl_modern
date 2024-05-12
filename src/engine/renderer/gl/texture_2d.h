@@ -8,9 +8,11 @@ namespace engine::gfx {
 
 struct Texture2DCreateParams {
   std::string filepath;
-  bool s_rgb{true};
+  uint32_t internal_format;
   bool generate_mipmaps{true};
   bool bindless{true};
+  uint32_t filter_mode_min;
+  uint32_t filter_mode_max;
 };
 
 class Texture2D {
@@ -18,6 +20,8 @@ class Texture2D {
   explicit Texture2D(const Texture2DCreateParams& params);
   Texture2D(const Texture2D& other) = delete;
   Texture2D operator=(const Texture2D& other) = delete;
+  Texture2D(Texture2D&& other) noexcept;
+  Texture2D& operator=(Texture2D&& other) noexcept;
   ~Texture2D();
   [[nodiscard]] uint32_t Id() const { return id_; }
   [[nodiscard]] glm::ivec2 Dims() const { return dims_; }

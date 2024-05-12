@@ -3,14 +3,14 @@
 #include <entt/entity/registry.hpp>
 #include <fstream>
 
-#include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
+#include "engine/resource/resource.h"
 
 void ModelViewerLoadModel(entt::registry &registry, engine::component::Transform &transform,
-                          const std::vector<engine::component::MeshMaterial> &mesh_material) {
-  for (const auto &mesh_mat : mesh_material) {
+                          const engine::ModelData &model_data) {
+  for (const auto &mesh : model_data.meshes) {
     auto ent = registry.create();
-    registry.emplace<engine::component::MeshMaterial>(ent, mesh_mat);
+    registry.emplace<engine::Mesh>(ent, mesh);
     registry.emplace<engine::component::Transform>(ent, transform);
     registry.emplace<engine::component::ModelMatrix>(ent);
   }

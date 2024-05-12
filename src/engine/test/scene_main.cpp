@@ -4,9 +4,10 @@
 #include <imgui_file/ImGuiFileDialog.h>
 
 #include "engine/application/event.h"
-#include "engine/ecs/component/renderer_components.h"
+#include "engine/core/base.h"
 #include "engine/ecs/component/transform.h"
-#include "engine/resource/mesh_manager.h"
+#include "engine/resource/resource.h"
+#include "engine/resource/resource_manager.h"
 #include "engine/test/scene_2.h"
 #include "engine/window_manager.h"
 #include "systems.h"
@@ -20,19 +21,21 @@ SceneMain::SceneMain() : camera_system(registry, render_view_info) {
   std::string model_string =
       "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
-  auto gear_mesh_materials = engine::MeshManager::Get().LoadModel(model_string);
+
+  AssetHandle model_handle = engine::ModelManager::Get().LoadModel(model_string);
+  auto& model = engine::ModelManager::Get().GetModel(model_handle);
 
   glm::vec3 iter{0};
   auto scale = glm::vec3(.01);
   int c = 1;
   for (iter.z = -c; iter.z <= c; iter.z++) {
     for (iter.x = -c; iter.x <= c; iter.x++) {
-      for (auto m : gear_mesh_materials) {
+      for (auto m : model.meshes) {
         engine::component::Transform t;
         t.SetScale(scale);
         auto ent = registry.create();
         t.SetTranslation({iter.x * 50, iter.y, iter.z * 50});
-        registry.emplace<engine::component::MeshMaterial>(ent, m);
+        registry.emplace<engine::Mesh>(ent, m);
         registry.emplace<engine::component::Transform>(ent, t);
         registry.emplace<engine::component::ModelMatrix>(ent);
       }
@@ -99,8 +102,10 @@ void SceneMain::OnImGuiRender() {
     auto v = registry.view<engine::component::Transform>();
     registry.destroy(v.begin(), v.end());
     engine::component::Transform t;
-    auto mesh_materials = engine::MeshManager::Get().LoadModel(strings[i]);
-    ModelViewerLoadModel(registry, t, mesh_materials);
+    auto model_handle = engine::ModelManager::Get().LoadModel(strings[i]);
+    auto& model = engine::ModelManager::Get().GetModel(model_handle);
+
+    ModelViewerLoadModel(registry, t, model);
   }
   if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
     if (ImGuiFileDialog::Instance()->IsOk()) {  // action if OK
@@ -109,8 +114,9 @@ void SceneMain::OnImGuiRender() {
       auto v = registry.view<engine::component::Transform>();
       registry.destroy(v.begin(), v.end());
       engine::component::Transform t;
-      auto mesh_materials = engine::MeshManager::Get().LoadModel(file_path_name);
-      ModelViewerLoadModel(registry, t, mesh_materials);
+      auto model_handle = engine::ModelManager::Get().LoadModel(file_path_name);
+      auto& model = engine::ModelManager::Get().GetModel(model_handle);
+      ModelViewerLoadModel(registry, t, model);
     }
     ImGuiFileDialog::Instance()->Close();
   }

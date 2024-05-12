@@ -5,12 +5,12 @@
 #include <vector>
 
 namespace engine {
+struct ModelData;
 namespace component {
 struct Transform;
-struct MeshMaterial;
 }  // namespace component
 }  // namespace engine
 
 std::vector<std::string>& GetModelPaths();
 void ModelViewerLoadModel(entt::registry& registry, engine::component::Transform& transform,
-                          const std::vector<engine::component::MeshMaterial>& mesh_materials);
+                          const engine::ModelData& model_data);

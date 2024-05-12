@@ -6,9 +6,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "engine/core/base.h"
 #include "engine/renderer/gl/texture_2d.h"
 #include "engine/renderer/material.h"
-#include "engine/resource/data_types.h"
 
 namespace engine {
 
@@ -30,12 +30,12 @@ class MaterialManager {
  public:
   static MaterialManager& Get();
   void Init();
-  [[nodiscard]] MaterialHandle AddMaterial(const MaterialCreateInfo& material);
-  gfx::MaterialData& GetMaterial(MaterialHandle id);
-  void RemoveMaterial(MaterialHandle id);
-  inline MaterialHandle GetDefaultMaterialId() const { return default_material_id_; };
+  [[nodiscard]] AssetHandle AddMaterial(const MaterialCreateInfo& material);
+  gfx::MaterialData& GetMaterial(AssetHandle material_handle);
+  void RemoveMaterial(AssetHandle id);
+  inline AssetHandle GetDefaultMaterialHandle() const { return default_material_handle_; };
   void ClearAll();
-  [[nodiscard]] std::vector<std::pair<MaterialHandle, gfx::MaterialData>> GetAllMaterials() const;
+  [[nodiscard]] std::vector<std::pair<AssetHandle, gfx::MaterialData>> GetAllMaterials() const;
 
  private:
   // static class only to be created once by engine
@@ -43,10 +43,10 @@ class MaterialManager {
   MaterialManager();
   static MaterialManager* instance_;
 
-  MaterialHandle default_material_id_;
+  AssetHandle default_material_handle_;
 
   std::unordered_map<std::string, std::unique_ptr<gfx::Texture2D>> texture_map_;
-  std::unordered_map<MaterialHandle, gfx::MaterialData> material_map_;
+  std::unordered_map<AssetHandle, gfx::MaterialData> material_map_;
   uint32_t material_counter_{0};
 };
 

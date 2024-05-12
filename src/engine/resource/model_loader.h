@@ -3,9 +3,9 @@
 #include <assimp/Importer.hpp>
 #include <optional>
 
-namespace engine {
+#include "resource.h"
 
-struct ModelData;
+namespace engine {
 
 class ModelLoader {
  public:

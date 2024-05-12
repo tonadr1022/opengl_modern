@@ -21,7 +21,7 @@ void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
 WindowManager& WindowManager::Get() { return *instance_; }
 WindowManager* WindowManager::instance_ = nullptr;
 WindowManager::WindowManager() {
-  EASSERT_MSG(instance_ = nullptr, "Cannot create two window managers.");
+  EASSERT_MSG(instance_ == nullptr, "Cannot create two window managers.");
   instance_ = this;
 }
 

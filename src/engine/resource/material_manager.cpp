@@ -6,22 +6,23 @@
 #include "engine/renderer/gl/texture_2d.h"
 #include "engine/renderer/material.h"
 #include "engine/renderer/renderer.h"
-#include "engine/resource/data_types.h"
 
 namespace engine {
 
 MaterialManager& MaterialManager::Get() { return *instance_; }
 MaterialManager* MaterialManager::instance_ = nullptr;
 MaterialManager::MaterialManager() {
-  EASSERT_MSG(instance_ = nullptr, "Cannot create two material managers.");
+  EASSERT_MSG(instance_ == nullptr, "Cannot create two material managers.");
   instance_ = this;
 }
 
-MaterialHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_create_info) {
+AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_create_info) {
   gfx::Texture2DCreateParams create_params;
   create_params.generate_mipmaps = true;
   create_params.bindless = true;
-  create_params.s_rgb = true;
+  create_params.internal_format = GL_SRGB8_ALPHA8;
+  create_params.filter_mode_max = GL_LINEAR;
+  create_params.filter_mode_min = GL_LINEAR;
 
   gfx::MaterialData material;
   material.base_color = material_create_info.base_color;
@@ -87,7 +88,7 @@ MaterialHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_c
     }
   }
 
-  MaterialHandle id = gfx::Renderer::Get().AddMaterial(material);
+  AssetHandle id = gfx::Renderer::Get().AddMaterial(material);
   material_map_.emplace(id, material);
   return id;
 }
@@ -95,12 +96,12 @@ MaterialHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_c
 void MaterialManager::Init() {
   gfx::MaterialData default_material;
   default_material.base_color = {0, 1, 1};
-  // default_material_id_ = renderer_.AddMaterial(default_material);
-  // material_map_.emplace(default_material_id_, default_material);
+  default_material_handle_ = gfx::Renderer::Get().AddMaterial(default_material);
+  material_map_.emplace(default_material_handle_, default_material);
 }
 
-gfx::MaterialData& MaterialManager::GetMaterial(MaterialHandle id) {
-  auto it = material_map_.find(id);
+gfx::MaterialData& MaterialManager::GetMaterial(AssetHandle material_handle) {
+  auto it = material_map_.find(material_handle);
   EASSERT(it != material_map_.end());
   return it->second;
 }
@@ -112,7 +113,7 @@ void MaterialManager::ClearAll() {
   // TODO(tony): clear from renderer
 }
 
-std::vector<std::pair<MaterialHandle, gfx::MaterialData>> MaterialManager::GetAllMaterials() const {
+std::vector<std::pair<AssetHandle, gfx::MaterialData>> MaterialManager::GetAllMaterials() const {
   return {material_map_.begin(), material_map_.end()};
 }
 

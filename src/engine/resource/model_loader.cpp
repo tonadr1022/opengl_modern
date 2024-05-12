@@ -7,6 +7,10 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
+#include "engine/renderer/renderer.h"
+#include "engine/resource/material_manager.h"
+#include "engine/resource/resource.h"
+
 namespace engine {
 
 glm::vec3 aiVec3ToGLM(const aiVector3f& vec) { return {vec.x, vec.y, vec.z}; }
@@ -14,22 +18,22 @@ glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
 
 std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
   ZoneScopedNC("load model", tracy::Color::Red);
-  spdlog::info("loading {}", path);
-  int slash_idx = path.find_last_of("/\\");
-  std::string directory = path.substr(0, slash_idx + 1);
+  spdlog::info("loading {}", filepath);
+  int slash_idx = filepath.find_last_of("/\\");
+  std::string directory = filepath.substr(0, slash_idx + 1);
 
   uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
-  const aiScene* scene = importer->ReadFile(path, flags);
+  const aiScene* scene = importer_.ReadFile(filepath, flags);
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    spdlog::error("Path: {}\nAssimp error: {}", path, importer->GetErrorString());
-    return {};
+    spdlog::error("Path: {}\nAssimp error: {}", filepath, importer_.GetErrorString());
+    return std::nullopt;
   }
 
   // in sync with scene materials, material manager has different ids.
   // each index contains the material id
-  std::vector<MaterialHandle> material_ids;
-  material_ids.resize(scene->mNumMaterials);
+  std::vector<AssetHandle> material_handles;
+  material_handles.resize(scene->mNumMaterials);
   aiString filename;
   for (int ai_scene_mat_idx = 0; ai_scene_mat_idx < scene->mNumMaterials; ai_scene_mat_idx++) {
     auto* material = scene->mMaterials[ai_scene_mat_idx];
@@ -51,11 +55,11 @@ std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
     m.metalness_path = get_texture_path(aiTextureType_METALNESS);
     m.ao_path = get_texture_path(aiTextureType_AMBIENT_OCCLUSION);
     m.normal_path = get_texture_path(aiTextureType_NORMALS);
+    AssetHandle handle = MaterialManager::Get().AddMaterial(m);
+    material_handles[ai_scene_mat_idx] = handle;
 
     // add material and get id. associate it with the scene in the vector so that
     // meshes can access the real material id.
-    MaterialHandle material_id = MaterialManager::Get().AddMaterial(m);
-    material_ids[ai_scene_mat_idx] = material_id;
   }
 
   // TODO(tony): scene graph instead of straight vector
@@ -76,11 +80,10 @@ std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
   //   }
   // }
 
-  std::vector<component::MeshMaterial> mesh_materials;
-  mesh_materials.reserve(scene->mNumMeshes);
+  ModelData model;
+  model.meshes.reserve(scene->mNumMeshes);
   std::vector<gfx::Vertex> vertices;
   std::vector<gfx::Index> indices;
-  component::MeshMaterial mesh_material;
   {
     ZoneScopedN("geometry load");
     for (int i = 0; i < scene->mNumMeshes; i++) {
@@ -109,16 +112,15 @@ std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
         }
       }
 
-      MaterialHandle mat_id = (mesh.mMaterialIndex >= 0)
-                                  ? material_ids[mesh.mMaterialIndex]
-                                  : MaterialManager::Get().GetDefaultMaterialId();
-      MeshID mesh_id = renderer_->AddBatchedMesh(vertices, indices);
-      mesh_material.material_handle = mat_id;
-      mesh_material.mesh_handle = mesh_id;
-      mesh_materials.emplace_back(mesh_material);
+      AssetHandle mat_handle = (mesh.mMaterialIndex >= 0)
+                                   ? material_handles[mesh.mMaterialIndex]
+                                   : MaterialManager::Get().GetDefaultMaterialHandle();
+      AssetHandle mesh_id = gfx::Renderer::Get().AddBatchedMesh(vertices, indices);
+      Mesh m{.mesh_handle = mesh_id, .material_handle = mat_handle};
+      model.meshes.emplace_back(m);
     }
   }
-  return mesh_materials;
+  return std::move(model);
 }
 
 }  // namespace engine

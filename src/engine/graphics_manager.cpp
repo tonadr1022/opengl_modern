@@ -2,20 +2,23 @@
 
 #include <entt/entity/registry.hpp>
 
-#include "engine/ecs/component/renderer_components.h"
 #include "engine/ecs/component/transform.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/material_manager.h"
+#include "engine/resource/resource.h"
 #include "engine/scene.h"
+#include "engine/window_manager.h"
 
 namespace engine {
 
-using component::MeshMaterial;
 using component::ModelMatrix;
 using component::Transform;
 using gfx::Renderer;
 
-void GraphicsManager::Init() { Renderer::Get().Init(); }
+void GraphicsManager::Init() {
+  auto framebuffer_dims = WindowManager::Get().GetWindowDimensions();
+  Renderer::Get().Init(framebuffer_dims);
+}
 void GraphicsManager::Shutdown() { Renderer::Get().Shutdown(); }
 
 void GraphicsManager::StartFrame(Scene& scene) {
@@ -48,11 +51,10 @@ void GraphicsManager::DrawOpaque(entt::registry& registry) {
   update_model_matrices(registry);
   {
     ZoneScopedN("submit cmds");
-    auto draw_cmd_group = registry.view<ModelMatrix, MeshMaterial>();
+    auto draw_cmd_group = registry.view<ModelMatrix, Mesh>();
     auto& renderer = Renderer::Get();
-    draw_cmd_group.each([this, &renderer](auto& model_matrix, auto& mesh_material) {
-      renderer.SubmitDrawCommand(model_matrix.matrix, mesh_material.mesh_handle,
-                                 mesh_material.material_handle);
+    draw_cmd_group.each([this, &renderer](auto& model_matrix, auto& mesh) {
+      renderer.SubmitDrawCommand(model_matrix.matrix, mesh.mesh_handle, mesh.material_handle);
     });
   }
 

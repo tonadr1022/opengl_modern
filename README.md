@@ -1,8 +1,6 @@
-# OpenGL_Modern
+# OpenGL Renderer 2 (4.6 AZDO edition)
 
-Funny bugs I spent too much time on!
+### References
 
-- Deleting the line "glEnable(GL_DEBUG_OUTPUT)"
-- Forgetting to push vertices into the vector when reading them from Assimp
-- setting the color output to "vec4 color" instead of o_color, results in no
-  output!
+- [LearnOpenGL](https://learnopengl.com/Advanced-Lighting/Deferred-Shading)
+- [AZDO presentation](https://www.gdcvault.com/play/1020791/Approaching-Zero-Driver-Overhead-in)

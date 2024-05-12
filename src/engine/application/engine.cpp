@@ -11,7 +11,7 @@
 #include "engine/graphics_manager.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/material_manager.h"
-#include "engine/resource/mesh_manager.h"
+#include "engine/resource/resource_manager.h"
 #include "engine/resource/shader_manager.h"
 #include "engine/window_manager.h"
 #include "input.h"
@@ -26,7 +26,7 @@ Engine::Engine() {
   shader_manager_ = new ShaderManager;
   renderer_ = new gfx::Renderer;
   material_manager_ = new MaterialManager;
-  mesh_manager_ = new MeshManager;
+  resource_manager_ = new ModelManager;
   graphics_system_ = new GraphicsManager;
 
   window_manager_->Init();
@@ -35,7 +35,6 @@ Engine::Engine() {
   window_manager_->SetVsync(true);
   graphics_system_->Init();
   material_manager_->Init();
-  mesh_manager_->Init(renderer_);
   imgui_system_->Init(window_manager_->GetContext());
 
   Input::init_glfw_input_callbacks(window_manager_->GetContext());
@@ -125,7 +124,7 @@ Engine& Engine::Get() {
 }
 
 void Engine::OnFrameBufferResize(uint32_t width, uint32_t height) {
-  renderer_->SetFrameBufferSize(width, height);
+  renderer_->OnFrameBufferResize(width, height);
 }
 
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {
@@ -157,7 +156,7 @@ void Engine::Shutdown() {
 
   //  may switch unique pointers, but this works for now, lifetime is well defined
   delete material_manager_;
-  delete mesh_manager_;
+  delete resource_manager_;
   delete imgui_system_;
   delete graphics_system_;
   delete renderer_;

@@ -6,9 +6,6 @@
 
 namespace engine {
 
-using MaterialHandle = uint32_t;
-using MeshID = uint32_t;
-
 namespace gfx {
 
 struct Vertex {

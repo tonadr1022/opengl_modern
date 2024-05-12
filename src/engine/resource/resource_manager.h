@@ -18,28 +18,21 @@ struct ModelAsset {
   std::string filepath;
 };
 
-class ResourceManager {
+class ModelManager {
  public:
-  ResourceManager& Get();
-  ~ResourceManager();
+  static ModelManager& Get();
+  ~ModelManager();
 
-  AssetHandle LoadModel(const std::string& filepath);
-  ModelData& GetModel(AssetHandle handle);
-  AssetHandle LoadTexture(gfx::Texture2DCreateParams& params);
-  engine::gfx::Texture2D& GetTexture(AssetHandle handle);
+  [[nodiscard]] AssetHandle LoadModel(const std::string& filepath);
+  [[nodiscard]] ModelData& GetModel(AssetHandle handle);
 
  private:
   friend class Engine;
-  ResourceManager();
-  static ResourceManager* instance_;
+  ModelManager();
+  static ModelManager* instance_;
   std::unique_ptr<ModelLoader> model_loader_;
-
   AssetHandle GetHandle(const std::string& filepath);
-
-  // std::map<std::string, AssetHandle> file_path_to_id_;
   std::map<AssetHandle, ModelAsset> models_;
-  std::map<AssetHandle, engine::gfx::Texture2D> textures_;
-  // std::map<AssetID,
 };
 
 }  // namespace engine

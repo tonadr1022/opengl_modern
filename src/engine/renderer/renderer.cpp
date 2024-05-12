@@ -4,6 +4,7 @@
 
 #include <cstdint>
 
+#include "engine/core/base.h"
 #include "engine/core/e_assert.h"
 #include "engine/pch.h"
 #include "engine/renderer/gl/buffer.h"
@@ -33,7 +34,7 @@ struct CameraInfo {
 Renderer* Renderer::instance_{nullptr};
 Renderer& Renderer::Get() { return *instance_; }
 Renderer::Renderer() {
-  EASSERT_MSG(instance_ = nullptr, "Cannot create two renderers .");
+  EASSERT_MSG(instance_ == nullptr, "Cannot create two renderers .");
   instance_ = this;
 }
 
@@ -85,9 +86,10 @@ void Renderer::InitBuffers() {
   //                                GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 }
 
-void Renderer::SetFrameBufferSize(uint32_t width, uint32_t height) {
-  frame_buffer_height_ = height;
-  framebuffer_width_ = width;
+void Renderer::OnFrameBufferResize(uint32_t width, uint32_t height) {
+  framebuffer_dims_.y = height;
+  framebuffer_dims_.x = width;
+  ResetFrameBuffers();
 }
 
 void Renderer::SetBatchedObjectCount(uint32_t count) {
@@ -95,10 +97,10 @@ void Renderer::SetBatchedObjectCount(uint32_t count) {
   draw_cmd_uniforms_.reserve(count);
 }
 
-void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id,
-                                 MaterialHandle material_id) {
-  draw_cmd_mesh_ids_.emplace_back(mesh_id);
-  draw_cmd_uniforms_.emplace_back(model, material_id);
+void Renderer::SubmitDrawCommand(const glm::mat4& model, AssetHandle mesh_handle,
+                                 AssetHandle material_handle) {
+  draw_cmd_mesh_ids_.emplace_back(mesh_handle);
+  draw_cmd_uniforms_.emplace_back(model, material_handle);
   // user_draw_cmds_[user_draw_cmds_index_] = UserDrawCommand{
   //     .mesh_id = mesh_id, .material_id = material_id, .model_matrix_index =
   //     user_draw_cmds_index_};
@@ -108,12 +110,52 @@ void Renderer::SubmitDrawCommand(const glm::mat4& model, MeshID mesh_id,
 
 const RendererStats& Renderer::GetStats() { return stats_; }
 
-void Renderer::Init() {
+void Renderer::ResetFrameBuffers() {
+  // position
+  if (g_position_tex_) glDeleteTextures(1, &g_position_tex_);
+  glCreateTextures(GL_TEXTURE_2D, 1, &g_position_tex_);
+  glTextureStorage2D(g_position_tex_, 1, GL_RGBA16F, framebuffer_dims_.x, framebuffer_dims_.y);
+  glTextureParameteri(g_position_tex_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTextureParameteri(g_position_tex_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glNamedFramebufferTexture(g_buffer_, GL_COLOR_ATTACHMENT0, g_position_tex_, 0);
+
+  // normal
+  if (g_normal_tex_) glDeleteTextures(1, &g_normal_tex_);
+  glCreateTextures(GL_TEXTURE_2D, 1, &g_normal_tex_);
+  glTextureStorage2D(g_normal_tex_, 1, GL_RGBA16F, framebuffer_dims_.x, framebuffer_dims_.y);
+  glTextureParameteri(g_normal_tex_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTextureParameteri(g_normal_tex_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glNamedFramebufferTexture(g_buffer_, GL_COLOR_ATTACHMENT1, g_normal_tex_, 0);
+
+  // Albedo
+  if (g_albedo_tex_) glDeleteTextures(1, &g_albedo_tex_);
+  glCreateTextures(GL_TEXTURE_2D, 1, &g_albedo_tex_);
+  glTextureStorage2D(g_albedo_tex_, 1, GL_RGBA8, framebuffer_dims_.x, framebuffer_dims_.y);
+  glTextureParameteri(g_albedo_tex_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTextureParameteri(g_albedo_tex_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glNamedFramebufferTexture(g_buffer_, GL_COLOR_ATTACHMENT2, g_albedo_tex_, 0);
+  if (!glCheckNamedFramebufferStatus(g_buffer_, GL_FRAMEBUFFER)) {
+    spdlog::error("g buffer incomplete.");
+  }
+}
+
+void Renderer::InitFrameBuffers() {
+  glCreateFramebuffers(1, &g_buffer_);
+  ResetFrameBuffers();
+  // specify color buffers to draw into
+  GLenum bufs[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+  glNamedFramebufferDrawBuffers(g_buffer_, 3, bufs);
+}
+
+void Renderer::Init(glm::ivec2 framebuffer_dims) {
+  framebuffer_dims_ = framebuffer_dims;
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
   InitBuffers();
   InitVaos();
+  InitFrameBuffers();
+
   glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
   glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
 }
@@ -134,7 +176,7 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-MeshID Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index>& indices) {
+AssetHandle Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index>& indices) {
   DrawElementsIndirectCommand cmd{};
   // number of elements
   cmd.count = static_cast<uint32_t>(indices.size());
@@ -148,7 +190,7 @@ MeshID Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<Index
   cmd.instance_count = 0;
 
   // FOR NOW, renderer controls mesh ids since it allocates meshes linearly
-  MeshID id = draw_elements_indirect_cmds_.size();
+  AssetHandle id = draw_elements_indirect_cmds_.size();
   draw_elements_indirect_cmds_.emplace_back(cmd);
 
   // NEED TO BE CALLED AFTER BASE_VERTEX AND FIRST_INDEX ASSIGNMENT SINCE THIS INCREMENTS THEM
@@ -215,7 +257,7 @@ void Renderer::Reset() {
   glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
 }
 
-MaterialHandle Renderer::AddMaterial(const MaterialData& material) {
+AssetHandle Renderer::AddMaterial(const MaterialData& material) {
   EASSERT_MSG(materials_buffer_ != nullptr, "buffer not initialized");
   // assign handles so material samplers, properties can be accessed in shaders
   BindlessMaterial bindless_mat;
@@ -232,7 +274,7 @@ MaterialHandle Renderer::AddMaterial(const MaterialData& material) {
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
   // bindless_mat.base_color = material.base_color;
   // id is the index into the material buffer.
-  MaterialHandle id = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
+  AssetHandle handle = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
 
   // auto* ptr = static_cast<BindlessMaterial*>(materials_buffer_->Map(GL_READ_ONLY));
   // for (int i = 0; i < materials_buffer_->NumAllocs(); i++) {
@@ -241,7 +283,7 @@ MaterialHandle Renderer::AddMaterial(const MaterialData& material) {
   // }
   // spdlog::warn("done");
   // materials_buffer_->Unmap();
-  return id;
+  return handle;
 }
 
 }  // namespace engine::gfx

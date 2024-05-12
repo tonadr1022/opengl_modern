@@ -9,13 +9,15 @@ struct WindowManager;
 struct ImGuiManager;
 struct Event;
 class MaterialManager;
-class MeshManager;
+class ModelManager;
 class ShaderManager;
 namespace gfx {
-
 class Renderer;
 }
 
+/**
+ * Main class to run the main loop, control scenes and take ownership of singleton managers.
+ */
 class Engine {
  public:
   ~Engine();
@@ -43,7 +45,7 @@ class Engine {
   ImGuiManager* imgui_system_{nullptr};
   MaterialManager* material_manager_{nullptr};
   ShaderManager* shader_manager_{nullptr};
-  MeshManager* mesh_manager_{nullptr};
+  ModelManager* resource_manager_{nullptr};
   gfx::Renderer* renderer_{nullptr};
 
   std::unique_ptr<Scene> active_scene_{nullptr};
