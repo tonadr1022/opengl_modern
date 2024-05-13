@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include <cstdint>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "engine/core/base.h"
 #include "engine/core/e_assert.h"
@@ -39,9 +40,12 @@ Renderer::Renderer() {
 }
 
 void Renderer::LoadShaders() {
-  ShaderManager::Get().AddShader("batch",
-                                 {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
-                                  {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
+  auto& manager = ShaderManager::Get();
+  manager.AddShader("batch", {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
+                              {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
+  GLuint id = manager.GetShader("batch")->Id();
+  GLuint ubo_block_index = glGetUniformBlockIndex(id, "Matrices");
+  glUniformBlockBinding(id, ubo_block_index, 0);
 }
 
 Renderer::~Renderer() = default;
@@ -66,6 +70,7 @@ void Renderer::InitVaos() {
 }
 
 void Renderer::InitBuffers() {
+  // GL_DYNAMIC_STORAGE_BIT - contents can be update after creation
   batch_vertex_buffer_ =
       std::make_unique<Buffer>(sizeof(Vertex) * VertexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
   batch_element_buffer_ =
@@ -76,10 +81,14 @@ void Renderer::InitBuffers() {
       std::make_unique<Buffer>(sizeof(BatchUniform) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
   materials_buffer_ = std::make_unique<Buffer>(sizeof(BindlessMaterial) * MaxMaterials,
                                                GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
+  // ubo for vp matrix for now. May add other matrices/uniforms
+  shader_uniform_ubo_ = std::make_unique<Buffer>(64, GL_DYNAMIC_STORAGE_BIT);
+
   // glCreateBuffers(1, &materials_buffer_);
   // glNamedBufferStorage(materials_buffer_, sizeof(BindlessMaterial) * MaxMaterials, nullptr,
   //                      GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
 
+  // TODO(tony): persistent map buffer
   // Buffer::Create(sizeof(glm::mat4) * MaxDrawCommands,
   //                GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
   // auto* batch_map_ptr = batch_ssbo_buffer.MapRange(0, sizeof(glm::mat4) * MaxDrawCommands,
@@ -169,9 +178,14 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   stats_.multi_draw_cmds_buffer_count = 0;
   stats_.vertices = 0;
 
+  // shader matrix uniforms
   view_matrix_ = view_info.view_matrix;
   projection_matrix_ = view_info.projection_matrix;
   vp_matrix_ = projection_matrix_ * view_matrix_;
+  shader_uniform_ubo_->BindBase(GL_UNIFORM_BUFFER, 0);
+  shader_uniform_ubo_->ResetOffset();
+  shader_uniform_ubo_->SubData(64, glm::value_ptr(vp_matrix_));
+
   draw_cmd_uniforms_.clear();
   draw_cmd_mesh_ids_.clear();
   glEnable(GL_CULL_FACE);
@@ -239,9 +253,9 @@ void Renderer::RenderOpaqueObjects() {
   // std::memcpy(batch_map_ptr, uniforms.data(), sizeof(glm::mat4) * uniforms.size());
 
   draw_indirect_buffer_->Bind(GL_DRAW_INDIRECT_BUFFER);
-  batch_ssbo_uniform_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 0);
+  batch_ssbo_uniform_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 1);
   // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, materials_buffer_);
-  materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 1);
+  materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 2);
   shader->SetMat4("vp_matrix", vp_matrix_);
 
   // mode, type, offest ptr, command count, stride (0 since tightly packed)
