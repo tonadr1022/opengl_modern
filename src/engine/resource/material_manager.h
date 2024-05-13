@@ -34,7 +34,7 @@ class MaterialManager {
   gfx::MaterialData& GetMaterial(AssetHandle material_handle);
   void RemoveMaterial(AssetHandle id);
   inline AssetHandle GetDefaultMaterialHandle() const { return default_material_handle_; };
-  void ClearAll();
+  void Reset();
   [[nodiscard]] std::vector<std::pair<AssetHandle, gfx::MaterialData>> GetAllMaterials() const;
 
  private:
@@ -47,7 +47,6 @@ class MaterialManager {
 
   std::unordered_map<std::string, std::unique_ptr<gfx::Texture2D>> texture_map_;
   std::unordered_map<AssetHandle, gfx::MaterialData> material_map_;
-  uint32_t material_counter_{0};
 };
 
 }  // namespace engine

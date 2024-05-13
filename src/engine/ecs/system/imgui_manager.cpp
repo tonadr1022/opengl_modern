@@ -123,6 +123,7 @@ void ImGuiManager::RenderRendererStats(const gfx::RendererStats& stats) {
   ImGui::Text("Indices: %i", stats.indices);
   ImGui::Text("MultiDrawCalls: %i", stats.multi_draw_calls);
   ImGui::Text("Multidraw commands Buffer: %i", stats.multi_draw_cmds_buffer_count);
+  ImGui::Text("Num Meshes: %i", stats.num_meshes);
   ImGui::EndChild();
 }
 

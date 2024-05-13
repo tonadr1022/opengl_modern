@@ -172,10 +172,15 @@ void Engine::LoadScene(std::unique_ptr<Scene> scene) {
   // reset resources and renderer state only if scene already exists
   bool scene_exists = active_scene_ != nullptr;
   if (scene_exists) {
-    material_manager_->ClearAll();
-    graphics_system_->InitScene(*scene);
+    // need to reset graphics system before material manager, otherwise
+    // the default material will be added before the reset of the material buffer.
+    // this is a potential architectural improvement for changing scenes.
+    graphics_system_->ResetOnSceneChange(*scene);
+    material_manager_->Reset();
   }
+
   active_scene_ = std::move(scene);
+  active_scene_->Init();
 }
 
 }  // namespace engine

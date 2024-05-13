@@ -6,6 +6,7 @@
 namespace engine {
 
 Scene::Scene() = default;
+
 Scene::~Scene() { registry.clear(); }
 
 void Scene::LoadScene(std::unique_ptr<Scene> scene) { Engine::Get().LoadScene(std::move(scene)); }

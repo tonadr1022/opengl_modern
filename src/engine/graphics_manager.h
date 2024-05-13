@@ -17,7 +17,7 @@ struct GraphicsManager {
   void Init();
   void Shutdown();
   void StartFrame(Scene& scene);
-  void InitScene(Scene& scene);
+  void ResetOnSceneChange(Scene& scene);
   void UpdateTransforms(entt::registry& registry);
   void DrawOpaque(entt::registry& registry);
   void EndFrame();

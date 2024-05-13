@@ -27,6 +27,7 @@ class Scene {
 
  public:
   Scene();
+  virtual void Init() = 0;
   virtual ~Scene();
   virtual void OnUpdate(Timestep timestep);
   virtual void OnFixedUpdate(Timestep timestep);

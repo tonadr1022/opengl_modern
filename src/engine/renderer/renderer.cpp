@@ -163,7 +163,12 @@ void Renderer::Init(glm::ivec2 framebuffer_dims) {
 void Renderer::Shutdown() {}
 
 void Renderer::StartFrame(const RenderViewInfo& view_info) {
-  memset(&stats_, 0, sizeof(stats_));
+  // can't memset since num meshes is across frames
+  stats_.indices = 0;
+  stats_.multi_draw_calls = 0;
+  stats_.multi_draw_cmds_buffer_count = 0;
+  stats_.vertices = 0;
+
   view_matrix_ = view_info.view_matrix;
   projection_matrix_ = view_info.projection_matrix;
   vp_matrix_ = projection_matrix_ * view_matrix_;
@@ -198,7 +203,6 @@ AssetHandle Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<
   batch_element_buffer_->SubData(sizeof(Index) * indices.size(), indices.data());
 
   stats_.num_meshes++;
-  // TODO(tony): change to vector so renderer controls ids
   return id;
 }
 
@@ -252,9 +256,16 @@ void Renderer::EndFrame() {
 }
 
 void Renderer::Reset() {
-  InitBuffers();
-  glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
-  glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
+  memset(&stats_, 0, sizeof(stats_));
+  // reset buffers to allocate new scene
+  draw_elements_indirect_cmds_.clear();
+  material_id_to_index_.clear();
+  draw_cmd_mesh_ids_.clear();
+  batch_vertex_buffer_->ResetOffset();
+  batch_element_buffer_->ResetOffset();
+  draw_indirect_buffer_->ResetOffset();
+  batch_ssbo_uniform_buffer_->ResetOffset();
+  materials_buffer_->ResetOffset();
 }
 
 AssetHandle Renderer::AddMaterial(const MaterialData& material) {

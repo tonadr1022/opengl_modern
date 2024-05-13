@@ -25,7 +25,7 @@ void GraphicsManager::StartFrame(Scene& scene) {
   Renderer::Get().StartFrame(scene.render_view_info);
 }
 
-void GraphicsManager::InitScene(Scene& /*scene*/) { Renderer::Get().Reset(); }
+void GraphicsManager::ResetOnSceneChange(Scene& /*scene*/) { Renderer::Get().Reset(); }
 
 void update_model_matrices(entt::registry& registry) {
   ZoneScopedN("update model matrices");

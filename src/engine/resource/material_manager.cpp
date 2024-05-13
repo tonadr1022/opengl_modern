@@ -106,10 +106,10 @@ gfx::MaterialData& MaterialManager::GetMaterial(AssetHandle material_handle) {
   return it->second;
 }
 
-void MaterialManager::ClearAll() {
+void MaterialManager::Reset() {
   material_map_.clear();
   texture_map_.clear();
-  material_counter_ = 0;
+  Init();
   // TODO(tony): clear from renderer
 }
 

@@ -12,7 +12,9 @@
 #include "engine/window_manager.h"
 #include "systems.h"
 
-SceneMain::SceneMain() : camera_system(registry, render_view_info) {
+SceneMain::SceneMain() : camera_system(registry, render_view_info) {}
+
+void SceneMain::Init() {
   camera_system.enabled = false;
   camera_system.camera_mode = engine::CameraMode::FPS;
   player_entity_ = registry.create();
