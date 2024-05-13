@@ -107,6 +107,7 @@ class Renderer {
   uint32_t g_rma_tex_{0};
   uint32_t g_depth_tex_{0};
 
+  void InitTempLights();
   void InitBuffers();
   void InitVaos();
   void LoadShaders();

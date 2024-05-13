@@ -14,6 +14,18 @@ uniform vec3 u_albedoOverride;
 
 layout(location = 0) out vec4 o_color;
 
+struct PointLight {
+    vec3 position;
+    vec3 color;
+    float linear;
+    float quadratic;
+    // float radiusSquared;
+};
+
+layout(binding = 2, std430) readonly buffer PointLights {
+    PointLight pointLights[];
+};
+
 struct Material {
     vec3 base_color;
     float pad1;
@@ -33,11 +45,16 @@ layout(binding = 1, std430) readonly buffer Materials {
 void main() {
     Material material = materials[fs_in.materialIndex];
     const bool hasAlbedo = (material.albedo_map_handle.x != 0 || material.albedo_map_handle.y != 0);
+    vec4 albedo;
     if (u_overrideMaterial) {
-        o_color = vec4(u_albedoOverride, 1.0);
-    } else if (hasAlbedo) {
-        o_color = texture(sampler2D(material.albedo_map_handle), fs_in.texCoord).rgba;
+        albedo = vec4(u_albedoOverride, 1.0);
     } else {
-        o_color = vec4(material.base_color, 1.0);
+        if (hasAlbedo) {
+            albedo = texture(sampler2D(material.albedo_map_handle), fs_in.texCoord).rgba;
+        } else {
+            albedo = vec4(material.base_color, 1.0);
+        }
     }
+
+    o_color = albedo;
 }

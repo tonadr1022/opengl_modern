@@ -42,12 +42,14 @@ void Renderer::LoadShaders() {
   ubo_block_index = glGetUniformBlockIndex(id, "Matrices");
   // assign binding point
   glUniformBlockBinding(id, ubo_block_index, 0);
-  id = manager
-           .AddShader("gbuffer", {{GET_SHADER_PATH("gbuffer.vs.glsl"), ShaderType::Vertex},
-                                  {GET_SHADER_PATH("gbuffer.fs.glsl"), ShaderType::Fragment}})
-           ->Id();
-  ubo_block_index = glGetUniformBlockIndex(id, "Matrices");
-  glUniformBlockBinding(id, ubo_block_index, 0);
+  // TODO(tony): deferred rendering
+
+  // id = manager
+  //          .AddShader("gbuffer", {{GET_SHADER_PATH("gbuffer.vs.glsl"), ShaderType::Vertex},
+  //                                 {GET_SHADER_PATH("gbuffer.fs.glsl"), ShaderType::Fragment}})
+  //          ->Id();
+  // ubo_block_index = glGetUniformBlockIndex(id, "Matrices");
+  // glUniformBlockBinding(id, ubo_block_index, 0);
 }
 
 Renderer::~Renderer() = default;
@@ -198,6 +200,9 @@ void Renderer::InitFrameBuffers() {
   ResetFrameBuffers();
 }
 
+void Renderer::InitTempLights() {
+  // light_ssbo_->SubData(sizeof(PointLight), void *data)
+}
 void Renderer::Init(glm::ivec2 framebuffer_dims) {
   framebuffer_dims_ = framebuffer_dims;
   glViewport(0, 0, framebuffer_dims_.x, framebuffer_dims_.y);
@@ -207,6 +212,7 @@ void Renderer::Init(glm::ivec2 framebuffer_dims) {
   InitBuffers();
   InitVaos();
   InitFrameBuffers();
+  InitTempLights();
 
   glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
   glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
