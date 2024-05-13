@@ -1,6 +1,5 @@
 #pragma once
 
-#include <entt/core/hashed_string.hpp>
 #include <glm/vec3.hpp>
 
 #include "engine/renderer/gl/texture_2d.h"
@@ -10,7 +9,12 @@ namespace engine {
 namespace gfx {
 class Texture2D;
 
-struct BindlessMaterial {
+// std430: https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)
+struct alignas(16) BindlessMaterial {
+  glm::vec3 albedo;
+  float pad1;
+  glm::vec2 metallic_roughness;
+  glm::vec2 pad2;
   uint64_t albedo_map_handle{};
   uint64_t roughness_map_handle{};
   uint64_t metalness_map_handle{};
@@ -19,7 +23,8 @@ struct BindlessMaterial {
 };
 
 struct MaterialData {
-  glm::vec3 base_color;
+  glm::vec3 albedo{1, 1, 1};
+  glm::vec2 metallic_roughness{0, 1};
   gfx::Texture2D* albedo_texture{nullptr};
   gfx::Texture2D* roughness_texture{nullptr};
   gfx::Texture2D* metalness_texture{nullptr};

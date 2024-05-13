@@ -21,6 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # add_compile_definitions(TRACY_ENABLE)
 # option ( TRACY_ENABLE "" ON)
+
 add_compile_definitions(SHADER_PATH="${CMAKE_SOURCE_DIR}/resources/shaders/")
 add_compile_definitions(TEXTURE_PATH="${CMAKE_SOURCE_DIR}/resources/textures/")
 add_compile_definitions(MODEL_PATH="${CMAKE_SOURCE_DIR}/resources/models/")

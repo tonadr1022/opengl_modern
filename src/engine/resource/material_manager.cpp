@@ -25,7 +25,7 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
   create_params.filter_mode_min = GL_LINEAR;
 
   gfx::MaterialData material;
-  material.base_color = material_create_info.base_color;
+  material.albedo = material_create_info.base_color;
   if (material_create_info.albedo_path.has_value()) {
     create_params.filepath = material_create_info.albedo_path.value();
     auto it = texture_map_.find(material_create_info.albedo_path.value());
@@ -95,7 +95,7 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
 
 void MaterialManager::Init() {
   gfx::MaterialData default_material;
-  default_material.base_color = {0, 1, 1};
+  default_material.albedo = {0, 1, 1};
   default_material_handle_ = gfx::Renderer::Get().AddMaterial(default_material);
   material_map_.emplace(default_material_handle_, default_material);
 }

@@ -96,6 +96,7 @@ void Renderer::InitBuffers() {
 }
 
 void Renderer::OnFrameBufferResize(uint32_t width, uint32_t height) {
+  spdlog::info("{} {}", width, height);
   framebuffer_dims_.y = height;
   framebuffer_dims_.x = width;
   ResetFrameBuffers();
@@ -296,7 +297,8 @@ AssetHandle Renderer::AddMaterial(const MaterialData& material) {
     bindless_mat.ao_map_handle = material.ao_texture->BindlessHandle();
   if (material.roughness_texture != nullptr)
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
-  // bindless_mat.base_color = material.base_color;
+  bindless_mat.albedo = material.albedo;
+  bindless_mat.metallic_roughness = material.metallic_roughness;
   // id is the index into the material buffer.
   AssetHandle handle = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
 

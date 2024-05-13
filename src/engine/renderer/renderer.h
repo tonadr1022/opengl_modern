@@ -9,6 +9,7 @@
 
 #include "engine/core/base.h"
 #include "engine/resource/data_types.h"
+#include "engine/resource/paths.h"
 
 struct GLFWwindow;
 
@@ -69,6 +70,11 @@ class Renderer {
   static constexpr const uint32_t MaxMaterials = 100;
 
  private:
+  std::vector<std::string> skybox_strings_ = {
+      GET_TEXTURE_PATH("skybox2/right.jpg"), GET_TEXTURE_PATH("skybox2/left.jpg"),
+      GET_TEXTURE_PATH("skybox2/top.jpg"),   GET_TEXTURE_PATH("skybox2/bottom.jpg"),
+      GET_TEXTURE_PATH("skybox2/front.jpg"), GET_TEXTURE_PATH("skybox2/back.jpg"),
+  };
   friend class engine::Engine;
   Renderer();
   static Renderer* instance_;

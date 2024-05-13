@@ -8,11 +8,16 @@ layout(location = 0) in VS_OUT {
     flat uint materialIndex;
 } vs_in;
 
+// uniform vec2 u_metallicRoughnessOverride;
+// uniform vec3 u_albedoOverride;
+
 layout(location = 0) out vec4 o_color;
 
 struct Material {
-    // vec3 base_color;
-    // float pad;
+    vec3 base_color;
+    float pad1;
+    vec2 metallic_roughness;
+    float pad2;
     uvec2 albedo_map_handle;
     uvec2 roughness_map_handle;
     uvec2 metalness_map_handle;
