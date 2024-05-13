@@ -12,7 +12,7 @@ void framebuffer_size_callback(GLFWwindow* glfw_window, int width, int height) {
 
 void window_size_callback(GLFWwindow* glfw_window, int width, int height) {
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(glfw_window));
-  Event e{.type = EventType::WindowResize};
+  Event e{.type = EventType::kWindowResize};
   e.window_size.x = width;
   e.window_size.y = height;
   engine->OnEvent(e);

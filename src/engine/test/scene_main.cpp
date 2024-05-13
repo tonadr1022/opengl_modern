@@ -6,25 +6,26 @@
 #include "engine/application/event.h"
 #include "engine/core/base.h"
 #include "engine/ecs/component/transform.h"
+#include "engine/renderer/light.h"
+#include "engine/resource/model_manager.h"
 #include "engine/resource/resource.h"
-#include "engine/resource/resource_manager.h"
 #include "engine/test/scene_2.h"
 #include "engine/window_manager.h"
 #include "systems.h"
 
 SceneMain::SceneMain() : camera_system(registry, render_view_info) {}
+using engine::PointLight;
 
 void SceneMain::Init() {
-  camera_system.enabled = false;
   camera_system.camera_mode = engine::CameraMode::FPS;
   player_entity_ = registry.create();
-  camera_system.InitDefaultCamera(player_entity_);
+  camera_system.InitDefaultCamera(player_entity_, {0, 5, 0}, {-1, 0, 0});
 
   std::string model_string =
       "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
 
-  AssetHandle model_handle = engine::ModelManager::Get().LoadModel(model_string);
+  AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
 
   glm::vec3 iter{0};
@@ -49,7 +50,7 @@ using engine::EventType;
 using engine::KeyCode;
 void SceneMain::OnEvent(const engine::Event& e) {
   switch (e.type) {
-    case EventType::KeyPressed:
+    case EventType::kKeyPressed:
       if (e.key.code == KeyCode::M) {
         camera_system.on_ = !camera_system.on_;
         if (!camera_system.on_) engine::WindowManager::Get().CenterCursor();
@@ -83,42 +84,44 @@ void DrawImGuiDropdown(const char* label, std::vector<std::string>& items, int& 
 // TODO(tony): clean up and separate
 void SceneMain::OnImGuiRender() {
   ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoNavFocus);
-  if (ImGui::TreeNode("Systems")) {
+  if (ImGui::CollapsingHeader("Systems", ImGuiTreeNodeFlags_DefaultOpen)) {
     ImGui::Checkbox("Camera", &camera_system.enabled);
   }
 
   camera_system.OnImGui();
 
-  if (ImGui::Button("Open File Dialog")) {
-    IGFD::FileDialogConfig config;
-    config.path = ".";
-    ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf,.obj,.fbx",
-                                            config);
-  }
-  auto& strings = GetModelPaths();
-  static int i = 0;
-  DrawImGuiDropdown("dropdown", strings, i);
-  if (ImGui::Button("Load")) {
-    auto v = registry.view<engine::component::Transform>();
-    registry.destroy(v.begin(), v.end());
-    engine::component::Transform t;
-    auto model_handle = engine::ModelManager::Get().LoadModel(strings[i]);
-    auto& model = engine::ModelManager::Get().GetModel(model_handle);
-
-    ModelViewerLoadModel(registry, t, model);
-  }
-  if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
-    if (ImGuiFileDialog::Instance()->IsOk()) {  // action if OK
-      std::string file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
-      std::string file_path = ImGuiFileDialog::Instance()->GetCurrentPath();
+  if (ImGui::CollapsingHeader("Model Load", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::Button("Open File Dialog")) {
+      IGFD::FileDialogConfig config;
+      config.path = ".";
+      ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf,.obj,.fbx",
+                                              config);
+    }
+    auto& strings = GetModelPaths();
+    static int i = 0;
+    DrawImGuiDropdown("dropdown", strings, i);
+    if (ImGui::Button("Load")) {
       auto v = registry.view<engine::component::Transform>();
       registry.destroy(v.begin(), v.end());
       engine::component::Transform t;
-      auto model_handle = engine::ModelManager::Get().LoadModel(file_path_name);
+      auto model_handle = engine::ModelManager::Get().LoadModel({strings[i]});
       auto& model = engine::ModelManager::Get().GetModel(model_handle);
+
       ModelViewerLoadModel(registry, t, model);
     }
-    ImGuiFileDialog::Instance()->Close();
+    if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
+      if (ImGuiFileDialog::Instance()->IsOk()) {  // action if OK
+        std::string file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
+        std::string file_path = ImGuiFileDialog::Instance()->GetCurrentPath();
+        auto v = registry.view<engine::component::Transform>();
+        registry.destroy(v.begin(), v.end());
+        engine::component::Transform t;
+        auto model_handle = engine::ModelManager::Get().LoadModel({file_path_name});
+        auto& model = engine::ModelManager::Get().GetModel(model_handle);
+        ModelViewerLoadModel(registry, t, model);
+      }
+      ImGuiFileDialog::Instance()->Close();
+    }
   }
 
   ImGui::End();

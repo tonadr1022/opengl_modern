@@ -8,6 +8,11 @@ struct Mesh {
   AssetHandle material_handle;
 };
 
+struct ModelLoadParams {
+  std::string filepath;
+  bool flip_textures;
+};
+
 struct ModelData {
   std::vector<Mesh> meshes;
 };

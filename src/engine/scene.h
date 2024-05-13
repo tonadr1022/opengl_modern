@@ -11,7 +11,6 @@ class Engine;
 class Event;
 struct System;
 class MaterialManager;
-class MeshManager;
 class WindowManager;
 
 namespace gfx {

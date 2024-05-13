@@ -2,8 +2,12 @@
 
 #include <imgui.h>
 
+#include "engine/renderer/light.h"
+
+#define GLM_ENABLE_EXPERIMENTAL
 #include <cstdint>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "engine/core/base.h"
 #include "engine/core/e_assert.h"
@@ -18,20 +22,6 @@
 
 namespace engine::gfx {
 
-namespace {
-
-constexpr uint32_t VertexBufferArrayMaxLength{10'000'000};
-constexpr uint32_t IndexBufferArrayMaxLength{10'000'000};
-constexpr uint32_t MaxDrawCommands{10'000'000};
-
-struct CameraInfo {
-  glm::mat4 view_matrix;
-  glm::mat4 projection_matrix;
-  glm::mat4 vp_matrix;
-};
-
-}  // namespace
-
 Renderer* Renderer::instance_{nullptr};
 Renderer& Renderer::Get() { return *instance_; }
 Renderer::Renderer() {
@@ -41,10 +31,22 @@ Renderer::Renderer() {
 
 void Renderer::LoadShaders() {
   auto& manager = ShaderManager::Get();
-  manager.AddShader("batch", {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
-                              {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}});
-  GLuint id = manager.GetShader("batch")->Id();
-  GLuint ubo_block_index = glGetUniformBlockIndex(id, "Matrices");
+  // set ubo for relevant shaders
+  GLuint ubo_block_index;
+  GLuint id;
+  id = manager
+           .AddShader("batch", {{GET_SHADER_PATH("batch.vs.glsl"), ShaderType::Vertex},
+                                {GET_SHADER_PATH("batch.fs.glsl"), ShaderType::Fragment}})
+           ->Id();
+  // get index
+  ubo_block_index = glGetUniformBlockIndex(id, "Matrices");
+  // assign binding point
+  glUniformBlockBinding(id, ubo_block_index, 0);
+  id = manager
+           .AddShader("gbuffer", {{GET_SHADER_PATH("gbuffer.vs.glsl"), ShaderType::Vertex},
+                                  {GET_SHADER_PATH("gbuffer.fs.glsl"), ShaderType::Fragment}})
+           ->Id();
+  ubo_block_index = glGetUniformBlockIndex(id, "Matrices");
   glUniformBlockBinding(id, ubo_block_index, 0);
 }
 
@@ -71,18 +73,21 @@ void Renderer::InitVaos() {
 
 void Renderer::InitBuffers() {
   // GL_DYNAMIC_STORAGE_BIT - contents can be update after creation
-  batch_vertex_buffer_ =
-      std::make_unique<Buffer>(sizeof(Vertex) * VertexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
+  batch_vertex_buffer_ = std::make_unique<Buffer>(sizeof(Vertex) * kVertexBufferArrayMaxLength,
+                                                  GL_DYNAMIC_STORAGE_BIT);
   batch_element_buffer_ =
-      std::make_unique<Buffer>(sizeof(Index) * IndexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
+      std::make_unique<Buffer>(sizeof(Index) * kIndexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
   draw_indirect_buffer_ = std::make_unique<Buffer>(
-      sizeof(DrawElementsIndirectCommand) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
-  batch_ssbo_uniform_buffer_ =
-      std::make_unique<Buffer>(sizeof(BatchUniform) * MaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
-  materials_buffer_ = std::make_unique<Buffer>(sizeof(BindlessMaterial) * MaxMaterials,
+      sizeof(DrawElementsIndirectCommand) * kMaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
+  batch_uniform_ssbo_ =
+      std::make_unique<Buffer>(sizeof(BatchUniform) * kMaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
+  materials_buffer_ = std::make_unique<Buffer>(sizeof(BindlessMaterial) * kMaxMaterials,
                                                GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
   // ubo for vp matrix for now. May add other matrices/uniforms
+  // TODO(tony): don't hardcode matrix
   shader_uniform_ubo_ = std::make_unique<Buffer>(64, GL_DYNAMIC_STORAGE_BIT);
+  // lights
+  light_ssbo_ = std::make_unique<Buffer>(sizeof(PointLight) * kMaxLights, GL_DYNAMIC_STORAGE_BIT);
 
   // glCreateBuffers(1, &materials_buffer_);
   // glNamedBufferStorage(materials_buffer_, sizeof(BindlessMaterial) * MaxMaterials, nullptr,
@@ -96,10 +101,10 @@ void Renderer::InitBuffers() {
 }
 
 void Renderer::OnFrameBufferResize(uint32_t width, uint32_t height) {
-  spdlog::info("{} {}", width, height);
   framebuffer_dims_.y = height;
   framebuffer_dims_.x = width;
-  // ResetFrameBuffers();
+  glViewport(0, 0, framebuffer_dims_.x, framebuffer_dims_.y);
+  ResetFrameBuffers();
 }
 
 void Renderer::SetBatchedObjectCount(uint32_t count) {
@@ -120,51 +125,88 @@ void Renderer::SubmitDrawCommand(const glm::mat4& model, AssetHandle mesh_handle
 
 const RendererStats& Renderer::GetStats() { return stats_; }
 
+void Renderer::OnImGuiRender() {
+  ImGui::Begin("Renderer", nullptr, ImGuiWindowFlags_NoNavFocus);
+  // if (ImGui::TreeNodeEx("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
+  if (ImGui::CollapsingHeader("Metrics", ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::Text("Vertices: %i", stats_.vertices);
+    ImGui::Text("Indices: %i", stats_.indices);
+    ImGui::Text("MultiDrawCalls: %i", stats_.multi_draw_calls);
+    ImGui::Text("Multidraw commands Buffer: %i", stats_.multi_draw_cmds_buffer_count);
+    ImGui::Text("Num Meshes: %i", stats_.num_meshes);
+    ImGui::Text("VBO offset: %i, %f", batch_vertex_buffer_->Offset(),
+                static_cast<float>(batch_vertex_buffer_->Offset()) / kVertexBufferArrayMaxLength);
+    ImGui::Text("EBO Offset: %i, %f", batch_element_buffer_->Offset(),
+                static_cast<float>(batch_element_buffer_->Offset()) / kIndexBufferArrayMaxLength);
+  }
+
+  if (ImGui::CollapsingHeader("PBR", ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::Checkbox("Override Albedo", &internal_settings_.use_override_albedo);
+    ImGui::SameLine();
+    ImGui::Checkbox("Override Metallic", &internal_settings_.use_override_metallic);
+    ImGui::Checkbox("Override Roughness", &internal_settings_.use_override_roughness);
+    ImGui::DragFloat3("Albedo Override", &internal_settings_.albedo_override.x, 0.01, 0, 1);
+    ImGui::DragFloat("Metallic Override", &internal_settings_.metallic_roughness_override.x, .01, 0,
+                     1);
+    ImGui::DragFloat("Roughness Override", &internal_settings_.metallic_roughness_override.y, .01,
+                     0, 1);
+  }
+
+  // if (ImGui::CollapsingHeader("Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+  // }
+  ImGui::End();
+}
+
 void Renderer::ResetFrameBuffers() {
-  // position
-  if (g_position_tex_) glDeleteTextures(1, &g_position_tex_);
-  glCreateTextures(GL_TEXTURE_2D, 1, &g_position_tex_);
-  glTextureStorage2D(g_position_tex_, 1, GL_RGBA16F, framebuffer_dims_.x, framebuffer_dims_.y);
-  glTextureParameteri(g_position_tex_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTextureParameteri(g_position_tex_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glNamedFramebufferTexture(g_buffer_, GL_COLOR_ATTACHMENT0, g_position_tex_, 0);
-
-  // normal
-  if (g_normal_tex_) glDeleteTextures(1, &g_normal_tex_);
-  glCreateTextures(GL_TEXTURE_2D, 1, &g_normal_tex_);
-  glTextureStorage2D(g_normal_tex_, 1, GL_RGBA16F, framebuffer_dims_.x, framebuffer_dims_.y);
-  glTextureParameteri(g_normal_tex_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTextureParameteri(g_normal_tex_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glNamedFramebufferTexture(g_buffer_, GL_COLOR_ATTACHMENT1, g_normal_tex_, 0);
-
-  // Albedo
+  // attach textures to the gbuffer FBO
+  // albedo
   if (g_albedo_tex_) glDeleteTextures(1, &g_albedo_tex_);
   glCreateTextures(GL_TEXTURE_2D, 1, &g_albedo_tex_);
   glTextureStorage2D(g_albedo_tex_, 1, GL_RGBA8, framebuffer_dims_.x, framebuffer_dims_.y);
-  glTextureParameteri(g_albedo_tex_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTextureParameteri(g_albedo_tex_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glNamedFramebufferTexture(g_buffer_, GL_COLOR_ATTACHMENT2, g_albedo_tex_, 0);
+
+  // normal
+  // TODO(tony): switch texture format and do sphere map calculation
+  if (g_normal_tex_) glDeleteTextures(1, &g_normal_tex_);
+  glCreateTextures(GL_TEXTURE_2D, 1, &g_normal_tex_);
+  glTextureStorage2D(g_normal_tex_, 1, GL_RGBA16F, framebuffer_dims_.x, framebuffer_dims_.y);
+  glNamedFramebufferTexture(g_buffer_, GL_COLOR_ATTACHMENT1, g_normal_tex_, 0);
+
+  // roughness metallic ambient occlusion
+  if (g_rma_tex_) glDeleteTextures(1, &g_rma_tex_);
+  glCreateTextures(GL_TEXTURE_2D, 1, &g_rma_tex_);
+  // GL_RGB10_A2: 10 bits for rgb, 2 for alpha, since alpha not used.
+  glTextureStorage2D(g_rma_tex_, 1, GL_RGB10_A2, framebuffer_dims_.x, framebuffer_dims_.y);
+  glNamedFramebufferTexture(g_buffer_, GL_COLOR_ATTACHMENT0, g_rma_tex_, 0);
+
+  // depth
+  glCreateTextures(GL_TEXTURE_2D, 1, &g_depth_tex_);
+  glTextureStorage2D(g_depth_tex_, 1, GL_DEPTH_COMPONENT32F, framebuffer_dims_.x,
+                     framebuffer_dims_.y);
+  glNamedFramebufferTexture(g_buffer_, GL_DEPTH_ATTACHMENT, g_depth_tex_, 0);
+
   if (!glCheckNamedFramebufferStatus(g_buffer_, GL_FRAMEBUFFER)) {
     spdlog::error("g buffer incomplete.");
   }
-}
-
-void Renderer::InitFrameBuffers() {
-  glCreateFramebuffers(1, &g_buffer_);
-  ResetFrameBuffers();
   // specify color buffers to draw into
   GLenum bufs[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
   glNamedFramebufferDrawBuffers(g_buffer_, 3, bufs);
 }
 
+void Renderer::InitFrameBuffers() {
+  glCreateFramebuffers(1, &g_buffer_);
+  ResetFrameBuffers();
+}
+
 void Renderer::Init(glm::ivec2 framebuffer_dims) {
   framebuffer_dims_ = framebuffer_dims;
+  glViewport(0, 0, framebuffer_dims_.x, framebuffer_dims_.y);
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
   InitBuffers();
   InitVaos();
-  // InitFrameBuffers();
+  InitFrameBuffers();
 
   glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
   glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
@@ -181,10 +223,9 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
 
   // shader matrix uniforms
   view_matrix_ = view_info.view_matrix;
-  // projection_matrix_ = view_info.projection_matrix;
-  projection_matrix_ = glm::perspective(
-      45.0f, static_cast<float>(framebuffer_dims_.x) / framebuffer_dims_.y, 0.1f, 1000.0f);
+  projection_matrix_ = view_info.projection_matrix;
   vp_matrix_ = projection_matrix_ * view_matrix_;
+
   shader_uniform_ubo_->BindBase(GL_UNIFORM_BUFFER, 0);
   shader_uniform_ubo_->ResetOffset();
   shader_uniform_ubo_->SubData(64, glm::value_ptr(vp_matrix_));
@@ -229,9 +270,9 @@ void Renderer::RenderOpaqueObjects() {
   auto shader = ShaderManager::Get().GetShader("batch");
   shader->Bind();
   glBindVertexArray(batch_vao_);
-  batch_ssbo_uniform_buffer_->ResetOffset();
-  batch_ssbo_uniform_buffer_->SubData(sizeof(BatchUniform) * draw_cmd_uniforms_.size(),
-                                      draw_cmd_uniforms_.data());
+  batch_uniform_ssbo_->ResetOffset();
+  batch_uniform_ssbo_->SubData(sizeof(BatchUniform) * draw_cmd_uniforms_.size(),
+                               draw_cmd_uniforms_.data());
 
   std::vector<DrawElementsIndirectCommand> cmds;
   cmds.reserve(draw_cmd_uniforms_.size());
@@ -257,7 +298,7 @@ void Renderer::RenderOpaqueObjects() {
   // std::memcpy(batch_map_ptr, uniforms.data(), sizeof(glm::mat4) * uniforms.size());
 
   draw_indirect_buffer_->Bind(GL_DRAW_INDIRECT_BUFFER);
-  batch_ssbo_uniform_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 0);
+  batch_uniform_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, 0);
   // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, materials_buffer_);
   materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 1);
 
@@ -281,7 +322,7 @@ void Renderer::Reset() {
   batch_vertex_buffer_->ResetOffset();
   batch_element_buffer_->ResetOffset();
   draw_indirect_buffer_->ResetOffset();
-  batch_ssbo_uniform_buffer_->ResetOffset();
+  batch_uniform_ssbo_->ResetOffset();
   materials_buffer_->ResetOffset();
 }
 

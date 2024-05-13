@@ -7,7 +7,7 @@ set(SOURCES
     resource/shader_manager.cpp
     resource/model_loader.cpp
     resource/material_manager.cpp
-    resource/resource_manager.cpp
+    resource/model_manager.cpp
     resource/texture_manager.cpp
     renderer/gl/shader.cpp
     application/input.cpp
@@ -36,6 +36,7 @@ set(SOURCES
     test/main.cpp
     test/scene_main.cpp
     test/scene_2.cpp
+    test/scene_deferred.cpp
 
     )
 

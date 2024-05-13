@@ -11,7 +11,7 @@
 #include "engine/graphics_manager.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/material_manager.h"
-#include "engine/resource/resource_manager.h"
+#include "engine/resource/model_manager.h"
 #include "engine/resource/shader_manager.h"
 #include "engine/window_manager.h"
 #include "input.h"
@@ -42,7 +42,7 @@ Engine::Engine() {
 
 void Engine::OnEvent(const Event& e) {
   switch (e.type) {
-    case EventType::KeyPressed:
+    case EventType::kKeyPressed:
       if (e.key.code == KeyCode::Q && e.key.system) {
         Stop();
         return;
@@ -51,6 +51,9 @@ void Engine::OnEvent(const Event& e) {
         return;
       } else if (e.key.code == KeyCode::P) {
         // window_system_->SetCursorVisible(!window_system_->GetCursorVisible());
+      } else if (e.key.code == KeyCode::R && e.key.control) {
+        ShaderManager::Get().RecompileShaders();
+        return;
       }
     default:
       break;
@@ -128,9 +131,7 @@ void Engine::OnFrameBufferResize(uint32_t width, uint32_t height) {
 }
 
 void Engine::ImGuiSystemPerFrame(Timestep timestep) {
-  ImGui::Begin("Renderer", nullptr, ImGuiWindowFlags_NoNavFocus);
-  imgui_system_->RenderRendererStats(renderer_->GetStats());
-  ImGui::End();
+  graphics_system_->OnImGuiRender();
   active_scene_->OnImGuiRender();
 
   ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoNavFocus);

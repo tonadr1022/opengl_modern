@@ -19,6 +19,7 @@ void GraphicsManager::Init() {
   auto framebuffer_dims = WindowManager::Get().GetWindowDimensions();
   Renderer::Get().Init(framebuffer_dims);
 }
+void GraphicsManager::OnImGuiRender() { Renderer::Get().OnImGuiRender(); }
 void GraphicsManager::Shutdown() { Renderer::Get().Shutdown(); }
 
 void GraphicsManager::StartFrame(Scene& scene) {

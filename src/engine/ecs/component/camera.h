@@ -11,7 +11,7 @@ struct FPSCamera {
   glm::vec3 front{0.f, 0.f, -1.f};
   float yaw{-90.f}, pitch{0.f};
   float mouse_sensitivity{1};
-  float fov{45};
+  float fov_degrees{90};
   float near_plane{0.1f};
   float far_plane{1000.f};
   bool active{true};

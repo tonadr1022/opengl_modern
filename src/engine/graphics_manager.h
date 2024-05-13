@@ -16,6 +16,7 @@ struct GraphicsManager {
  public:
   void Init();
   void Shutdown();
+  void OnImGuiRender();
   void StartFrame(Scene& scene);
   void ResetOnSceneChange(Scene& scene);
   void UpdateTransforms(entt::registry& registry);

@@ -16,17 +16,17 @@ namespace engine {
 glm::vec3 aiVec3ToGLM(const aiVector3f& vec) { return {vec.x, vec.y, vec.z}; }
 glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
 
-std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
+std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
   ZoneScopedNC("load model", tracy::Color::Red);
-  spdlog::info("loading {}", filepath);
-  int slash_idx = filepath.find_last_of("/\\");
-  std::string directory = filepath.substr(0, slash_idx + 1);
+  spdlog::info("loading {}", params.filepath);
+  int slash_idx = params.filepath.find_last_of("/\\");
+  std::string directory = params.filepath.substr(0, slash_idx + 1);
 
   uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
-  const aiScene* scene = importer_.ReadFile(filepath, flags);
+  const aiScene* scene = importer_.ReadFile(params.filepath, flags);
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    spdlog::error("Path: {}\nAssimp error: {}", filepath, importer_.GetErrorString());
+    spdlog::error("Path: {}\nAssimp error: {}", params.filepath, importer_.GetErrorString());
     return std::nullopt;
   }
 
@@ -55,6 +55,7 @@ std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
     m.metalness_path = get_texture_path(aiTextureType_METALNESS);
     m.ao_path = get_texture_path(aiTextureType_AMBIENT_OCCLUSION);
     m.normal_path = get_texture_path(aiTextureType_NORMALS);
+    m.flip_textures = params.flip_textures;
     AssetHandle handle = MaterialManager::Get().AddMaterial(m);
     material_handles[ai_scene_mat_idx] = handle;
 

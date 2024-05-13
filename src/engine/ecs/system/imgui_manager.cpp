@@ -6,7 +6,6 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-#include "engine/renderer/renderer.h"
 #include "engine/util/imgui_extensions.h"
 
 namespace engine {
@@ -117,16 +116,6 @@ void ImGuiManager::EndFrame() {
   // ImGui::UpdatePlatformWindows();
 }
 
-void ImGuiManager::RenderRendererStats(const gfx::RendererStats& stats) {
-  ImGui::BeginChild("Stats");
-  ImGui::Text("Vertices: %i", stats.vertices);
-  ImGui::Text("Indices: %i", stats.indices);
-  ImGui::Text("MultiDrawCalls: %i", stats.multi_draw_calls);
-  ImGui::Text("Multidraw commands Buffer: %i", stats.multi_draw_cmds_buffer_count);
-  ImGui::Text("Num Meshes: %i", stats.num_meshes);
-  ImGui::EndChild();
-}
-
 void ImGuiManager::FramerateSubMenu(Timestep timestep) {
   ImGui::BeginChild("Framerate");
 
@@ -136,14 +125,14 @@ void ImGuiManager::FramerateSubMenu(Timestep timestep) {
     ImGui::PlotVar("Frametime (ms)", timestep * 1000.0f, 0.f, .05f * 1000.f, 240, ImVec2(300, 100));
   }
 
-  constexpr const double AvgFramesToCount = 30;
+  constexpr const double kAvgFramesToCount = 30;
 
   static double accumulated = 0;
   static int acc_count = 0;
   acc_count++;
   static double avg_frame_rate = 999999;
   accumulated += timestep;
-  if (acc_count >= AvgFramesToCount) {
+  if (acc_count >= kAvgFramesToCount) {
     avg_frame_rate = accumulated / acc_count;
     acc_count = 0;
     accumulated = 0;

@@ -1,4 +1,5 @@
 #include "engine/application/engine.h"
+#include "engine/test/scene_deferred.h"
 #include "scene_main.h"
 
 int main() {

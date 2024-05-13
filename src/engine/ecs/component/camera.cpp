@@ -4,7 +4,7 @@
 #include <glm/ext/matrix_transform.hpp>
 
 glm::mat4 engine::FPSCamera::GetProjection(float aspect_ratio) const {
-  return glm::perspective(fov, aspect_ratio, near_plane, far_plane);
+  return glm::perspective(glm::radians(fov_degrees), aspect_ratio, near_plane, far_plane);
 }
 
 glm::mat4 engine::FPSCamera::GetView() const {

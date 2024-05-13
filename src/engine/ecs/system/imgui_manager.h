@@ -14,7 +14,6 @@ struct ImGuiManager {
   void StartFrame();
   void EndFrame();
   void FramerateSubMenu(Timestep timestep);
-  void RenderRendererStats(const gfx::RendererStats& stats);
 
   bool debug_menu_enabled{true};
   bool enabled{true};

@@ -2,14 +2,14 @@
 
 #include "engine/application/event.h"
 #include "engine/ecs/component/transform.h"
-#include "engine/resource/resource_manager.h"
+#include "engine/resource/model_manager.h"
 #include "engine/window_manager.h"
 #include "scene_main.h"
 
 using engine::KeyCode;
 void Scene2::OnEvent(const engine::Event& e) {
   switch (e.type) {
-    case engine::EventType::KeyPressed:
+    case engine::EventType::kKeyPressed:
       if (e.key.code == engine::KeyCode::B) {
         LoadScene(std::make_unique<SceneMain>());
       } else if (e.key.code == KeyCode::M) {
@@ -40,7 +40,7 @@ void Scene2::Init() {
       // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
       "/home/tony/dep/models/glTF-Sample-Assets/Models/Cube/glTF/Cube.gltf";
 
-  AssetHandle model_handle = engine::ModelManager::Get().LoadModel(model_string);
+  AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
 
   glm::vec3 iter{0};

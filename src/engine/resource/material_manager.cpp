@@ -23,6 +23,7 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
   create_params.internal_format = GL_SRGB8_ALPHA8;
   create_params.filter_mode_max = GL_LINEAR;
   create_params.filter_mode_min = GL_LINEAR;
+  create_params.flip = material_create_info.flip_textures;
 
   gfx::MaterialData material;
   material.albedo = material_create_info.base_color;
@@ -32,9 +33,6 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
     if (it != texture_map_.end()) {
       material.albedo_texture = it->second.get();
     } else {
-      // auto tex = std::make_unique<gfx::Texture2D>(create_params);
-      // texture_map_.emplace(material_create_info.albedo_path.value(), std::move(tex));
-      // material.albedo_texture = tex.get();
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
       auto it = texture_map_.emplace(material_create_info.albedo_path.value(), std::move(tex));
       material.albedo_texture = it.first->second.get();
@@ -110,7 +108,6 @@ void MaterialManager::Reset() {
   material_map_.clear();
   texture_map_.clear();
   Init();
-  // TODO(tony): clear from renderer
 }
 
 std::vector<std::pair<AssetHandle, gfx::MaterialData>> MaterialManager::GetAllMaterials() const {

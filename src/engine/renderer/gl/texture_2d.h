@@ -9,10 +9,11 @@ namespace engine::gfx {
 struct Texture2DCreateParams {
   std::string filepath;
   uint32_t internal_format;
-  bool generate_mipmaps{true};
-  bool bindless{true};
   uint32_t filter_mode_min;
   uint32_t filter_mode_max;
+  bool generate_mipmaps{true};
+  bool bindless{true};
+  bool flip{true};
 };
 
 class Texture2D {

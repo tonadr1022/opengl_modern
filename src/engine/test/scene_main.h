@@ -3,7 +3,6 @@
 #include <entt/entity/fwd.hpp>
 
 #include "engine/application/engine.h"
-#include "engine/core/base.h"
 #include "engine/ecs/system/camera_system.h"
 #include "engine/scene.h"
 

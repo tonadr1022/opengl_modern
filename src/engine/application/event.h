@@ -8,18 +8,18 @@
 namespace engine {
 
 enum class EventType {
-  WindowClose,
-  WindowResize,
-  FrameBufferResize,
-  WindowFocused,
-  WindowLostFocus,
-  WindowMoved,
-  KeyPressed = 1,
-  KeyReleased = 2,
-  MouseButtonPressed,
-  MouseButtonReleased,
-  MouseMoved,
-  MouseScrolled
+  kWindowClose,
+  kWindowResize,
+  kFrameBufferResize,
+  kWindowFocused,
+  kWindowLostFocus,
+  kWindowMoved,
+  kKeyPressed = 1,
+  kKeyReleased = 2,
+  kMouseButtonPressed,
+  kMouseButtonReleased,
+  kMouseMoved,
+  kMouseScrolled
 };
 
 struct Event {

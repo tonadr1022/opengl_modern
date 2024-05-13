@@ -67,7 +67,13 @@ class Renderer {
   [[nodiscard]] AssetHandle AddMaterial(const MaterialData& material_data);
   [[nodiscard]] const RendererStats& GetStats();
 
-  static constexpr const uint32_t MaxMaterials = 100;
+  static constexpr const uint32_t kMaxMaterials = 100;
+  static constexpr uint32_t kVertexBufferArrayMaxLength{10'000'000};
+  static constexpr uint32_t kIndexBufferArrayMaxLength{10'000'000};
+  static constexpr uint32_t kMaxDrawCommands{10'000'000};
+  static constexpr uint32_t kMaxLights{100};
+
+  void OnImGuiRender();
 
  private:
   std::vector<std::string> skybox_strings_ = {
@@ -84,7 +90,8 @@ class Renderer {
 
   std::unique_ptr<Buffer> batch_vertex_buffer_{nullptr};
   std::unique_ptr<Buffer> batch_element_buffer_{nullptr};
-  std::unique_ptr<Buffer> batch_ssbo_uniform_buffer_{nullptr};
+  std::unique_ptr<Buffer> batch_uniform_ssbo_{nullptr};
+  std::unique_ptr<Buffer> light_ssbo_{nullptr};
   std::unique_ptr<Buffer> draw_indirect_buffer_{nullptr};
   std::unique_ptr<Buffer> shader_uniform_ubo_{nullptr};
   // uint32_t materials_buffer_;
@@ -95,9 +102,10 @@ class Renderer {
   // gfx::Texture2D* g_normal_tex_{nullptr};
   // gfx::Texture2D* g_albedo_tex_{nullptr};
 
-  uint32_t g_position_tex_{0};
-  uint32_t g_normal_tex_{0};
   uint32_t g_albedo_tex_{0};
+  uint32_t g_normal_tex_{0};
+  uint32_t g_rma_tex_{0};
+  uint32_t g_depth_tex_{0};
 
   void InitBuffers();
   void InitVaos();
@@ -127,6 +135,15 @@ class Renderer {
 
   void DrawOpaqueHelper(AssetHandle material_id, std::vector<glm::mat4>& uniforms);
   RendererStats stats_{0};
+  struct InternalSettings {
+    glm::vec3 albedo_override{1, 0, 0};
+    glm::vec2 metallic_roughness_override{0, 1};
+    bool use_override_albedo{false};
+    bool use_override_roughness{false};
+    bool use_override_metallic{false};
+  };
+
+  InternalSettings internal_settings_;
 };
 
 }  // namespace engine::gfx

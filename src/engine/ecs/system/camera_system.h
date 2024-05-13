@@ -19,21 +19,22 @@ struct CameraSystem : public engine::ecs::ISystem {
   void OnImGui();
   // camera system should always be enabled since camera always needs to update, but movement may
   // not always be on
-  bool on_{true};
-  float fps_movement_speed_{DefaultMovementSpeed};
+  bool on_{false};
+  float fps_movement_speed_{kDefaultMovementSpeed};
 
   engine::CameraMode camera_mode{engine::CameraMode::FPS};
 
-  static constexpr const float DefaultFov = 45.0f;
-  static constexpr const float MaxFov = 120.0f;
-  static constexpr const float MinFov = 5.0f;
-  static constexpr const float DefaultMouseSensitivity = 0.5f;
-  static constexpr const float MinMouseSensitivity = 0.05f;
-  static constexpr const float MaxMouseSensitivity = 1.0f;
-  static constexpr const float MinMoveSpeed = 0.1f;
-  static constexpr const float MaxMoveSpeed = 200.0f;
-  static constexpr const float DefaultMovementSpeed = 5.0f;
-  void InitDefaultCamera(entt::entity entity);
+  static constexpr const float kDefaultFov = 45.0f;
+  static constexpr const float kMaxFov = 120.0f;
+  static constexpr const float kMinFov = 5.0f;
+  static constexpr const float kDefaultMouseSensitivity = 0.5f;
+  static constexpr const float kMinMouseSensitivity = 0.05f;
+  static constexpr const float kMaxMouseSensitivity = 1.0f;
+  static constexpr const float kMinMoveSpeed = 0.1f;
+  static constexpr const float kMaxMoveSpeed = 200.0f;
+  static constexpr const float kDefaultMovementSpeed = 15.0f;
+  void InitDefaultCamera(entt::entity entity, const glm::vec3& position = {0, 1, 1},
+                         const glm::vec3& front = {0, 0, -1});
 
  private:
   template <typename Camera>

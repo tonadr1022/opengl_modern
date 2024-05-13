@@ -61,22 +61,6 @@ void Input::init_glfw_input_callbacks(GLFWwindow* window) {
 
 void Input::keypress_cb(GLFWwindow* window, int key, int scancode, int action, int mods) {
   ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
-  // if (ImGui::GetIO().WantCaptureKeyboard) spdlog::info("imgui want");
-
-  //  ImGuiIO& io = ImGui::GetIO();
-  //  if (action == GLFW_PRESS) {
-  //    io.KeysDown[key] = true;
-  //  }
-  //  if (action == GLFW_RELEASE) {
-  //    io.KeysDown[key] = false;
-  //  }
-
-  //  io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] ||
-  //  io.KeysDown[GLFW_KEY_RIGHT_CONTROL]; io.KeyShift =
-  //  io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-  //  io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] ||
-  //  io.KeysDown[GLFW_KEY_RIGHT_ALT]; io.KeySuper =
-  //  io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
   Event e;
   e.type = static_cast<EventType>(action);
@@ -114,7 +98,7 @@ void Input::mouse_pos_cb(GLFWwindow* window, double xpos, double ypos) {
   // cursor_offset_.y = prev_cursor_offset_.y - static_cast<float>(ypos);
   // prev_cursor_offset_ = glm::vec2(xpos, ypos);
   //
-  Event e{.type = EventType::MouseMoved};
+  Event e{.type = EventType::kMouseMoved};
   e.mouse_pos.x = xpos;
   e.mouse_pos.y = ypos;
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
@@ -124,7 +108,7 @@ void Input::mouse_pos_cb(GLFWwindow* window, double xpos, double ypos) {
 void Input::mouse_scroll_cb(GLFWwindow* window, double xoffset, double yoffset) {
   // TODO(tony): clean up, one or the other between polling and events?
   ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
-  Event e{.type = EventType::MouseScrolled};
+  Event e{.type = EventType::kMouseScrolled};
   scroll_offset_ = yoffset;
   e.scroll.offset = yoffset;
   auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
@@ -135,11 +119,11 @@ void Input::mouse_button_cb(GLFWwindow* window, int button, int action, int mods
   ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
   Event e;
   if (action == GLFW_PRESS) {
-    e.type = EventType::MouseButtonPressed;
+    e.type = EventType::kMouseButtonPressed;
     e.mouse.action = InputAction::Press;
     mouse_button_states_[button] = Pressed;
   } else if (action == GLFW_RELEASE) {
-    e.type = EventType::MouseButtonReleased;
+    e.type = EventType::kMouseButtonReleased;
     e.mouse.action = InputAction::Release;
     mouse_button_states_[button] = Released;
   }

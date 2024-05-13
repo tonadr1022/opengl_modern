@@ -9,7 +9,7 @@ namespace engine::gfx {
 Texture2D::Texture2D(const Texture2DCreateParams& params) {
   ZoneScopedN("tex load");
 
-  stbi_set_flip_vertically_on_load(true);
+  stbi_set_flip_vertically_on_load(params.flip);
 
   // https://www.khronos.org/opengl/wiki/Bindless_Texture
   glCreateTextures(GL_TEXTURE_2D, 1, &id_);
