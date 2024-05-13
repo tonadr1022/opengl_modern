@@ -80,6 +80,7 @@ class Renderer {
   std::unique_ptr<Buffer> batch_element_buffer_{nullptr};
   std::unique_ptr<Buffer> batch_ssbo_uniform_buffer_{nullptr};
   std::unique_ptr<Buffer> draw_indirect_buffer_{nullptr};
+  std::unique_ptr<Buffer> shader_uniform_ubo_{nullptr};
   // uint32_t materials_buffer_;
   // std::unique_ptr<VertexArray> batch_vao_{nullptr};
   uint32_t batch_vao_{0};
