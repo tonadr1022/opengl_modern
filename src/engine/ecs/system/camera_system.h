@@ -17,7 +17,10 @@ struct CameraSystem : public engine::ecs::ISystem {
   explicit CameraSystem(entt::registry& registry, engine::gfx::RenderViewInfo& render_view_info);
   void OnUpdate(double timestep);
   void OnImGui();
-  float movement_speed{DefaultMovementSpeed};
+  // camera system should always be enabled since camera always needs to update, but movement may
+  // not always be on
+  bool on_{true};
+  float fps_movement_speed_{DefaultMovementSpeed};
 
   engine::CameraMode camera_mode{engine::CameraMode::FPS};
 

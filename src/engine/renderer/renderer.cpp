@@ -99,7 +99,7 @@ void Renderer::OnFrameBufferResize(uint32_t width, uint32_t height) {
   spdlog::info("{} {}", width, height);
   framebuffer_dims_.y = height;
   framebuffer_dims_.x = width;
-  ResetFrameBuffers();
+  // ResetFrameBuffers();
 }
 
 void Renderer::SetBatchedObjectCount(uint32_t count) {
@@ -164,7 +164,7 @@ void Renderer::Init(glm::ivec2 framebuffer_dims) {
   LoadShaders();
   InitBuffers();
   InitVaos();
-  InitFrameBuffers();
+  // InitFrameBuffers();
 
   glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
   glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
@@ -181,7 +181,9 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
 
   // shader matrix uniforms
   view_matrix_ = view_info.view_matrix;
-  projection_matrix_ = view_info.projection_matrix;
+  // projection_matrix_ = view_info.projection_matrix;
+  projection_matrix_ = glm::perspective(
+      45.0f, static_cast<float>(framebuffer_dims_.x) / framebuffer_dims_.y, 0.1f, 1000.0f);
   vp_matrix_ = projection_matrix_ * view_matrix_;
   shader_uniform_ubo_->BindBase(GL_UNIFORM_BUFFER, 0);
   shader_uniform_ubo_->ResetOffset();
@@ -193,6 +195,7 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
   glClearColor(0.6, 0.6, 0.6, 1.0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 

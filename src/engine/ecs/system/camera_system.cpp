@@ -33,8 +33,8 @@ void CameraSystem::OnUpdate(double timestep) {
   auto view = registry.view<FPSCamera>();
   if (camera_mode == engine::CameraMode::FPS) {
     view.each([this, timestep](FPSCamera &camera) {
-      if (camera.active) {
-        float movement_offset = movement_speed * timestep;
+      if (on_ && camera.active) {
+        float movement_offset = fps_movement_speed_ * timestep;
         glm::vec3 movement(0.f);
         if (Input::IsKeyDown(KeyCode::W) || Input::IsKeyDown(KeyCode::I)) {
           movement += camera.front;
@@ -66,11 +66,8 @@ void CameraSystem::OnUpdate(double timestep) {
         glm::vec3 front;
         front.x = glm::cos(glm::radians(camera.yaw)) * glm::cos(glm::radians(camera.pitch));
         front.y = glm::sin(glm::radians(camera.pitch));
-        front.z = glm::sin(glm::radians(camera.yaw)) * glm::cos(glm::radians(camera.pitch));
-        camera.front = glm::normalize(front);
-
-        SetViewInfo(camera);
       }
+      SetViewInfo(camera);
     });
   }
 }
@@ -98,7 +95,7 @@ void CameraSystem::OnImGui() {
     ImGui::Text("Yaw: %.1f, Pitch: %.1f", camera.yaw, camera.pitch);
     ImGui::Text("Position: %.1f, %.1f, %.1f", position.x, position.y, position.z);
     ImGui::Text("Front: %.2f, %.2f, %.2f", front.x, front.y, front.z);
-    ImGui::SliderFloat("Movement Speed", &movement_speed, MinMoveSpeed, MaxMoveSpeed);
+    ImGui::SliderFloat("Movement Speed", &fps_movement_speed_, MinMoveSpeed, MaxMoveSpeed);
     float fov_rad = glm::radians(camera.fov);
     if (ImGui::SliderAngle("FOV", &fov_rad, MinFov, MaxFov)) {
       camera.fov = glm::degrees(fov_rad);

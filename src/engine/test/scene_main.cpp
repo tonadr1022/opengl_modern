@@ -51,9 +51,9 @@ void SceneMain::OnEvent(const engine::Event& e) {
   switch (e.type) {
     case EventType::KeyPressed:
       if (e.key.code == KeyCode::M) {
-        camera_system.enabled = !camera_system.enabled;
-        if (!camera_system.enabled) engine::WindowManager::Get().CenterCursor();
-        engine::WindowManager::Get().SetCursorVisibility(!camera_system.enabled);
+        camera_system.on_ = !camera_system.on_;
+        if (!camera_system.on_) engine::WindowManager::Get().CenterCursor();
+        engine::WindowManager::Get().SetCursorVisibility(!camera_system.on_);
         break;
       } else if (e.key.code == KeyCode::B) {
         LoadScene(std::make_unique<Scene2>());
@@ -65,9 +65,7 @@ void SceneMain::OnEvent(const engine::Event& e) {
   }
 }
 
-void SceneMain::OnUpdate(Timestep timestep) {
-  if (camera_system.enabled) camera_system.OnUpdate(timestep);
-}
+void SceneMain::OnUpdate(Timestep timestep) { camera_system.OnUpdate(timestep); }
 
 void DrawImGuiDropdown(const char* label, std::vector<std::string>& items, int& currentItemIndex) {
   if (ImGui::BeginCombo(label, items[currentItemIndex].data())) {
