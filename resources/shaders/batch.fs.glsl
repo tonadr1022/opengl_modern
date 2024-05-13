@@ -20,7 +20,7 @@ struct Material {
     uvec2 normal_map_handle;
 };
 
-layout(binding = 2, std430) readonly buffer Materials {
+layout(binding = 1, std430) readonly buffer Materials {
     Material materials[];
 };
 
