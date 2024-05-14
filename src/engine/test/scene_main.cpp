@@ -39,6 +39,18 @@ void SceneMain::Init() {
     registry.emplace<engine::component::Transform>(ent, t);
     registry.emplace<engine::component::ModelMatrix>(ent);
   }
+
+  glm::vec3 iter{0, 1, 0};
+  for (iter.z = -1; iter.z < 1; iter.z++) {
+    for (iter.x = -1; iter.x < 1; iter.x++) {
+      auto ent = registry.create();
+      PointLight light;
+      light.color = {1, 1, 1};
+      light.position = {iter.x * 5, iter.y, iter.z};
+      registry.emplace<engine::PointLight>(ent, light);
+    }
+  }
+
   // for (iter.z = -c; iter.z <= c; iter.z++) {
   //   for (iter.x = -c; iter.x <= c; iter.x++) {
   //     for (auto m : model.meshes) {

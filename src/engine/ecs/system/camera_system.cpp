@@ -80,6 +80,7 @@ void CameraSystem::SetViewInfo(Camera &camera) {
   auto dims = engine::WindowManager::Get().GetWindowDimensions();
   float aspect_ratio = dims.x / dims.y;
   render_view_info_.projection_matrix = camera.GetProjection(aspect_ratio);
+  render_view_info_.cam_pos = camera.position;
 }
 
 void CameraSystem::InitDefaultCamera(entt::entity entity, const glm::vec3 &position,

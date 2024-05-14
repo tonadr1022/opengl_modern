@@ -23,7 +23,12 @@ void GraphicsManager::OnImGuiRender() { Renderer::Get().OnImGuiRender(); }
 void GraphicsManager::Shutdown() { Renderer::Get().Shutdown(); }
 
 void GraphicsManager::StartFrame(Scene& scene) {
+  // TODO(tony): optimize, maybe don't submit lights every frame?
   Renderer::Get().StartFrame(scene.render_view_info);
+  auto lights_view = scene.registry.view<PointLight>();
+  std::vector<PointLight> lights;
+  lights_view.each([&](const auto& light) { lights.emplace_back(light); });
+  Renderer::Get().SubmitDynamicLights(lights);
 }
 
 void GraphicsManager::ResetOnSceneChange(Scene& /*scene*/) { Renderer::Get().Reset(); }

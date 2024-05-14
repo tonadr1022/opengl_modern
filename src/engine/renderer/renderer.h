@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "engine/core/base.h"
+#include "engine/renderer/light.h"
 #include "engine/resource/data_types.h"
 #include "engine/resource/paths.h"
 
@@ -57,6 +58,7 @@ class Renderer {
   void EndFrame();
   void Reset();
   void SetBatchedObjectCount(uint32_t count);
+  void SubmitDynamicLights(std::vector<PointLight>& lights);
   void OnFrameBufferResize(uint32_t width, uint32_t height);
   void SubmitDrawCommand(const glm::mat4& model, AssetHandle mesh_handle,
                          AssetHandle material_handle);
@@ -76,6 +78,11 @@ class Renderer {
   void OnImGuiRender();
 
  private:
+  struct alignas(16) UBOUniforms {
+    glm::mat4 vp_matrix;
+    glm::vec3 cam_pos;
+    float pad;
+  };
   std::vector<std::string> skybox_strings_ = {
       GET_TEXTURE_PATH("skybox2/right.jpg"), GET_TEXTURE_PATH("skybox2/left.jpg"),
       GET_TEXTURE_PATH("skybox2/top.jpg"),   GET_TEXTURE_PATH("skybox2/bottom.jpg"),

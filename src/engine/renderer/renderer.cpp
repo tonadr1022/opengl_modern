@@ -87,7 +87,7 @@ void Renderer::InitBuffers() {
                                                GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
   // ubo for vp matrix for now. May add other matrices/uniforms
   // TODO(tony): don't hardcode matrix
-  shader_uniform_ubo_ = std::make_unique<Buffer>(64, GL_DYNAMIC_STORAGE_BIT);
+  shader_uniform_ubo_ = std::make_unique<Buffer>(sizeof(UBOUniforms), GL_DYNAMIC_STORAGE_BIT);
   // lights
   light_ssbo_ = std::make_unique<Buffer>(sizeof(PointLight) * kMaxLights, GL_DYNAMIC_STORAGE_BIT);
 
@@ -232,16 +232,22 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   projection_matrix_ = view_info.projection_matrix;
   vp_matrix_ = projection_matrix_ * view_matrix_;
 
+  // assign uniforms common to shaders
   shader_uniform_ubo_->BindBase(GL_UNIFORM_BUFFER, 0);
   shader_uniform_ubo_->ResetOffset();
   shader_uniform_ubo_->SubData(64, glm::value_ptr(vp_matrix_));
+  glm::vec3 cam_pos = view_info.cam_pos;
+  shader_uniform_ubo_->SubData(sizeof(glm::vec4), &cam_pos.x);
 
   draw_cmd_uniforms_.clear();
   draw_cmd_mesh_ids_.clear();
+
+  // gl state
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
   glClearColor(0.6, 0.6, 0.6, 1.0);
+  // TODO(tony): address when blitting framebuffers
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
@@ -307,10 +313,17 @@ void Renderer::RenderOpaqueObjects() {
   batch_uniform_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, 0);
   // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, materials_buffer_);
   materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 1);
+  // TODO(tony): avoid subdata every frame?
+  light_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, 2);
 
   // mode, type, offest ptr, command count, stride (0 since tightly packed)
   glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, cmds.size(), 0);
   stats_.multi_draw_calls++;
+}
+
+void Renderer::SubmitDynamicLights(std::vector<PointLight>& lights) {
+  light_ssbo_->ResetOffset();
+  light_ssbo_->SubData(sizeof(PointLight) * lights.size(), lights.data());
 }
 
 void Renderer::EndFrame() {
