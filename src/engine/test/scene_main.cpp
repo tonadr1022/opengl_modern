@@ -23,10 +23,13 @@ void SceneMain::Init() {
   player_entity_ = registry.create();
   camera_system.InitDefaultCamera(player_entity_, {0, 5, 0}, {-1, 0, 0});
 
-  std::string model_string = GET_MODEL_PATH("ball.obj");
+  // std::string model_string = GET_MODEL_PATH("ball.obj");
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/Suzanne/glTF/Suzanne.gltf";
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
+  std::string model_string =
+      // "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
+      "/home/tony/clone/OpenGL-Renderer/MP-APS/Data/Models/crytek-sponza/sponza.obj";
 
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
@@ -34,41 +37,56 @@ void SceneMain::Init() {
   auto scale = glm::vec3(.01);
   // int c = 1;
 
-  {
-    // engine::Mesh m = engine::ShapeLoader::LoadSphere();
-    engine::Mesh m = model.meshes[0];
+  for (auto m : model.meshes) {
     engine::component::Transform t;
-    int num_cols = 7;
-    int num_rows = 7;
-    float spacing{2.5};
-    for (int row = 0; row < num_cols; row++) {
-      for (int col = 0; col < num_rows; col++) {
-        engine::MaterialCreateInfo mat;
-        mat.base_color = {1, 0, 0};
-        mat.roughness =
-            glm::clamp(static_cast<float>(col) / static_cast<float>(num_cols), .05f, 1.f);
-        mat.metallic = static_cast<float>(row) / static_cast<float>(num_rows);
-        auto mat_handle = engine::MaterialManager::Get().AddMaterial(mat);
-        m.material_handle = mat_handle;
-        t.SetTranslation({(col - num_rows / 2) * spacing, (row - num_rows / 2) * spacing, 0.0f});
-        t.SetScale(scale);
-        auto ent = registry.create();
-        registry.emplace<engine::Mesh>(ent, m);
-        registry.emplace<engine::component::Transform>(ent, t);
-        registry.emplace<engine::component::ModelMatrix>(ent);
-      }
-    }
+    t.SetScale(scale);
+    auto ent = registry.create();
+    registry.emplace<engine::Mesh>(ent, m);
+    registry.emplace<engine::component::Transform>(ent, t);
+    registry.emplace<engine::component::ModelMatrix>(ent);
   }
 
-  glm::vec3 light_positions[] = {
-      glm::vec3(-10.0f, 10.0f, 10.0f),
-      glm::vec3(10.0f, 10.0f, 10.0f),
-      glm::vec3(-10.0f, -10.0f, 10.0f),
-      glm::vec3(10.0f, -10.0f, 10.0f),
-  };
+  // {
+  //   // engine::Mesh m = engine::ShapeLoader::LoadSphere();
+  //   engine::Mesh m = model.meshes[0];
+  //   engine::component::Transform t;
+  //   int num_cols = 7;
+  //   int num_rows = 7;
+  //   float spacing{2.5};
+  //   for (int row = 0; row < num_cols; row++) {
+  //     for (int col = 0; col < num_rows; col++) {
+  //       engine::MaterialCreateInfo mat;
+  //       mat.base_color = {1, 0, 0};
+  //       mat.roughness =
+  //           glm::clamp(static_cast<float>(col) / static_cast<float>(num_cols), .05f, 1.f);
+  //       mat.metallic = static_cast<float>(row) / static_cast<float>(num_rows);
+  //       auto mat_handle = engine::MaterialManager::Get().AddMaterial(mat);
+  //       m.material_handle = mat_handle;
+  //       t.SetTranslation({(col - num_rows / 2) * spacing, (row - num_rows / 2) * spacing, 0.0f});
+  //       t.SetScale(scale);
+  //       auto ent = registry.create();
+  //       registry.emplace<engine::Mesh>(ent, m);
+  //       registry.emplace<engine::component::Transform>(ent, t);
+  //       registry.emplace<engine::component::ModelMatrix>(ent);
+  //     }
+  //   }
+  // }
 
+  // glm::vec3 light_positions[] = {
+  //     glm::vec3(-10.0f, 10.0f, 10.0f),
+  //     glm::vec3(10.0f, 10.0f, 10.0f),
+  //     glm::vec3(-10.0f, -10.0f, 10.0f),
+  //     glm::vec3(10.0f, -10.0f, 10.0f),
+  // };
+
+  glm::vec3 light_positions[] = {
+      glm::vec3(0, 1.0f, 0),
+      glm::vec3(1, 1.0f, 0),
+      glm::vec3(-1, 1.0f, 0),
+      glm::vec3(0, 1.0f, 1),
+  };
   PointLight light;
-  light.color = {1, 1, 0, 0};
+  light.color = {1, 1, 1, 0};
   for (auto& pos : light_positions) {
     auto ent = registry.create();
     light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
@@ -110,7 +128,16 @@ void SceneMain::OnEvent(const engine::Event& e) {
   }
 }
 
-void SceneMain::OnUpdate(Timestep timestep) { camera_system.OnUpdate(timestep); }
+void SceneMain::OnUpdate(Timestep timestep) {
+  camera_system.OnUpdate(timestep);
+
+  // static float t;
+  // t += timestep;
+  // auto v = registry.view<PointLight>();
+  // v.each(
+  //     [&](PointLight& light) { light.position += glm::vec4(sin(t * 5.0) * 5.0, 0.0, 0.0, 0.0);
+  //     });
+}
 
 void DrawImGuiDropdown(const char* label, std::vector<std::string>& items, int& currentItemIndex) {
   if (ImGui::BeginCombo(label, items[currentItemIndex].data())) {

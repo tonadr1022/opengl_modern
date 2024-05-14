@@ -12,31 +12,16 @@ class Texture2D;
 
 // std430: https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)
 struct alignas(16) BindlessMaterial {
-  glm::vec3 albedo;
-  float pad1;
-  float roughness;
-  float metallic;
-  glm::vec2 pad2;
   uint64_t albedo_map_handle{};
   uint64_t roughness_map_handle{};
   uint64_t metalness_map_handle{};
   uint64_t ao_map_handle{};
   uint64_t normal_map_handle{};
-};
-
-struct alignas(16) BindlessPhongMaterial {
-  glm::vec3 albedo;
-  float pad1;
-  uint64_t albedo_map_handle{};
-  uint64_t specular_map_handle{};
-  uint64_t normal_map_handle{};
-};
-
-struct PhongMaterialData {
-  glm::vec3 albedo{1, 0, 1};
-  gfx::Texture2D* albedo_texture{nullptr};
-  gfx::Texture2D* specular_texture{nullptr};
-  gfx::Texture2D* normal_texture{nullptr};
+  // glm::vec3 albedo;
+  // float pad1;
+  // float roughness;
+  // float metallic;
+  // glm::vec2 pad2;
 };
 
 struct MaterialData {

@@ -83,8 +83,8 @@ void Renderer::InitBuffers() {
       sizeof(DrawElementsIndirectCommand) * kMaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
   batch_uniform_ssbo_ =
       std::make_unique<Buffer>(sizeof(BatchUniform) * kMaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
-  materials_buffer_ = std::make_unique<Buffer>(sizeof(BindlessMaterial) * kMaxMaterials,
-                                               GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
+  materials_buffer_ =
+      std::make_unique<Buffer>(sizeof(BindlessMaterial) * kMaxMaterials, GL_DYNAMIC_STORAGE_BIT);
   // ubo for vp matrix for now. May add other matrices/uniforms
   // TODO(tony): don't hardcode matrix
   shader_uniform_ubo_ = std::make_unique<Buffer>(sizeof(UBOUniforms), GL_DYNAMIC_STORAGE_BIT);
@@ -352,9 +352,8 @@ AssetHandle Renderer::AddMaterial(const MaterialData& material) {
   EASSERT_MSG(materials_buffer_ != nullptr, "buffer not initialized");
   // assign handles so material samplers, properties can be accessed in shaders
   BindlessMaterial bindless_mat;
-  if (material.albedo_texture != nullptr) {
+  if (material.albedo_texture != nullptr)
     bindless_mat.albedo_map_handle = material.albedo_texture->BindlessHandle();
-  }
   if (material.normal_texture != nullptr)
     bindless_mat.normal_map_handle = material.normal_texture->BindlessHandle();
   if (material.metalness_texture != nullptr)
@@ -363,9 +362,9 @@ AssetHandle Renderer::AddMaterial(const MaterialData& material) {
     bindless_mat.ao_map_handle = material.ao_texture->BindlessHandle();
   if (material.roughness_texture != nullptr)
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
-  bindless_mat.albedo = material.albedo;
-  bindless_mat.roughness = material.roughness;
-  bindless_mat.metallic = material.metallic;
+  // bindless_mat.albedo = material.albedo;
+  // bindless_mat.roughness = material.roughness;
+  // bindless_mat.metallic = material.metallic;
   // id is the index into the material buffer.
   AssetHandle handle = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
 

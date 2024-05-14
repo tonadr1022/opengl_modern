@@ -50,7 +50,6 @@ class MaterialManager {
 
   std::unordered_map<std::string, std::unique_ptr<gfx::Texture2D>> texture_map_;
   std::unordered_map<AssetHandle, gfx::MaterialData> material_map_;
-  std::unordered_map<AssetHandle, gfx::PhongMaterialData> phong_material_map_;
 };
 
 }  // namespace engine

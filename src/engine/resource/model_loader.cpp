@@ -35,13 +35,13 @@ std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
   // each index contains the material id
   std::vector<AssetHandle> material_handles;
   material_handles.resize(scene->mNumMaterials);
-  aiString filename;
   for (int ai_scene_mat_idx = 0; ai_scene_mat_idx < scene->mNumMaterials; ai_scene_mat_idx++) {
     auto* material = scene->mMaterials[ai_scene_mat_idx];
 
     // returns full path if texture exists.
     // TODO(tony): other texture meta data?
     auto get_texture_path = [&](aiTextureType type) -> std::optional<std::string> {
+      aiString filename;
       if (material->GetTextureCount(type)) {
         material->GetTexture(type, 0, &filename);
         if (filename.length > 0) return directory + filename.data;
@@ -53,15 +53,26 @@ std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
     m.albedo_path = get_texture_path(aiTextureType_DIFFUSE);
     if (!m.albedo_path.has_value()) m.albedo_path = get_texture_path(aiTextureType_BASE_COLOR);
     m.roughness_path = get_texture_path(aiTextureType_DIFFUSE_ROUGHNESS);
+    if (!m.roughness_path.has_value()) m.roughness_path = get_texture_path(aiTextureType_SHININESS);
     m.metalness_path = get_texture_path(aiTextureType_METALNESS);
+    if (!m.metalness_path.has_value()) m.metalness_path = get_texture_path(aiTextureType_AMBIENT);
     m.ao_path = get_texture_path(aiTextureType_AMBIENT_OCCLUSION);
-    m.normal_path = get_texture_path(aiTextureType_NORMALS);
+    m.normal_path = get_texture_path(aiTextureType_HEIGHT);
+    if (!m.normal_path.has_value()) m.normal_path = get_texture_path(aiTextureType_NORMALS);
+
     m.flip_textures = params.flip_textures;
-    spdlog::info("{} {} {} {}", m.roughness_path.value_or("no roughnesspath"),
+    spdlog::info("\nroughness: {}\n metalness: {}\n ao: {}\n albedo: {}\n normal:{}\n",
+                 m.roughness_path.value_or("no roughnesspath"),
                  m.metalness_path.value_or("no metalnesspath"), m.ao_path.value_or("no ao_path"),
-                 m.albedo_path.value_or("no albedopath"));
+                 m.albedo_path.value_or("no albedopath"), m.normal_path.value_or("no normal path"));
+
     AssetHandle handle = MaterialManager::Get().AddMaterial(m);
     material_handles[ai_scene_mat_idx] = handle;
+
+    // aiString alphaMaskPath;
+    // material->GetTexture(aiTextureType_OPACITY, 0, &alphaMaskPath);
+    // spdlog::info("{}\n{}\n{}\n{}\n{}\n", albedoPath.data, metallicPath.data, normalPath.data,
+    //              roughnessPath.data, alphaMaskPath.data);
 
     // add material and get id. associate it with the scene in the vector so that
     // meshes can access the real material id.
