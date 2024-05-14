@@ -24,11 +24,12 @@ struct Buffer;
 struct Texture2D;
 
 struct RendererStats {
-  uint32_t vertices;
-  uint32_t indices;
-  uint32_t multi_draw_calls;
-  uint32_t multi_draw_cmds_buffer_count;
-  uint32_t num_meshes;
+  uint32_t vertices_in_buffer{0};
+  uint32_t indices_in_buffer{0};
+  uint32_t multi_draw_calls{0};
+  uint32_t multi_draw_cmds_buffer_count{0};
+  uint32_t num_meshes{0};
+  uint32_t num_point_lights{0};
 };
 
 struct UserDrawCommand {

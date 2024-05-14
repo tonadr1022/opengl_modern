@@ -8,6 +8,7 @@
 #include <glm/vec3.hpp>
 
 #include "engine/renderer/renderer.h"
+#include "engine/resource/data_types.h"
 #include "engine/resource/material_manager.h"
 #include "engine/resource/resource.h"
 
@@ -56,6 +57,9 @@ std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
     m.ao_path = get_texture_path(aiTextureType_AMBIENT_OCCLUSION);
     m.normal_path = get_texture_path(aiTextureType_NORMALS);
     m.flip_textures = params.flip_textures;
+    spdlog::info("{} {} {} {}", m.roughness_path.value_or("no roughnesspath"),
+                 m.metalness_path.value_or("no metalnesspath"), m.ao_path.value_or("no ao_path"),
+                 m.albedo_path.value_or("no albedopath"));
     AssetHandle handle = MaterialManager::Get().AddMaterial(m);
     material_handles[ai_scene_mat_idx] = handle;
 

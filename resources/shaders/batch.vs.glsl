@@ -30,10 +30,12 @@ layout(std430, binding = 0) readonly buffer data {
 
 void main(void) {
     UniformData uniformData = uniforms[gl_DrawID];
-    vec4 posWorldSpace = vp_matrix * uniformData.model * vec4(aPosition, 1.0);
+    vec4 posWorldSpace = uniformData.model * vec4(aPosition, 1.0);
     vs_out.posWorldSpace = vec3(posWorldSpace);
     vs_out.texCoords = aTexCoords;
-    vs_out.normal = aNormal;
+    // TODO: not this
+    vs_out.normal = mat3(transpose(inverse(uniformData.model))) * aNormal;
+
     vs_out.materialIndex = uniformData.materialIndex;
-    gl_Position = posWorldSpace;
+    gl_Position = vp_matrix * posWorldSpace;
 }

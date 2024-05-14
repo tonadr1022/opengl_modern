@@ -131,11 +131,12 @@ void Renderer::OnImGuiRender() {
   ImGui::Begin("Renderer", nullptr, ImGuiWindowFlags_NoNavFocus);
   // if (ImGui::TreeNodeEx("Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
   if (ImGui::CollapsingHeader("Metrics", ImGuiTreeNodeFlags_DefaultOpen)) {
-    ImGui::Text("Vertices: %i", stats_.vertices);
-    ImGui::Text("Indices: %i", stats_.indices);
+    ImGui::Text("Vertices in buffer: %i", stats_.vertices_in_buffer);
+    ImGui::Text("Indices in buffer: %i", stats_.indices_in_buffer);
     ImGui::Text("MultiDrawCalls: %i", stats_.multi_draw_calls);
     ImGui::Text("Multidraw commands Buffer: %i", stats_.multi_draw_cmds_buffer_count);
     ImGui::Text("Num Meshes: %i", stats_.num_meshes);
+    ImGui::Text("Num Point Lights: %i", stats_.num_point_lights);
     ImGui::Text("VBO offset: %i, %f", batch_vertex_buffer_->Offset(),
                 static_cast<float>(batch_vertex_buffer_->Offset()) / kVertexBufferArrayMaxLength);
     ImGui::Text("EBO Offset: %i, %f", batch_element_buffer_->Offset(),
@@ -222,10 +223,9 @@ void Renderer::Shutdown() {}
 
 void Renderer::StartFrame(const RenderViewInfo& view_info) {
   // can't memset since num meshes is across frames
-  stats_.indices = 0;
   stats_.multi_draw_calls = 0;
   stats_.multi_draw_cmds_buffer_count = 0;
-  stats_.vertices = 0;
+  stats_.num_point_lights = 0;
 
   // shader matrix uniforms
   view_matrix_ = view_info.view_matrix;
@@ -235,7 +235,8 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   // assign uniforms common to shaders
   shader_uniform_ubo_->BindBase(GL_UNIFORM_BUFFER, 0);
   shader_uniform_ubo_->ResetOffset();
-  shader_uniform_ubo_->SubData(64, glm::value_ptr(vp_matrix_));
+
+  shader_uniform_ubo_->SubData(sizeof(glm::mat4), glm::value_ptr(vp_matrix_));
   glm::vec3 cam_pos = view_info.cam_pos;
   shader_uniform_ubo_->SubData(sizeof(glm::vec4), &cam_pos.x);
 
@@ -246,7 +247,8 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
-  glClearColor(0.6, 0.6, 0.6, 1.0);
+  // glClearColor(0.6, 0.6, 0.6, 1.0);
+  glClearColor(0.1, 0.1, 0.1, 1.0);
   // TODO(tony): address when blitting framebuffers
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -272,8 +274,9 @@ AssetHandle Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<
   // NEED TO BE CALLED AFTER BASE_VERTEX AND FIRST_INDEX ASSIGNMENT SINCE THIS INCREMENTS THEM
   batch_vertex_buffer_->SubData(sizeof(Vertex) * vertices.size(), vertices.data());
   batch_element_buffer_->SubData(sizeof(Index) * indices.size(), indices.data());
-
   stats_.num_meshes++;
+  stats_.indices_in_buffer += cmd.count;
+  stats_.vertices_in_buffer += vertices.size();
   return id;
 }
 
@@ -299,7 +302,6 @@ void Renderer::RenderOpaqueObjects() {
     cmd.instance_count = 1;
     cmd.count = draw_cmd_info.count;
     cmd.first_index = draw_cmd_info.first_index;
-    stats_.indices += cmd.count;
     stats_.multi_draw_cmds_buffer_count++;
     cmds.emplace_back(cmd);
   }
@@ -322,6 +324,7 @@ void Renderer::RenderOpaqueObjects() {
 }
 
 void Renderer::SubmitDynamicLights(std::vector<PointLight>& lights) {
+  stats_.num_point_lights += lights.size();
   light_ssbo_->ResetOffset();
   light_ssbo_->SubData(sizeof(PointLight) * lights.size(), lights.data());
 }
@@ -361,7 +364,8 @@ AssetHandle Renderer::AddMaterial(const MaterialData& material) {
   if (material.roughness_texture != nullptr)
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
   bindless_mat.albedo = material.albedo;
-  bindless_mat.metallic_roughness = material.metallic_roughness;
+  bindless_mat.roughness = material.roughness;
+  bindless_mat.metallic = material.metallic;
   // id is the index into the material buffer.
   AssetHandle handle = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
 

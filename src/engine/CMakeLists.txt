@@ -8,6 +8,7 @@ set(SOURCES
     resource/model_loader.cpp
     resource/material_manager.cpp
     resource/model_manager.cpp
+    resource/shape_loader.cpp
     resource/texture_manager.cpp
     renderer/gl/shader.cpp
     application/input.cpp

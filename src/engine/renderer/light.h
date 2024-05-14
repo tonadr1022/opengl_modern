@@ -1,19 +1,17 @@
 #pragma once
 
-#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 namespace engine {
 
 struct DirectionalLight {
-  glm::vec3 direction;
-  glm::vec3 color{1, 1, 1};
+  glm::vec4 direction;
+  glm::vec4 color{1, 1, 1, 0};
 };
 
 struct PointLight {
-  glm::vec3 position;
-  glm::vec3 color{1, 1, 1};
-  float linear;
-  float quadratic;
+  glm::vec4 position{};
+  glm::vec4 color{1, 1, 1, 0};
 };
 
 }  // namespace engine

@@ -19,6 +19,8 @@ class Renderer;
 
 struct MaterialCreateInfo {
   glm::vec3 base_color{1, 1, 1};
+  float roughness{1};
+  float metallic{0};
   std::optional<std::string> albedo_path;
   std::optional<std::string> roughness_path;
   std::optional<std::string> metalness_path;

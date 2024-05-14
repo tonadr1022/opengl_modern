@@ -7,7 +7,9 @@
 #include "engine/core/base.h"
 #include "engine/ecs/component/transform.h"
 #include "engine/renderer/light.h"
+#include "engine/resource/material_manager.h"
 #include "engine/resource/model_manager.h"
+#include "engine/resource/paths.h"
 #include "engine/resource/resource.h"
 #include "engine/test/scene_2.h"
 #include "engine/window_manager.h"
@@ -21,8 +23,9 @@ void SceneMain::Init() {
   player_entity_ = registry.create();
   camera_system.InitDefaultCamera(player_entity_, {0, 5, 0}, {-1, 0, 0});
 
-  std::string model_string =
-      "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
+  std::string model_string = GET_MODEL_PATH("ball.obj");
+  // "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
+  // "/home/tony/dep/models/glTF-Sample-Assets/Models/Suzanne/glTF/Suzanne.gltf";
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
 
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
@@ -31,24 +34,45 @@ void SceneMain::Init() {
   auto scale = glm::vec3(.01);
   // int c = 1;
 
-  for (auto m : model.meshes) {
+  {
+    // engine::Mesh m = engine::ShapeLoader::LoadSphere();
+    engine::Mesh m = model.meshes[0];
     engine::component::Transform t;
-    t.SetScale(scale);
-    auto ent = registry.create();
-    registry.emplace<engine::Mesh>(ent, m);
-    registry.emplace<engine::component::Transform>(ent, t);
-    registry.emplace<engine::component::ModelMatrix>(ent);
+    int num_cols = 7;
+    int num_rows = 7;
+    float spacing{2.5};
+    for (int row = 0; row < num_cols; row++) {
+      for (int col = 0; col < num_rows; col++) {
+        engine::MaterialCreateInfo mat;
+        mat.base_color = {1, 0, 0};
+        mat.roughness =
+            glm::clamp(static_cast<float>(col) / static_cast<float>(num_cols), .05f, 1.f);
+        mat.metallic = static_cast<float>(row) / static_cast<float>(num_rows);
+        auto mat_handle = engine::MaterialManager::Get().AddMaterial(mat);
+        m.material_handle = mat_handle;
+        t.SetTranslation({(col - num_rows / 2) * spacing, (row - num_rows / 2) * spacing, 0.0f});
+        t.SetScale(scale);
+        auto ent = registry.create();
+        registry.emplace<engine::Mesh>(ent, m);
+        registry.emplace<engine::component::Transform>(ent, t);
+        registry.emplace<engine::component::ModelMatrix>(ent);
+      }
+    }
   }
 
-  glm::vec3 iter{0, 1, 0};
-  for (iter.z = -1; iter.z < 1; iter.z++) {
-    for (iter.x = -1; iter.x < 1; iter.x++) {
-      auto ent = registry.create();
-      PointLight light;
-      light.color = {1, 1, 1};
-      light.position = {iter.x * 5, iter.y, iter.z};
-      registry.emplace<engine::PointLight>(ent, light);
-    }
+  glm::vec3 light_positions[] = {
+      glm::vec3(-10.0f, 10.0f, 10.0f),
+      glm::vec3(10.0f, 10.0f, 10.0f),
+      glm::vec3(-10.0f, -10.0f, 10.0f),
+      glm::vec3(10.0f, -10.0f, 10.0f),
+  };
+
+  PointLight light;
+  light.color = {1, 1, 0, 0};
+  for (auto& pos : light_positions) {
+    auto ent = registry.create();
+    light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
+    registry.emplace<engine::PointLight>(ent, light);
   }
 
   // for (iter.z = -c; iter.z <= c; iter.z++) {
@@ -161,7 +185,7 @@ void SceneMain::OnImGuiRender() {
 //   data.reserve(num_mats);
 //   MaterialCreateInfo d;
 //   for (int i = 0; i < num_mats; i++) {
-//     d.base_color = {rand() % num_mats / static_cast<float>(num_mats), rand() % num_mats /
+//     d.base_color = {rand() %/*  num_mats / static_cast<float>(num_mats), rand() % */ num_mats /
 //     num_mats,
 //                     rand() % num_mats / num_mats};
 //     engine::MaterialID itermat = material_manager_->AddMaterial(d);

@@ -14,7 +14,8 @@ class Texture2D;
 struct alignas(16) BindlessMaterial {
   glm::vec3 albedo;
   float pad1;
-  glm::vec2 metallic_roughness;
+  float roughness;
+  float metallic;
   glm::vec2 pad2;
   uint64_t albedo_map_handle{};
   uint64_t roughness_map_handle{};
@@ -40,7 +41,8 @@ struct PhongMaterialData {
 
 struct MaterialData {
   glm::vec3 albedo{1, 1, 1};
-  glm::vec2 metallic_roughness{0, 1};
+  float roughness{1};
+  float metallic{0};
   gfx::Texture2D* albedo_texture{nullptr};
   gfx::Texture2D* roughness_texture{nullptr};
   gfx::Texture2D* metalness_texture{nullptr};
