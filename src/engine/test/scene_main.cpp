@@ -28,22 +28,30 @@ void SceneMain::Init() {
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
 
-  glm::vec3 iter{0};
   auto scale = glm::vec3(.01);
-  int c = 1;
-  for (iter.z = -c; iter.z <= c; iter.z++) {
-    for (iter.x = -c; iter.x <= c; iter.x++) {
-      for (auto m : model.meshes) {
-        engine::component::Transform t;
-        t.SetScale(scale);
-        auto ent = registry.create();
-        t.SetTranslation({iter.x * 50, iter.y, iter.z * 50});
-        registry.emplace<engine::Mesh>(ent, m);
-        registry.emplace<engine::component::Transform>(ent, t);
-        registry.emplace<engine::component::ModelMatrix>(ent);
-      }
-    }
+  // int c = 1;
+
+  for (auto m : model.meshes) {
+    engine::component::Transform t;
+    t.SetScale(scale);
+    auto ent = registry.create();
+    registry.emplace<engine::Mesh>(ent, m);
+    registry.emplace<engine::component::Transform>(ent, t);
+    registry.emplace<engine::component::ModelMatrix>(ent);
   }
+  // for (iter.z = -c; iter.z <= c; iter.z++) {
+  //   for (iter.x = -c; iter.x <= c; iter.x++) {
+  //     for (auto m : model.meshes) {
+  //       engine::component::Transform t;
+  //       t.SetScale(scale);
+  //       auto ent = registry.create();
+  //       t.SetTranslation({iter.x * 50, iter.y, iter.z * 50});
+  //       registry.emplace<engine::Mesh>(ent, m);
+  //       registry.emplace<engine::component::Transform>(ent, t);
+  //       registry.emplace<engine::component::ModelMatrix>(ent);
+  //     }
+  //   }
+  // }
 }
 
 using engine::EventType;
