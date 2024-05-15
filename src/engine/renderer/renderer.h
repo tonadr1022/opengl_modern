@@ -71,8 +71,8 @@ class Renderer {
   [[nodiscard]] const RendererStats& GetStats();
 
   static constexpr const uint32_t kMaxMaterials = 100;
-  static constexpr uint32_t kVertexBufferArrayMaxLength{10'000'000};
-  static constexpr uint32_t kIndexBufferArrayMaxLength{10'000'000};
+  static constexpr uint32_t kVertexBufferArrayMaxLength{10'000'0000};
+  static constexpr uint32_t kIndexBufferArrayMaxLength{10'000'0000};
   static constexpr uint32_t kMaxDrawCommands{10'000'000};
   static constexpr uint32_t kMaxLights{100};
 
@@ -115,7 +115,6 @@ class Renderer {
   uint32_t g_rma_tex_{0};
   uint32_t g_depth_tex_{0};
 
-  void InitTempLights();
   void InitBuffers();
   void InitVaos();
   void LoadShaders();

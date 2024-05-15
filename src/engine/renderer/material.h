@@ -11,7 +11,7 @@ namespace gfx {
 class Texture2D;
 
 // std430: https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)
-struct alignas(16) BindlessMaterial {
+struct BindlessMaterial {
   uint64_t albedo_map_handle{};
   uint64_t roughness_map_handle{};
   uint64_t metalness_map_handle{};

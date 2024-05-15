@@ -43,7 +43,7 @@ struct Material {
     // float pad3;
 };
 
-layout(binding = 1, std430) readonly buffer Materials {
+layout(std430, binding = 1) readonly buffer Materials {
     Material materials[];
 };
 
@@ -66,6 +66,7 @@ void main() {
     const bool hasMetallic = (material.metalness_map_handle.x != 0 || material.metalness_map_handle.y != 0);
     const bool hasAO = (material.ao_map_handle.x != 0 || material.ao_map_handle.y != 0);
     const bool hasNormal = (material.normal_map_handle.x != 0 || material.normal_map_handle.y != 0);
+
     if (u_overrideMaterial) {
         albedo = vec4(u_albedoOverride, 1.0);
         roughness = u_metallicRoughnessOverride.x;
@@ -74,22 +75,24 @@ void main() {
     } else {
         if (hasAlbedo) {
             albedo = texture(sampler2D(material.albedo_map_handle), fs_in.texCoords).rgba;
+            // o_color = albedo;
+            // return;
         } else {
             // albedo = vec4(material.base_color, 1.0);
             albedo = vec4(1.0);
         }
         if (hasRoughness) {
-            roughness = texture(sampler2D(material.roughness_map_handle), fs_in.texCoords).r;
-            o_color = vec4(roughness, roughness, roughness, 1.);
-            return;
+            roughness = texture(sampler2D(material.roughness_map_handle), fs_in.texCoords).g;
+            // o_color = vec4(roughness, roughness, roughness, 1.);
+            // return;
         } else {
             // roughness = material.roughness;
             roughness = 1;
-            o_color = vec4(0, 1, 1, 1);
-            return;
+            // o_color = vec4(0, 1, 1, 1);
+            // return;
         }
         if (hasMetallic) {
-            metallic = texture(sampler2D(material.metalness_map_handle), fs_in.texCoords).g;
+            metallic = texture(sampler2D(material.metalness_map_handle), fs_in.texCoords).r;
             // o_color = vec4(1, 0, 1, 1);
             // o_color = vec4(metallic, metallic, metallic, 1.0);
             // return;

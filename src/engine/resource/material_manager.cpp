@@ -49,8 +49,8 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
       material.metalness_texture = it->second.get();
     } else {
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
-      texture_map_.emplace(material_create_info.metalness_path.value(), std::move(tex));
-      material.metalness_texture = tex.get();
+      auto it = texture_map_.emplace(material_create_info.metalness_path.value(), std::move(tex));
+      material.metalness_texture = it.first->second.get();
     }
   }
 
@@ -59,10 +59,11 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
     auto it = texture_map_.find(material_create_info.roughness_path.value());
     if (it != texture_map_.end()) {
       material.roughness_texture = it->second.get();
+      spdlog::info("duplicate");
     } else {
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
-      texture_map_.emplace(material_create_info.roughness_path.value(), std::move(tex));
-      material.roughness_texture = tex.get();
+      auto it = texture_map_.emplace(material_create_info.roughness_path.value(), std::move(tex));
+      material.roughness_texture = it.first->second.get();
     }
   }
 
@@ -73,8 +74,8 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
       material.normal_texture = it->second.get();
     } else {
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
-      texture_map_.emplace(material_create_info.normal_path.value(), std::move(tex));
-      material.normal_texture = tex.get();
+      auto it = texture_map_.emplace(material_create_info.normal_path.value(), std::move(tex));
+      material.normal_texture = it.first->second.get();
     }
   }
   if (material_create_info.ao_path.has_value()) {
@@ -84,8 +85,8 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
       material.ao_texture = it->second.get();
     } else {
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
-      texture_map_.emplace(material_create_info.ao_path.value(), std::move(tex));
-      material.ao_texture = tex.get();
+      auto it = texture_map_.emplace(material_create_info.ao_path.value(), std::move(tex));
+      material.ao_texture = it.first->second.get();
     }
   }
 

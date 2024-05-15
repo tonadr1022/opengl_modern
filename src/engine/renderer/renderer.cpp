@@ -83,8 +83,8 @@ void Renderer::InitBuffers() {
       sizeof(DrawElementsIndirectCommand) * kMaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
   batch_uniform_ssbo_ =
       std::make_unique<Buffer>(sizeof(BatchUniform) * kMaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
-  materials_buffer_ =
-      std::make_unique<Buffer>(sizeof(BindlessMaterial) * kMaxMaterials, GL_DYNAMIC_STORAGE_BIT);
+  materials_buffer_ = std::make_unique<Buffer>(sizeof(BindlessMaterial) * kMaxMaterials,
+                                               GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
   // ubo for vp matrix for now. May add other matrices/uniforms
   // TODO(tony): don't hardcode matrix
   shader_uniform_ubo_ = std::make_unique<Buffer>(sizeof(UBOUniforms), GL_DYNAMIC_STORAGE_BIT);
@@ -154,7 +154,6 @@ void Renderer::OnImGuiRender() {
     ImGui::DragFloat("Roughness Override", &internal_settings_.metallic_roughness_override.y, .01,
                      0, 1);
   }
-
   // if (ImGui::CollapsingHeader("Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
   // }
   ImGui::End();
@@ -201,9 +200,6 @@ void Renderer::InitFrameBuffers() {
   ResetFrameBuffers();
 }
 
-void Renderer::InitTempLights() {
-  // light_ssbo_->SubData(sizeof(PointLight), void *data)
-}
 void Renderer::Init(glm::ivec2 framebuffer_dims) {
   framebuffer_dims_ = framebuffer_dims;
   glViewport(0, 0, framebuffer_dims_.x, framebuffer_dims_.y);
@@ -213,7 +209,6 @@ void Renderer::Init(glm::ivec2 framebuffer_dims) {
   InitBuffers();
   InitVaos();
   InitFrameBuffers();
-  InitTempLights();
 
   glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
   glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
@@ -235,7 +230,6 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   // assign uniforms common to shaders
   shader_uniform_ubo_->BindBase(GL_UNIFORM_BUFFER, 0);
   shader_uniform_ubo_->ResetOffset();
-
   shader_uniform_ubo_->SubData(sizeof(glm::mat4), glm::value_ptr(vp_matrix_));
   glm::vec3 cam_pos = view_info.cam_pos;
   shader_uniform_ubo_->SubData(sizeof(glm::vec4), &cam_pos.x);
@@ -248,7 +242,7 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_STENCIL_TEST);
   // glClearColor(0.6, 0.6, 0.6, 1.0);
-  glClearColor(0.1, 0.1, 0.1, 1.0);
+  glClearColor(0.0, 0.0, 0.0, 1.0);
   // TODO(tony): address when blitting framebuffers
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -362,6 +356,11 @@ AssetHandle Renderer::AddMaterial(const MaterialData& material) {
     bindless_mat.ao_map_handle = material.ao_texture->BindlessHandle();
   if (material.roughness_texture != nullptr)
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
+  static int count = 0;
+  spdlog::info("{} {} {} {} {}", bindless_mat.albedo_map_handle, bindless_mat.roughness_map_handle,
+               bindless_mat.metalness_map_handle, bindless_mat.ao_map_handle, count);
+  count++;
+
   // bindless_mat.albedo = material.albedo;
   // bindless_mat.roughness = material.roughness;
   // bindless_mat.metallic = material.metallic;

@@ -21,15 +21,17 @@ using engine::PointLight;
 void SceneMain::Init() {
   camera_system.camera_mode = engine::CameraMode::FPS;
   player_entity_ = registry.create();
-  camera_system.InitDefaultCamera(player_entity_, {0, 5, 0}, {-1, 0, 0});
+  camera_system.InitDefaultCamera(player_entity_);
+  // camera_system.InitDefaultCamera(player_entity_, {0, 5, 0}, {-1, 0, 0});
 
   // std::string model_string = GET_MODEL_PATH("ball.obj");
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/Suzanne/glTF/Suzanne.gltf";
   // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
   std::string model_string =
-      // "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
-      "/home/tony/clone/OpenGL-Renderer/MP-APS/Data/Models/crytek-sponza/sponza.obj";
+      // "/home/tony/dep/models/glTF-Sample-Assets/Models/DamagedHelmet/glTF/DamagedHelmet.gltf";
+      "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
+  // "/home/tony/clone/OpenGL-Renderer/MP-APS/Data/Models/crytek-sponza/sponza.obj";
 
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
@@ -80,10 +82,8 @@ void SceneMain::Init() {
   // };
 
   glm::vec3 light_positions[] = {
-      glm::vec3(0, 1.0f, 0),
-      glm::vec3(1, 1.0f, 0),
-      glm::vec3(-1, 1.0f, 0),
-      glm::vec3(0, 1.0f, 1),
+      glm::vec3(0, 1.0f, 0), glm::vec3(1, 1.0f, 0), glm::vec3(-1, 1.0f, 0), glm::vec3(0, 1.0f, 1),
+      // glm::vec3(0, 2, -1)
   };
   PointLight light;
   light.color = {1, 1, 1, 0};
