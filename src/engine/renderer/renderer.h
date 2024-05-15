@@ -58,6 +58,7 @@ class Renderer {
   void StartFrame(const RenderViewInfo& view_info);
   void EndFrame();
   void Reset();
+  void ClearMeshes();
   void SetBatchedObjectCount(uint32_t count);
   void SubmitDynamicLights(std::vector<PointLight>& lights);
   void OnFrameBufferResize(uint32_t width, uint32_t height);

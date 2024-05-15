@@ -356,10 +356,9 @@ AssetHandle Renderer::AddMaterial(const MaterialData& material) {
     bindless_mat.ao_map_handle = material.ao_texture->BindlessHandle();
   if (material.roughness_texture != nullptr)
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
-  static int count = 0;
-  spdlog::info("{} {} {} {} {}", bindless_mat.albedo_map_handle, bindless_mat.roughness_map_handle,
-               bindless_mat.metalness_map_handle, bindless_mat.ao_map_handle, count);
-  count++;
+  // spdlog::info("{} {} {} {} {}", bindless_mat.albedo_map_handle,
+  // bindless_mat.roughness_map_handle,
+  //              bindless_mat.metalness_map_handle, bindless_mat.ao_map_handle, count);
 
   // bindless_mat.albedo = material.albedo;
   // bindless_mat.roughness = material.roughness;

@@ -59,7 +59,6 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
     auto it = texture_map_.find(material_create_info.roughness_path.value());
     if (it != texture_map_.end()) {
       material.roughness_texture = it->second.get();
-      spdlog::info("duplicate");
     } else {
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
       auto it = texture_map_.emplace(material_create_info.roughness_path.value(), std::move(tex));

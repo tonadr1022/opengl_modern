@@ -6,7 +6,9 @@
 #include "engine/application/event.h"
 #include "engine/core/base.h"
 #include "engine/ecs/component/transform.h"
+#include "engine/graphics_manager.h"
 #include "engine/renderer/light.h"
+#include "engine/renderer/renderer.h"
 #include "engine/resource/material_manager.h"
 #include "engine/resource/model_manager.h"
 #include "engine/resource/paths.h"
@@ -15,30 +17,14 @@
 #include "engine/window_manager.h"
 #include "systems.h"
 
-SceneMain::SceneMain() : camera_system(registry, render_view_info) {}
-using engine::PointLight;
-
-void SceneMain::Init() {
-  camera_system.camera_mode = engine::CameraMode::FPS;
-  player_entity_ = registry.create();
-  camera_system.InitDefaultCamera(player_entity_);
-  // camera_system.InitDefaultCamera(player_entity_, {0, 5, 0}, {-1, 0, 0});
-
-  // std::string model_string = GET_MODEL_PATH("ball.obj");
-  // "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
-  // "/home/tony/dep/models/glTF-Sample-Assets/Models/Suzanne/glTF/Suzanne.gltf";
-  // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
+void SceneMain::LoadSponza() {
+  spdlog::info("loading sponza func");
+  camera_system.InitDefaultCamera({0, 5, 0}, {-1, 0, 0});
   std::string model_string =
-      // "/home/tony/dep/models/glTF-Sample-Assets/Models/DamagedHelmet/glTF/DamagedHelmet.gltf";
       "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
-  // "/home/tony/clone/OpenGL-Renderer/MP-APS/Data/Models/crytek-sponza/sponza.obj";
-
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
-
   auto scale = glm::vec3(.01);
-  // int c = 1;
-
   for (auto m : model.meshes) {
     engine::component::Transform t;
     t.SetScale(scale);
@@ -47,51 +33,69 @@ void SceneMain::Init() {
     registry.emplace<engine::component::Transform>(ent, t);
     registry.emplace<engine::component::ModelMatrix>(ent);
   }
-
-  // {
-  //   // engine::Mesh m = engine::ShapeLoader::LoadSphere();
-  //   engine::Mesh m = model.meshes[0];
-  //   engine::component::Transform t;
-  //   int num_cols = 7;
-  //   int num_rows = 7;
-  //   float spacing{2.5};
-  //   for (int row = 0; row < num_cols; row++) {
-  //     for (int col = 0; col < num_rows; col++) {
-  //       engine::MaterialCreateInfo mat;
-  //       mat.base_color = {1, 0, 0};
-  //       mat.roughness =
-  //           glm::clamp(static_cast<float>(col) / static_cast<float>(num_cols), .05f, 1.f);
-  //       mat.metallic = static_cast<float>(row) / static_cast<float>(num_rows);
-  //       auto mat_handle = engine::MaterialManager::Get().AddMaterial(mat);
-  //       m.material_handle = mat_handle;
-  //       t.SetTranslation({(col - num_rows / 2) * spacing, (row - num_rows / 2) * spacing, 0.0f});
-  //       t.SetScale(scale);
-  //       auto ent = registry.create();
-  //       registry.emplace<engine::Mesh>(ent, m);
-  //       registry.emplace<engine::component::Transform>(ent, t);
-  //       registry.emplace<engine::component::ModelMatrix>(ent);
-  //     }
-  //   }
-  // }
-
-  // glm::vec3 light_positions[] = {
-  //     glm::vec3(-10.0f, 10.0f, 10.0f),
-  //     glm::vec3(10.0f, 10.0f, 10.0f),
-  //     glm::vec3(-10.0f, -10.0f, 10.0f),
-  //     glm::vec3(10.0f, -10.0f, 10.0f),
-  // };
-
   glm::vec3 light_positions[] = {
       glm::vec3(0, 1.0f, 0), glm::vec3(1, 1.0f, 0), glm::vec3(-1, 1.0f, 0), glm::vec3(0, 1.0f, 1),
       // glm::vec3(0, 2, -1)
   };
-  PointLight light;
+  engine::PointLight light;
   light.color = {1, 1, 1, 0};
   for (auto& pos : light_positions) {
     auto ent = registry.create();
     light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
     registry.emplace<engine::PointLight>(ent, light);
   }
+}
+
+void SceneMain::LoadSpheres() {
+  spdlog::info("loading spheres func");
+  camera_system.InitDefaultCamera();
+  std::string model_string = GET_MODEL_PATH("ball.obj");
+  AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
+  auto& model = engine::ModelManager::Get().GetModel(model_handle);
+  auto scale = glm::vec3(.01);
+  // engine::Mesh m = engine::ShapeLoader::LoadSphere();
+  engine::Mesh m = model.meshes[0];
+  engine::component::Transform t;
+  int num_cols = 7;
+  int num_rows = 7;
+  float spacing{2.5};
+  for (int row = 0; row < num_cols; row++) {
+    for (int col = 0; col < num_rows; col++) {
+      engine::MaterialCreateInfo mat;
+      mat.base_color = {1, 0, 0};
+      mat.roughness = glm::clamp(static_cast<float>(col) / static_cast<float>(num_cols), .05f, 1.f);
+      mat.metallic = static_cast<float>(row) / static_cast<float>(num_rows);
+      auto mat_handle = engine::MaterialManager::Get().AddMaterial(mat);
+      m.material_handle = mat_handle;
+      t.SetTranslation({(col - num_rows / 2) * spacing, (row - num_rows / 2) * spacing, 0.0f});
+      t.SetScale(scale);
+      auto ent = registry.create();
+      registry.emplace<engine::Mesh>(ent, m);
+      registry.emplace<engine::component::Transform>(ent, t);
+      registry.emplace<engine::component::ModelMatrix>(ent);
+    }
+  }
+  glm::vec3 light_positions[] = {
+      glm::vec3(-10.0f, 10.0f, 10.0f),
+      glm::vec3(10.0f, 10.0f, 10.0f),
+      glm::vec3(-10.0f, -10.0f, 10.0f),
+      glm::vec3(10.0f, -10.0f, 10.0f),
+  };
+  engine::PointLight light;
+  light.color = {1, 1, 1, 0};
+  for (auto& pos : light_positions) {
+    auto ent = registry.create();
+    light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
+    registry.emplace<engine::PointLight>(ent, light);
+  }
+}
+
+SceneMain::SceneMain() : camera_system(registry, render_view_info) {}
+
+void SceneMain::Init() {
+  camera_system.camera_mode = engine::CameraMode::FPS;
+  // camera_system.InitDefaultCamera(player_entity_);
+  LoadSponza();
 
   // for (iter.z = -c; iter.z <= c; iter.z++) {
   //   for (iter.x = -c; iter.x <= c; iter.x++) {
@@ -121,6 +125,21 @@ void SceneMain::OnEvent(const engine::Event& e) {
       } else if (e.key.code == KeyCode::B) {
         LoadScene(std::make_unique<Scene2>());
         break;
+      } else if (e.key.code == KeyCode::N) {
+        curr_scene_ =
+            static_cast<SceneMain::CurrScene>((curr_scene_ + 1) % SceneMain::CurrScene::kCount);
+        registry.clear();
+        engine::gfx::Renderer::Get().Reset();
+        switch (curr_scene_) {
+          case kSpheres:
+            LoadSpheres();
+            break;
+          case kSponza:
+            LoadSponza();
+            break;
+          default:
+            break;
+        }
       }
       break;
     default:

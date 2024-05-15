@@ -83,8 +83,7 @@ void CameraSystem::SetViewInfo(Camera &camera) {
   render_view_info_.cam_pos = camera.position;
 }
 
-void CameraSystem::InitDefaultCamera(entt::entity entity, const glm::vec3 &position,
-                                     const glm::vec3 &front) {
+void CameraSystem::InitDefaultCamera(const glm::vec3 &position, const glm::vec3 &front) {
   engine::FPSCamera camera;
   camera.position = position;
   camera.pitch = glm::asin(-front.y);
@@ -94,8 +93,8 @@ void CameraSystem::InitDefaultCamera(entt::entity entity, const glm::vec3 &posit
   front_actual.y = glm::sin(glm::radians(camera.pitch));
   front_actual.z = glm::sin(glm::radians(camera.yaw)) * glm::cos(glm::radians(camera.pitch));
   camera.front = glm::normalize(front_actual);
-
-  auto &c = registry.emplace<engine::FPSCamera>(entity, camera);
+  auto ent = registry.create();
+  auto &c = registry.emplace<engine::FPSCamera>(ent, camera);
   SetViewInfo(c);
 }
 

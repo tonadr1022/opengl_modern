@@ -33,7 +33,7 @@ struct CameraSystem : public engine::ecs::ISystem {
   static constexpr const float kMinMoveSpeed = 0.1f;
   static constexpr const float kMaxMoveSpeed = 200.0f;
   static constexpr const float kDefaultMovementSpeed = 15.0f;
-  void InitDefaultCamera(entt::entity entity, const glm::vec3& position = {0, 1, 1},
+  void InitDefaultCamera(const glm::vec3& position = {0, 1, 1},
                          const glm::vec3& front = {0, 0, -1});
 
  private:

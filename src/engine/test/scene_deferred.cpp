@@ -10,8 +10,7 @@ SceneDeferred::SceneDeferred() : camera_system(registry, render_view_info) {}
 
 void SceneDeferred::Init() {
   camera_system.camera_mode = engine::CameraMode::FPS;
-  player_entity_ = registry.create();
-  camera_system.InitDefaultCamera(player_entity_, {0, 5, 0}, {-1, 0, 0});
+  camera_system.InitDefaultCamera({0, 5, 0}, {-1, 0, 0});
 
   std::string model_string = GET_MODEL_PATH("backpack/backpack.obj");
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string, false});

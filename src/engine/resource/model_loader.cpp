@@ -19,9 +19,11 @@ glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
 
 std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
   ZoneScopedNC("load model", tracy::Color::Red);
-  spdlog::info("loading {}", params.filepath);
   int slash_idx = params.filepath.find_last_of("/\\");
+  int dot_idx = params.filepath.find_last_of('.');
   std::string directory = params.filepath.substr(0, slash_idx + 1);
+
+  spdlog::info("loading {}", params.filepath.substr(slash_idx + 1));
 
   uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
   const aiScene* scene = importer_.ReadFile(params.filepath, flags);
@@ -59,12 +61,12 @@ std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
     m.ao_path = get_texture_path(aiTextureType_AMBIENT_OCCLUSION);
     m.normal_path = get_texture_path(aiTextureType_HEIGHT);
     if (!m.normal_path.has_value()) m.normal_path = get_texture_path(aiTextureType_NORMALS);
-
     m.flip_textures = params.flip_textures;
-    spdlog::info("\nroughness: {}\n metalness: {}\n ao: {}\n albedo: {}\n normal:{}\n",
-                 m.roughness_path.value_or("no roughnesspath"),
-                 m.metalness_path.value_or("no metalnesspath"), m.ao_path.value_or("no ao_path"),
-                 m.albedo_path.value_or("no albedopath"), m.normal_path.value_or("no normal path"));
+    // spdlog::info("\nroughness: {}\n metalness: {}\n ao: {}\n albedo: {}\n normal:{}\n",
+    //              m.roughness_path.value_or("no roughnesspath"),
+    //              m.metalness_path.value_or("no metalnesspath"), m.ao_path.value_or("no ao_path"),
+    //              m.albedo_path.value_or("no albedopath"), m.normal_path.value_or("no normal
+    //              path"));
 
     AssetHandle handle = MaterialManager::Get().AddMaterial(m);
     material_handles[ai_scene_mat_idx] = handle;

@@ -16,5 +16,4 @@ class Scene2 : public engine::Scene {
   engine::ecs::CameraSystem camera_system;
 
  private:
-  entt::entity player_entity_{};
 };

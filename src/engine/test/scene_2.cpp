@@ -33,8 +33,7 @@ void Scene2::OnUpdate(Timestep timestep) {
 void Scene2::Init() {
   camera_system.enabled = false;
   camera_system.camera_mode = engine::CameraMode::FPS;
-  player_entity_ = registry.create();
-  camera_system.InitDefaultCamera(player_entity_);
+  camera_system.InitDefaultCamera();
 
   std::string model_string =
       // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";

@@ -33,3 +33,7 @@ I use [Vcpkg](https://github.com/microsoft/vcpkg) for dependency management, and
 - [LearnOpenGL](https://learnopengl.com/Advanced-Lighting/Deferred-Shading)
 - [AZDO presentation](https://www.gdcvault.com/play/1020791/Approaching-Zero-Driver-Overhead-in)
 - [Real-Time Rendering](https://www.realtimerendering.com)
+
+random notes:
+
+- pbr: null texture pointers that I was too dumb to notice due to moving unique pointer when amplacing into unordered map.
