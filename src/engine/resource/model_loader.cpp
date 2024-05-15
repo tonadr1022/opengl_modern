@@ -133,20 +133,27 @@ std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
 
       gfx::Vertex v;
       // process vertices
-      if (mesh.HasTextureCoords(0)) {
+      if (mesh.HasTextureCoords(0) && mesh.HasTangentsAndBitangents()) {
         for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
           v.position = aiVec3ToGLM(mesh.mVertices[i]);
           v.normal = aiVec3ToGLM(mesh.mNormals[i]);
           v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
+          v.tangent = aiVec3ToGLM(mesh.mTangents[i]);
+          v.bitangent = aiVec3ToGLM(mesh.mBitangents[i]);
           vertices.emplace_back(v);
         }
-      } else {
+      } else if (mesh.HasTangentsAndBitangents()) {
         for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
           v.position = aiVec3ToGLM(mesh.mVertices[i]);
           v.normal = aiVec3ToGLM(mesh.mNormals[i]);
+          v.tangent = aiVec3ToGLM(mesh.mTangents[i]);
+          v.bitangent = aiVec3ToGLM(mesh.mBitangents[i]);
           v.tex_coords = {0, 0};
           vertices.emplace_back(v);
         }
+      } else {
+        spdlog::error("no tangents or bitangents {}", filepath);
+        return std::nullopt;
       }
 
       // process indices

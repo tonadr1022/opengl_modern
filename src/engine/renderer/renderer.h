@@ -147,6 +147,9 @@ class Renderer {
   RendererStats stats_{0};
   DirectionalLight dir_light_;
   bool dir_light_on_{false};
+  bool normal_map_on_{true};
+  bool roughness_map_on_{true};
+  bool metallic_map_on_{true};
 
   struct InternalSettings {
     glm::vec3 albedo_override{1, 0, 0};

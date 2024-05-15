@@ -2,6 +2,7 @@
 #extension GL_ARB_bindless_texture : enable
 
 layout(location = 0) in VS_OUT {
+    mat3 TBN;
     vec3 posWorldSpace;
     vec3 normal;
     vec2 texCoords;
@@ -14,6 +15,9 @@ layout(std140, binding = 0) uniform Matrices
     vec3 cam_pos;
 };
 
+uniform bool u_normalMapOn;
+uniform bool u_roughnessMapOn;
+uniform bool u_metallicMapOn;
 uniform bool u_overrideMaterial;
 uniform vec2 u_metallicRoughnessOverride;
 uniform vec3 u_albedoOverride;
@@ -67,6 +71,7 @@ void main() {
     float roughness;
     float metallic;
     float ao;
+    vec3 normal;
 
     ///////////////////////// Assign material properties ///////////////////////////////
     Material material = materials[fs_in.materialIndex];
@@ -74,10 +79,12 @@ void main() {
     const bool hasRoughness = (material.roughness_map_handle.x != 0 || material.roughness_map_handle.y != 0);
     const bool hasMetallic = (material.metalness_map_handle.x != 0 || material.metalness_map_handle.y != 0);
     const bool hasAO = (material.ao_map_handle.x != 0 || material.ao_map_handle.y != 0);
+    const bool hasNormalMap = (material.normal_map_handle.x != 0 || material.normal_map_handle.y != 0);
     if (u_overrideMaterial) {
         albedo = vec4(u_albedoOverride, 1.0);
         metallic = u_metallicRoughnessOverride.x;
         roughness = u_metallicRoughnessOverride.y;
+        normal = normalize(fs_in.normal);
         ao = 1.0;
     } else {
         if (hasAlbedo) {
@@ -87,7 +94,7 @@ void main() {
             // o_color = albedo;
             // return;
         }
-        if (hasRoughness) {
+        if (u_roughnessMapOn && hasRoughness) {
             // TODO: make more robust, not all maps will combine roughness and metallic this way.
             roughness = texture(sampler2D(material.roughness_map_handle), fs_in.texCoords).g;
         } else {
@@ -95,10 +102,12 @@ void main() {
             // o_color = vec4(roughness, roughness, roughness, 1.0);
             // return;
         }
-        if (hasMetallic) {
-            metallic = texture(sampler2D(material.metalness_map_handle), fs_in.texCoords).r;
+        if (u_metallicMapOn && hasMetallic) {
+            metallic = texture(sampler2D(material.roughness_map_handle), fs_in.texCoords).r;
+            // o_color = vec4(metallic, metallic, metallic, 1.0);
+            // return;
         } else {
-            metallic = material.metallic;
+            // metallic = material.metallic;
             // o_color = vec4(metallic, metallic, metallic, 1.0);
             // return;
         }
@@ -107,13 +116,19 @@ void main() {
         } else {
             ao = 1.0;
         }
+        if (u_normalMapOn && hasNormalMap) {
+            normal = texture(sampler2D(material.normal_map_handle), fs_in.texCoords).rgb;
+            normal = normal * 2.0 - 1.0;
+            normal = normalize(fs_in.TBN * normal);
+        } else {
+            normal = normalize(fs_in.normal);
+        }
     }
     //////////////////////////////////////////////////////////////////////////////////////////
     if (albedo.a < 0.1) {
         discard;
     }
 
-    vec3 normal = normalize(fs_in.normal);
     vec3 V = normalize(cam_pos - fs_in.posWorldSpace);
 
     // reflectance at normal incidence

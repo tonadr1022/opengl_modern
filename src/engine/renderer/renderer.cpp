@@ -55,22 +55,22 @@ void Renderer::LoadShaders() {
 Renderer::~Renderer() = default;
 
 void Renderer::InitVaos() {
-  // batch_vao_ = std::make_unique<VertexArray>();
-  // batch_vao_->EnableAttribute<float>(0, 3, offsetof(Vertex, position));
-  // batch_vao_->EnableAttribute<float>(1, 3, offsetof(Vertex, normal));
-  // batch_vao_->EnableAttribute<float>(2, 2, offsetof(Vertex, tex_coords));
-  // batch_vao_->AttachVertexBuffer(batch_vertex_buffer_->Id(), 0, 0, sizeof(Vertex));
-  // batch_vao_->AttachElementBuffer(batch_element_buffer_->Id());
   glCreateVertexArrays(1, &batch_vao_);
   glEnableVertexArrayAttrib(batch_vao_, 0);
   glEnableVertexArrayAttrib(batch_vao_, 1);
   glEnableVertexArrayAttrib(batch_vao_, 2);
+  glEnableVertexArrayAttrib(batch_vao_, 3);
+  glEnableVertexArrayAttrib(batch_vao_, 4);
   glVertexArrayAttribFormat(batch_vao_, 0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
   glVertexArrayAttribFormat(batch_vao_, 1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
   glVertexArrayAttribFormat(batch_vao_, 2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, tex_coords));
+  glVertexArrayAttribFormat(batch_vao_, 3, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, tangent));
+  glVertexArrayAttribFormat(batch_vao_, 4, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, bitangent));
   glVertexArrayAttribBinding(batch_vao_, 0, 0);
   glVertexArrayAttribBinding(batch_vao_, 1, 0);
   glVertexArrayAttribBinding(batch_vao_, 2, 0);
+  glVertexArrayAttribBinding(batch_vao_, 3, 0);
+  glVertexArrayAttribBinding(batch_vao_, 4, 0);
 }
 
 void Renderer::InitBuffers() {
@@ -152,7 +152,10 @@ void Renderer::OnImGuiRender() {
     ImGui::DragFloat("Roughness Override", &internal_settings_.roughness_override, .01, 0, 1);
   }
 
-  ImGui::Checkbox("directional ", &dir_light_on_);
+  ImGui::Checkbox("directional", &dir_light_on_);
+  ImGui::Checkbox("normal map on", &normal_map_on_);
+  ImGui::Checkbox("roughness map on", &roughness_map_on_);
+  ImGui::Checkbox("metallic map on", &metallic_map_on_);
   ImGui::DragFloat3("directional dir", &dir_light_.direction.x, 0.01, -1, 1);
   ImGui::DragFloat3("directional color", &dir_light_.color.x, 0.01, 0, 1);
   // if (ImGui::CollapsingHeader("Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -292,6 +295,10 @@ void Renderer::RenderOpaqueObjects() {
 
   shader->SetVec3("u_directionalColor", dir_light_.color);
   shader->SetBool("u_directionalOn", dir_light_on_);
+  shader->SetBool("u_normalMapOn", normal_map_on_);
+  shader->SetBool("u_roughnessMapOn", roughness_map_on_);
+  shader->SetBool("u_metallicMapOn", metallic_map_on_);
+  shader->SetBool("u_normalMapOn", normal_map_on_);
   shader->SetVec3("u_directionalDirection", dir_light_.direction);
 
   glBindVertexArray(batch_vao_);

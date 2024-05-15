@@ -3,6 +3,8 @@
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoords;
+layout(location = 3) in vec3 aTangent;
+layout(location = 4) in vec3 aBitangent;
 
 // std140 explicitly states the memory layout.
 // https://registry.khronos.org/OpenGL/extensions/ARB/ARB_uniform_buffer_object.txt
@@ -13,6 +15,7 @@ layout(std140, binding = 0) uniform Matrices
 };
 
 layout(location = 0) out VS_OUT {
+    mat3 TBN;
     vec3 posWorldSpace;
     vec3 normal;
     vec2 texCoords;
@@ -54,8 +57,10 @@ void main(void) {
     vs_out.normal = mat3(uniformData.normalMatrix) * aNormal;
     vs_out.materialIndex = uniformData.materialIndex;
     Material material = materials[uniformData.materialIndex];
-    const bool hasNormalMap = (material.normal_map_handle.x != 0 || material.normal_map_handle.y != 0);
-    if (hasNormalMap) {} else {}
+    vec3 T = normalize(vec3(uniformData.model * vec4(aTangent, 0.0)));
+    vec3 B = normalize(vec3(uniformData.model * vec4(aBitangent, 0.0)));
+    vec3 N = normalize(vec3(uniformData.model * vec4(aNormal, 0.0)));
+    vs_out.TBN = mat3(T, B, N);
 
     gl_Position = vp_matrix * vec4(vs_out.posWorldSpace, 1.0);
 }
