@@ -39,7 +39,7 @@ void Scene2::Init() {
       // "/home/tony/dep/models/glTF-Sample-Assets/Models/WaterBottle/glTF/WaterBottle.gltf";
       "/home/tony/dep/models/glTF-Sample-Assets/Models/Cube/glTF/Cube.gltf";
 
-  AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
+  AssetHandle model_handle = engine::ModelManager::Get().LoadModel(model_string);
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
 
   glm::vec3 iter{0};

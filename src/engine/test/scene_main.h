@@ -13,12 +13,13 @@ class SceneMain : public engine::Scene {
   void OnImGuiRender() override;
   void LoadSponza();
   void LoadSpheres();
+  void LoadSpheres2();
   void OnEvent(const engine::Event& e) override;
   void OnUpdate(Timestep timestep) override;
 
   engine::ecs::CameraSystem camera_system;
 
  private:
-  enum CurrScene { kSponza, kSpheres, kCount };
+  enum CurrScene { kSponza, kSpheres, kSpheres2, kCount };
   CurrScene curr_scene_{SceneMain::CurrScene::kSponza};
 };

@@ -10,6 +10,7 @@
 #include "engine/renderer/light.h"
 #include "engine/renderer/renderer.h"
 #include "engine/resource/material_manager.h"
+#include "engine/resource/model_loader.h"
 #include "engine/resource/model_manager.h"
 #include "engine/resource/paths.h"
 #include "engine/resource/resource.h"
@@ -18,13 +19,12 @@
 #include "systems.h"
 
 void SceneMain::LoadSponza() {
-  spdlog::info("loading sponza func");
   camera_system.InitDefaultCamera({0, 5, 0}, {-1, 0, 0});
   std::string model_string =
       "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
-  auto scale = glm::vec3(.01);
+  auto scale = glm::vec3(.1);
   for (auto m : model.meshes) {
     engine::component::Transform t;
     t.SetScale(scale);
@@ -38,7 +38,7 @@ void SceneMain::LoadSponza() {
       // glm::vec3(0, 2, -1)
   };
   engine::PointLight light;
-  light.color = {1, 1, 1, 0};
+  light.color = {1, 1, 1};
   for (auto& pos : light_positions) {
     auto ent = registry.create();
     light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
@@ -47,7 +47,6 @@ void SceneMain::LoadSponza() {
 }
 
 void SceneMain::LoadSpheres() {
-  spdlog::info("loading spheres func");
   camera_system.InitDefaultCamera();
   std::string model_string = GET_MODEL_PATH("ball.obj");
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
@@ -59,15 +58,15 @@ void SceneMain::LoadSpheres() {
   int num_cols = 7;
   int num_rows = 7;
   float spacing{2.5};
-  for (int row = 0; row < num_cols; row++) {
-    for (int col = 0; col < num_rows; col++) {
+  for (int row = 0; row < num_rows; row++) {
+    for (int col = 0; col < num_cols; col++) {
       engine::MaterialCreateInfo mat;
-      mat.base_color = {1, 0, 0};
+      mat.base_color = {1, 1, 1, 1};
       mat.roughness = glm::clamp(static_cast<float>(col) / static_cast<float>(num_cols), .05f, 1.f);
       mat.metallic = static_cast<float>(row) / static_cast<float>(num_rows);
       auto mat_handle = engine::MaterialManager::Get().AddMaterial(mat);
       m.material_handle = mat_handle;
-      t.SetTranslation({(col - num_rows / 2) * spacing, (row - num_rows / 2) * spacing, 0.0f});
+      t.SetTranslation({(col - num_cols / 2) * spacing, (row - num_rows / 2) * spacing, 0.0f});
       t.SetScale(scale);
       auto ent = registry.create();
       registry.emplace<engine::Mesh>(ent, m);
@@ -76,19 +75,77 @@ void SceneMain::LoadSpheres() {
     }
   }
   glm::vec3 light_positions[] = {
-      glm::vec3(-10.0f, 10.0f, 10.0f),
+      glm::vec3(-10.0f, 10.0f, 0.0f),
       glm::vec3(10.0f, 10.0f, 10.0f),
       glm::vec3(-10.0f, -10.0f, 10.0f),
       glm::vec3(10.0f, -10.0f, 10.0f),
   };
+
   engine::PointLight light;
-  light.color = {1, 1, 1, 0};
+  light.color = {1, 1, 1};
   for (auto& pos : light_positions) {
     auto ent = registry.create();
     light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
     registry.emplace<engine::PointLight>(ent, light);
+    engine::MaterialCreateInfo mat;
+    mat.base_color = glm::vec4{light.color.x, light.color.y, light.color.z, 1};
+    registry.emplace<engine::Mesh>(ent, m);
+    engine::component::Transform t;
+    t.SetScale({0.005, 0.005, 0.005});
+    t.SetTranslation(light.position);
+    registry.emplace<engine::component::Transform>(ent, t);
+    registry.emplace<engine::component::ModelMatrix>(ent);
+  }
+  engine::DirectionalLight dir_light;
+  dir_light.color = {1, 0, 0};
+}
+
+void SceneMain::LoadSpheres2() {
+  camera_system.InitDefaultCamera();
+  std::string model_string =
+      "/home/tony/personal/cpp/opengl_modern/resources/models/spheres_demo/scene.gltf";
+  AssetHandle model_handle = engine::ModelManager::Get().LoadModel(model_string);
+  spdlog::info("loading gltf fast");
+  engine::ModelLoader::LoadModel2(
+      "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf");
+  spdlog::info("done loading fast");
+  auto& model = engine::ModelManager::Get().GetModel(model_handle);
+  // auto scale = glm::vec3(.01);
+  engine::Mesh m = model.meshes[0];
+  engine::component::Transform t;
+  // t.SetScale(scale);
+  for (auto m : model.meshes) {
+    engine::component::Transform t;
+    auto ent = registry.create();
+    registry.emplace<engine::Mesh>(ent, m);
+    registry.emplace<engine::component::Transform>(ent, t);
+    registry.emplace<engine::component::ModelMatrix>(ent);
   }
 }
+// glm::vec3 light_positions[] = {
+//     glm::vec3(-10.0f, 10.0f, 0.0f),
+//     glm::vec3(10.0f, 10.0f, 10.0f),
+//     glm::vec3(-10.0f, -10.0f, 10.0f),
+//     glm::vec3(10.0f, -10.0f, 10.0f),
+// };
+//
+// engine::PointLight light;
+// light.color = {1, 1, 1};
+// for (auto& pos : light_positions) {
+//   auto ent = registry.create();
+//   light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
+//   registry.emplace<engine::PointLight>(ent, light);
+//   engine::MaterialCreateInfo mat;
+//   mat.base_color = light.color;
+//   registry.emplace<engine::Mesh>(ent, m);
+//   engine::component::Transform t;
+//   t.SetScale({0.005, 0.005, 0.005});
+//   t.SetTranslation(light.position);
+//   registry.emplace<engine::component::Transform>(ent, t);
+//   registry.emplace<engine::component::ModelMatrix>(ent);
+// }
+// engine::DirectionalLight dir_light;
+// dir_light.color = {1, 0, 0};
 
 SceneMain::SceneMain() : camera_system(registry, render_view_info) {}
 
@@ -96,6 +153,7 @@ void SceneMain::Init() {
   camera_system.camera_mode = engine::CameraMode::FPS;
   // camera_system.InitDefaultCamera(player_entity_);
   LoadSponza();
+  // LoadSpheres();
 
   // for (iter.z = -c; iter.z <= c; iter.z++) {
   //   for (iter.x = -c; iter.x <= c; iter.x++) {
@@ -137,6 +195,9 @@ void SceneMain::OnEvent(const engine::Event& e) {
           case kSponza:
             LoadSponza();
             break;
+          case kSpheres2:
+            LoadSpheres2();
+            break;
           default:
             break;
         }
@@ -149,6 +210,10 @@ void SceneMain::OnEvent(const engine::Event& e) {
 
 void SceneMain::OnUpdate(Timestep timestep) {
   camera_system.OnUpdate(timestep);
+  auto v = registry.view<engine::PointLight, engine::component::Transform>();
+  v.each([&](engine::PointLight& light, engine::component::Transform& transform) {
+    transform.SetTranslation(light.position);
+  });
 
   // static float t;
   // t += timestep;
@@ -174,6 +239,7 @@ void DrawImGuiDropdown(const char* label, std::vector<std::string>& items, int& 
 // TODO(tony): clean up and separate
 void SceneMain::OnImGuiRender() {
   ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoNavFocus);
+  Scene::OnImGuiRender();
   if (ImGui::CollapsingHeader("Systems", ImGuiTreeNodeFlags_DefaultOpen)) {
     ImGui::Checkbox("Camera", &camera_system.enabled);
   }

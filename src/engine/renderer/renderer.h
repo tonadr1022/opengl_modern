@@ -130,8 +130,9 @@ class Renderer {
   std::vector<AssetHandle> draw_cmd_mesh_ids_;
 
   struct alignas(16) BatchUniform {
-    glm::mat4 model_matrix{};
-    uint64_t material_index{};
+    glm::mat4 model_matrix;
+    glm::mat4 normal_matrix;
+    uint64_t material_index;
   };
 
   std::vector<BatchUniform> draw_cmd_uniforms_;
@@ -144,12 +145,14 @@ class Renderer {
 
   void DrawOpaqueHelper(AssetHandle material_id, std::vector<glm::mat4>& uniforms);
   RendererStats stats_{0};
+  DirectionalLight dir_light_;
+  bool dir_light_on_{false};
+
   struct InternalSettings {
     glm::vec3 albedo_override{1, 0, 0};
-    glm::vec2 metallic_roughness_override{0, 1};
-    bool use_override_albedo{false};
-    bool use_override_roughness{false};
-    bool use_override_metallic{false};
+    float metallic_override{0};
+    float roughness_override{1};
+    bool override_material{false};
   };
 
   InternalSettings internal_settings_;

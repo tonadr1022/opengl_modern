@@ -53,6 +53,7 @@ target_link_libraries(
   PRIVATE assimp::assimp
           Tracy::TracyClient
           imgui::imgui
+          fastgltf::fastgltf
           GLEW::GLEW
           spdlog::spdlog
           glm::glm

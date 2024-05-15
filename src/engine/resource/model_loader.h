@@ -9,7 +9,8 @@ namespace engine {
 
 class ModelLoader {
  public:
-  std::optional<ModelData> LoadModel(const ModelLoadParams& params);
+  std::optional<ModelData> LoadModel(const std::string& filepath);
+  static std::optional<ModelData> LoadModel2(const std::string& filepath);
 
  private:
   Assimp::Importer importer_;

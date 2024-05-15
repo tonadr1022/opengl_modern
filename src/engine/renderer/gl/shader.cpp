@@ -41,6 +41,12 @@ void Shader::SetVec3(entt::hashed_string name, const glm::vec3& vec) {
   EASSERT_MSG(uniform_locations_.contains(name), "Uniform name not found");
   glUniform3fv(uniform_locations_[name], 1, glm::value_ptr(vec));
 }
+
+void Shader::SetVec2(entt::hashed_string name, const glm::vec2& vec) {
+  EASSERT_MSG(uniform_locations_.contains(name), "Uniform name not found");
+  glUniform2fv(uniform_locations_[name], 1, glm::value_ptr(vec));
+}
+
 void Shader::SetVec4(entt::hashed_string name, const glm::vec4& vec) {
   EASSERT_MSG(uniform_locations_.contains(name), "Uniform name not found");
   glUniform4fv(uniform_locations_[name], 1, glm::value_ptr(vec));

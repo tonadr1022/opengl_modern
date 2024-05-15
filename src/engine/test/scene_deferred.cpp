@@ -13,7 +13,7 @@ void SceneDeferred::Init() {
   camera_system.InitDefaultCamera({0, 5, 0}, {-1, 0, 0});
 
   std::string model_string = GET_MODEL_PATH("backpack/backpack.obj");
-  AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string, false});
+  AssetHandle model_handle = engine::ModelManager::Get().LoadModel(model_string);
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
 
   int c = 1;

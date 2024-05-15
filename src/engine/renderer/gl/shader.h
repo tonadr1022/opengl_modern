@@ -19,6 +19,7 @@ class Shader {
   void SetIVec2(entt::hashed_string name, const glm::ivec2& vec);
   void SetIVec3(entt::hashed_string name, const glm::ivec3& vec);
   void SetVec3(entt::hashed_string name, const glm::vec3& vec);
+  void SetVec2(entt::hashed_string name, const glm::vec2& vec);
   void SetVec4(entt::hashed_string name, const glm::vec4& vec);
   void SetMat3(entt::hashed_string name, const glm::mat3& mat, bool transpose = false);
   void SetBool(entt::hashed_string name, bool value);

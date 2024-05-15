@@ -148,6 +148,8 @@ void Renderer::OnImGuiRender() {
   if (ImGui::CollapsingHeader("PBR", ImGuiTreeNodeFlags_DefaultOpen)) {
     ImGui::Checkbox("Override Material", &internal_settings_.override_material);
     ImGui::ColorEdit3("Albedo Override", &internal_settings_.albedo_override.x);
+    spdlog::info("albedo {} {} {}", internal_settings_.albedo_override.x,
+                 internal_settings_.albedo_override.y, internal_settings_.albedo_override.z);
     ImGui::DragFloat("Metallic Override", &internal_settings_.metallic_override, .01, 0, 1);
     ImGui::DragFloat("Roughness Override", &internal_settings_.roughness_override, .01, 0, 1);
   }

@@ -3,7 +3,13 @@
 #include <assimp/material.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <assimp/vector3.h>
 
+#include <common/TracyQueue.hpp>
+#include <fastgltf/core.hpp>
+#include <fastgltf/types.hpp>
+#include <fastgltf/util.hpp>
+#include <filesystem>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
@@ -17,19 +23,19 @@ namespace engine {
 glm::vec3 aiVec3ToGLM(const aiVector3f& vec) { return {vec.x, vec.y, vec.z}; }
 glm::vec2 aiVec2ToGLM(const aiVector3D& vec) { return {vec.x, vec.y}; }
 
-std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
+std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
   ZoneScopedNC("load model", tracy::Color::Red);
-  int slash_idx = params.filepath.find_last_of("/\\");
-  int dot_idx = params.filepath.find_last_of('.');
-  std::string directory = params.filepath.substr(0, slash_idx + 1);
+  int slash_idx = filepath.find_last_of("/\\");
+  int dot_idx = filepath.find_last_of('.');
+  std::string directory = filepath.substr(0, slash_idx + 1);
 
-  spdlog::info("loading {}", params.filepath.substr(slash_idx + 1));
+  spdlog::info("loading {}", filepath.substr(slash_idx + 1));
 
   uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
-  const aiScene* scene = importer_.ReadFile(params.filepath, flags);
+  const aiScene* scene = importer_.ReadFile(filepath, flags);
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    spdlog::error("Path: {}\nAssimp error: {}", params.filepath, importer_.GetErrorString());
+    spdlog::error("Path: {}\nAssimp error: {}", filepath, importer_.GetErrorString());
     return std::nullopt;
   }
 
@@ -61,7 +67,18 @@ std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
     m.ao_path = get_texture_path(aiTextureType_AMBIENT_OCCLUSION);
     m.normal_path = get_texture_path(aiTextureType_HEIGHT);
     if (!m.normal_path.has_value()) m.normal_path = get_texture_path(aiTextureType_NORMALS);
-    m.flip_textures = params.flip_textures;
+    aiColor3D v;
+    material->Get(AI_MATKEY_COLOR_DIFFUSE, v);
+    m.base_color = {v.r, v.g, v.b, 1};
+    float metallic;
+    if (AI_SUCCESS != aiGetMaterialFloat(material, AI_MATKEY_METALLIC_FACTOR, &metallic)) {
+      metallic = 0;
+    }
+    float roughness;
+    if (AI_SUCCESS != aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &roughness)) {
+      roughness = 0;
+    }
+    spdlog::info("roughness {} {}", roughness, m.roughness);
     // spdlog::info("\nroughness: {}\n metalness: {}\n ao: {}\n albedo: {}\n normal:{}\n",
     //              m.roughness_path.value_or("no roughnesspath"),
     //              m.metalness_path.value_or("no metalnesspath"), m.ao_path.value_or("no ao_path"),
@@ -108,7 +125,7 @@ std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
       aiMesh& mesh = *scene->mMeshes[i];
       EASSERT_MSG(mesh.HasPositions(), "need positions");
       EASSERT_MSG(mesh.HasNormals(), "need normals");
-      EASSERT_MSG(mesh.HasTextureCoords(0), "need tex coords");
+      // EASSERT_MSG(mesh.HasTextureCoords(0), "need tex coords");
 
       vertices.clear();
       vertices.reserve(mesh.mNumVertices);
@@ -116,11 +133,20 @@ std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
 
       gfx::Vertex v;
       // process vertices
-      for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
-        v.position = aiVec3ToGLM(mesh.mVertices[i]);
-        v.normal = aiVec3ToGLM(mesh.mNormals[i]);
-        v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
-        vertices.emplace_back(v);
+      if (mesh.HasTextureCoords(0)) {
+        for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
+          v.position = aiVec3ToGLM(mesh.mVertices[i]);
+          v.normal = aiVec3ToGLM(mesh.mNormals[i]);
+          v.tex_coords = aiVec2ToGLM(mesh.mTextureCoords[0][i]);
+          vertices.emplace_back(v);
+        }
+      } else {
+        for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
+          v.position = aiVec3ToGLM(mesh.mVertices[i]);
+          v.normal = aiVec3ToGLM(mesh.mNormals[i]);
+          v.tex_coords = {0, 0};
+          vertices.emplace_back(v);
+        }
       }
 
       // process indices
@@ -138,6 +164,61 @@ std::optional<ModelData> ModelLoader::LoadModel(const ModelLoadParams& params) {
       model.meshes.emplace_back(m);
     }
   }
+  return std::move(model);
+}
+
+std::optional<ModelData> ModelLoader::LoadModel2(const std::string& filepath) {
+  fastgltf::Parser parser{};
+  constexpr auto kGltfOptions = fastgltf::Options::DontRequireValidAssetMember |
+                                fastgltf::Options::AllowDouble | fastgltf::Options::LoadGLBBuffers |
+                                fastgltf::Options::LoadExternalBuffers;
+  fastgltf::GltfDataBuffer data;
+  data.loadFromFile(filepath);
+  std::filesystem::path path{filepath};
+
+  fastgltf::Asset gltf;
+  auto type = fastgltf::determineGltfFileType(&data);
+  if (type == fastgltf::GltfType::glTF) {
+    auto load = parser.loadGltf(&data, path.parent_path(), kGltfOptions);
+    if (load) {
+      gltf = std::move(load.get());
+    } else {
+      spdlog::error("Failed to load glTF json: {}", fastgltf::to_underlying(load.error()));
+      return std::nullopt;
+    }
+  } else if (type == fastgltf::GltfType::GLB) {
+    auto load = parser.loadGltfBinary(&data, path, kGltfOptions);
+    if (load) {
+      gltf = std::move(load.get());
+    } else {
+      spdlog::error("Failed to load glTF json: {}", fastgltf::to_underlying(load.error()));
+      return std::nullopt;
+    }
+  } else {
+    spdlog::error("Failed to determine glTF container");
+    return std::nullopt;
+  }
+
+  ModelData model;
+  for (fastgltf::Material& material : gltf.materials) {
+    MaterialCreateInfo m;
+    m.base_color.r = material.pbrData.baseColorFactor[0];
+    m.base_color.g = material.pbrData.baseColorFactor[1];
+    m.base_color.b = material.pbrData.baseColorFactor[2];
+    m.base_color.a = material.pbrData.baseColorFactor[3];
+    m.metallic = material.pbrData.metallicFactor;
+    m.roughness = material.pbrData.roughnessFactor;
+    m.emissive.r = material.emissiveFactor[0];
+    m.emissive.g = material.emissiveFactor[1];
+    m.emissive.b = material.emissiveFactor[2];
+    if (material.alphaMode == fastgltf::AlphaMode::Blend) {
+      m.pass_type = MaterialPass::kTransparent;
+    } else {
+      m.pass_type = MaterialPass::kOpaque;
+    }
+    // if (material.pbrData.baseColorTexture->textureIndex)
+  }
+
   return std::move(model);
 }
 

@@ -24,7 +24,7 @@ class ModelManager {
   static ModelManager& Get();
   ~ModelManager();
 
-  [[nodiscard]] AssetHandle LoadModel(const ModelLoadParams& params);
+  [[nodiscard]] AssetHandle LoadModel(const std::string& filepath);
   [[nodiscard]] ModelData& GetModel(AssetHandle handle);
 
  private:

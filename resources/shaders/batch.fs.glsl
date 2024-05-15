@@ -17,12 +17,17 @@ layout(std140, binding = 0) uniform Matrices
 uniform bool u_overrideMaterial;
 uniform vec2 u_metallicRoughnessOverride;
 uniform vec3 u_albedoOverride;
+uniform bool u_directionalOn;
+uniform vec3 u_directionalDirection;
+uniform vec3 u_directionalColor;
 
 layout(location = 0) out vec4 o_color;
 
 struct PointLight {
-    vec4 position;
-    vec4 color;
+    vec3 position;
+    float _pad1;
+    vec3 color;
+    float intensity;
 };
 
 layout(binding = 2, std430) readonly buffer PointLights {
@@ -30,17 +35,17 @@ layout(binding = 2, std430) readonly buffer PointLights {
 };
 
 struct Material {
+    vec3 base_color;
+    float pad1;
+    float metallic;
+    float roughness;
+    float pad2;
+    float pad3;
     uvec2 albedo_map_handle;
     uvec2 roughness_map_handle;
     uvec2 metalness_map_handle;
     uvec2 ao_map_handle;
     uvec2 normal_map_handle;
-    // vec3 base_color;
-    // float pad1;
-    // float roughness;
-    // float metallic;
-    // float pad2;
-    // float pad3;
 };
 
 layout(std430, binding = 1) readonly buffer Materials {
@@ -52,8 +57,12 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0);
 float DistributionGGX(vec3 normal, vec3 halfVector, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
+
 const float PI = 3.14159265358979323846;
+
 void main() {
+    // o_color = vec4(1.0);
+    // return;
     vec4 albedo;
     float roughness;
     float metallic;
@@ -65,39 +74,33 @@ void main() {
     const bool hasRoughness = (material.roughness_map_handle.x != 0 || material.roughness_map_handle.y != 0);
     const bool hasMetallic = (material.metalness_map_handle.x != 0 || material.metalness_map_handle.y != 0);
     const bool hasAO = (material.ao_map_handle.x != 0 || material.ao_map_handle.y != 0);
-    const bool hasNormal = (material.normal_map_handle.x != 0 || material.normal_map_handle.y != 0);
-
     if (u_overrideMaterial) {
         albedo = vec4(u_albedoOverride, 1.0);
-        roughness = u_metallicRoughnessOverride.x;
-        metallic = u_metallicRoughnessOverride.y;
+        metallic = u_metallicRoughnessOverride.x;
+        roughness = u_metallicRoughnessOverride.y;
         ao = 1.0;
     } else {
         if (hasAlbedo) {
             albedo = texture(sampler2D(material.albedo_map_handle), fs_in.texCoords).rgba;
+        } else {
+            albedo = vec4(material.base_color, 1.0);
             // o_color = albedo;
             // return;
-        } else {
-            // albedo = vec4(material.base_color, 1.0);
-            albedo = vec4(1.0);
         }
         if (hasRoughness) {
+            // TODO: make more robust, not all maps will combine roughness and metallic this way.
             roughness = texture(sampler2D(material.roughness_map_handle), fs_in.texCoords).g;
-            // o_color = vec4(roughness, roughness, roughness, 1.);
-            // return;
         } else {
-            // roughness = material.roughness;
-            roughness = 1;
-            // o_color = vec4(0, 1, 1, 1);
+            roughness = material.roughness;
+            // o_color = vec4(roughness, roughness, roughness, 1.0);
             // return;
         }
         if (hasMetallic) {
             metallic = texture(sampler2D(material.metalness_map_handle), fs_in.texCoords).r;
-            // o_color = vec4(1, 0, 1, 1);
+        } else {
+            metallic = material.metallic;
             // o_color = vec4(metallic, metallic, metallic, 1.0);
             // return;
-        } else {
-            metallic = 1;
         }
         if (hasAO) {
             ao = texture(sampler2D(material.ao_map_handle), fs_in.texCoords).r;
@@ -125,8 +128,9 @@ void main() {
         vec3 H = normalize(V + L);
         float distToLight = length(pointLights[i].position.xyz - fs_in.posWorldSpace);
         // inverse square law, more physically correct than linear-quadratic
+        // float attenuation = 1.0 / (distToLight);
         float attenuation = 1.0 / (distToLight * distToLight);
-        vec3 radiance = pointLights[i].color.rgb * attenuation;
+        vec3 radiance = pointLights[i].color * pointLights[i].intensity * attenuation;
 
         float NDF = DistributionGGX(normal, H, roughness);
         float G = GeometrySmith(normal, V, L, roughness);
@@ -157,15 +161,47 @@ void main() {
         light_out += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
     }
 
-    // TODO: replace ambient with IBL
-    vec3 ambient = vec3(0.001) * albedo.rgb * ao;
-    vec3 color = ambient + light_out;
+    if (u_directionalOn) {
+        // directional
+        vec3 L = normalize(u_directionalDirection);
+        vec3 H = normalize(V + L);
+        vec3 radiance = u_directionalColor;
 
+        // Cook-Torrance BRDF
+        float NDF = DistributionGGX(normal, H, roughness);
+        float G = GeometrySmith(normal, V, L, roughness);
+        vec3 F = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+
+        vec3 numerator = NDF * G * F;
+        float denominator = 4.0 * max(dot(normal, V), 0.0) * max(dot(normal, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+        vec3 specular = numerator / denominator;
+        // kS is equal to Fresnel
+        vec3 kS = F;
+        // for energy conservation, the diffuse and specular light can't
+        // be above 1.0 (unless the surface emits light); to preserve this
+        // relationship the diffuse component (kD) should equal 1.0 - kS.
+        vec3 kD = vec3(1.0) - kS;
+        // multiply kD by the inverse metalness such that only non-metals
+        // have diffuse lighting, or a linear blend if partly metal (pure metals
+        // have no diffuse light).
+        kD *= 1.0 - metallic;
+        // scale light by NdotL
+        float NdotL = max(dot(normal, L), 0.0);
+        // add to outgoing radiance Lo
+        light_out += (kD * albedo.rgb / PI + specular) * radiance * NdotL; // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+    }
+
+    // TODO: replace ambient with IBL
+    vec3 color = light_out;
     // HDR tonemapping
     color = color / (color + vec3(1.0));
     // gamma correct
     color = pow(color, vec3(1.0 / 2.2));
+
     o_color = vec4(color, 1.0);
+
+    // // color = pow(color, vec3(1.0 / 2.2));
+    // o_color = vec4(color, 1.0);
 }
 
 // F0: surface reflection at zero incidence - how much surface reflects if looking directly at the surface.

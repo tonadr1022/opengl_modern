@@ -21,13 +21,13 @@ AssetHandle ModelManager::GetHandle(const std::string& filepath) {
   return hasher(filepath);
 }
 
-AssetHandle ModelManager::LoadModel(const ModelLoadParams& params) {
-  std::optional<ModelData> model = model_loader_->LoadModel(params);
+AssetHandle ModelManager::LoadModel(const std::string& filepath) {
+  std::optional<ModelData> model = model_loader_->LoadModel(filepath);
   if (!model.has_value()) {
-    spdlog::error("Failed to load model {}", params.filepath);
+    spdlog::error("Failed to load model {}", filepath);
     return NullAssetHandle;
   }
-  AssetHandle handle{GetHandle(params.filepath)};
+  AssetHandle handle{GetHandle(filepath)};
   models_.emplace(handle, std::move(model.value()));
   return handle;
 }

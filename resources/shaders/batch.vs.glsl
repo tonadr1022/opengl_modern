@@ -21,7 +21,26 @@ layout(location = 0) out VS_OUT {
 
 struct UniformData {
     mat4 model;
+    mat4 normalMatrix;
     uint materialIndex;
+};
+
+struct Material {
+    vec3 base_color;
+    float pad1;
+    float metallic;
+    float roughness;
+    float pad2;
+    float pad3;
+    uvec2 albedo_map_handle;
+    uvec2 roughness_map_handle;
+    uvec2 metalness_map_handle;
+    uvec2 ao_map_handle;
+    uvec2 normal_map_handle;
+};
+
+layout(std430, binding = 1) readonly buffer Materials {
+    Material materials[];
 };
 
 layout(std430, binding = 0) readonly buffer data {
@@ -30,12 +49,13 @@ layout(std430, binding = 0) readonly buffer data {
 
 void main(void) {
     UniformData uniformData = uniforms[gl_DrawID];
-    vec4 posWorldSpace = uniformData.model * vec4(aPosition, 1.0);
-    vs_out.posWorldSpace = vec3(posWorldSpace);
+    vs_out.posWorldSpace = vec3(uniformData.model * vec4(aPosition, 1.0));
     vs_out.texCoords = aTexCoords;
-    // TODO: not this
-    vs_out.normal = mat3(transpose(inverse(uniformData.model))) * aNormal;
-
+    vs_out.normal = mat3(uniformData.normalMatrix) * aNormal;
     vs_out.materialIndex = uniformData.materialIndex;
-    gl_Position = vp_matrix * posWorldSpace;
+    Material material = materials[uniformData.materialIndex];
+    const bool hasNormalMap = (material.normal_map_handle.x != 0 || material.normal_map_handle.y != 0);
+    if (hasNormalMap) {} else {}
+
+    gl_Position = vp_matrix * vec4(vs_out.posWorldSpace, 1.0);
 }

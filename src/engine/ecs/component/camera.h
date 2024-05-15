@@ -13,7 +13,7 @@ struct FPSCamera {
   float mouse_sensitivity{1};
   float fov_degrees{90};
   float near_plane{0.1f};
-  float far_plane{1000.f};
+  float far_plane{10000.f};
   bool active{true};
   static constexpr const glm::vec3 UpVector{0.f, 1.f, 0.f};
 

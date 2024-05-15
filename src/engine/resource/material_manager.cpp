@@ -20,15 +20,14 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
   gfx::Texture2DCreateParams create_params;
   create_params.generate_mipmaps = true;
   create_params.bindless = true;
-  create_params.internal_format = GL_SRGB8_ALPHA8;
   create_params.filter_mode_max = GL_LINEAR;
   create_params.filter_mode_min = GL_LINEAR;
-  create_params.flip = material_create_info.flip_textures;
+  create_params.flip = true;
 
   gfx::MaterialData material;
   material.albedo = material_create_info.base_color;
-  material.roughness = material_create_info.roughness;
   material.metallic = material_create_info.metallic;
+  material.roughness = material_create_info.roughness;
 
   if (material_create_info.albedo_path.has_value()) {
     create_params.filepath = material_create_info.albedo_path.value();
@@ -36,6 +35,7 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
     if (it != texture_map_.end()) {
       material.albedo_texture = it->second.get();
     } else {
+      create_params.internal_format = GL_SRGB8_ALPHA8;
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
       auto it = texture_map_.emplace(material_create_info.albedo_path.value(), std::move(tex));
       material.albedo_texture = it.first->second.get();
@@ -48,6 +48,7 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
     if (it != texture_map_.end()) {
       material.metalness_texture = it->second.get();
     } else {
+      create_params.internal_format = GL_RGBA8;
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
       auto it = texture_map_.emplace(material_create_info.metalness_path.value(), std::move(tex));
       material.metalness_texture = it.first->second.get();
@@ -60,6 +61,7 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
     if (it != texture_map_.end()) {
       material.roughness_texture = it->second.get();
     } else {
+      create_params.internal_format = GL_RGBA8;
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
       auto it = texture_map_.emplace(material_create_info.roughness_path.value(), std::move(tex));
       material.roughness_texture = it.first->second.get();
@@ -72,17 +74,20 @@ AssetHandle MaterialManager::AddMaterial(const MaterialCreateInfo& material_crea
     if (it != texture_map_.end()) {
       material.normal_texture = it->second.get();
     } else {
+      create_params.internal_format = GL_RGBA8;
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
       auto it = texture_map_.emplace(material_create_info.normal_path.value(), std::move(tex));
       material.normal_texture = it.first->second.get();
     }
   }
+
   if (material_create_info.ao_path.has_value()) {
     create_params.filepath = material_create_info.ao_path.value();
     auto it = texture_map_.find(material_create_info.ao_path.value());
     if (it != texture_map_.end()) {
       material.ao_texture = it->second.get();
     } else {
+      create_params.internal_format = GL_RGBA8;
       auto tex = std::make_unique<gfx::Texture2D>(create_params);
       auto it = texture_map_.emplace(material_create_info.ao_path.value(), std::move(tex));
       material.ao_texture = it.first->second.get();
@@ -99,7 +104,7 @@ void MaterialManager::Init() {
   default_material.albedo = {1, 1, 1};
   default_material.roughness = 0;
   default_material.metallic = 0;
-  default_material_handle_ = gfx::Renderer::Get().AddMaterial(default_material);
+  // default_material_handle_ = gfx::Renderer::Get().AddMaterial(default_material);
   material_map_.emplace(default_material_handle_, default_material);
 }
 

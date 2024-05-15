@@ -3,6 +3,7 @@
     "entt",
     "glew",
     "glfw3",
+    "fastgltf",
     "glm",
     "tracy",
     {

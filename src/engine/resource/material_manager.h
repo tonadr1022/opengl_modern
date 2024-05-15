@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/fwd.hpp>
+#include <glm/vec4.hpp>
 #include <memory>
 #include <optional>
 #include <string>
@@ -17,16 +19,18 @@ namespace gfx {
 class Renderer;
 }
 
+enum class MaterialPass { kOpaque, kTransparent };
 struct MaterialCreateInfo {
-  glm::vec3 base_color{1, 1, 1};
-  float roughness{1};
-  float metallic{0};
+  glm::vec4 base_color{1};
+  glm::vec3 emissive{0};
+  float metallic;
+  float roughness;
   std::optional<std::string> albedo_path;
   std::optional<std::string> roughness_path;
   std::optional<std::string> metalness_path;
   std::optional<std::string> ao_path;
   std::optional<std::string> normal_path;
-  bool flip_textures{true};
+  MaterialPass pass_type;
 };
 
 class MaterialManager {
