@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <glm/fwd.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -66,7 +67,7 @@ class Renderer {
                          AssetHandle material_handle);
   [[nodiscard]] AssetHandle AddBatchedMesh(std::vector<Vertex>& vertices,
                                            std::vector<Index>& indices);
-  void RenderOpaqueObjects();
+  void RenderOpaqueObjects(const RenderViewInfo& view_info, const DirectionalLight& dir_light);
   void SetMaterials(const std::vector<MaterialData>& materials);
   [[nodiscard]] AssetHandle AddMaterial(const MaterialData& material_data);
   [[nodiscard]] const RendererStats& GetStats();
@@ -80,11 +81,13 @@ class Renderer {
   void OnImGuiRender();
 
  private:
+  void TestGBufferReset();
   struct alignas(16) UBOUniforms {
     glm::mat4 vp_matrix;
     glm::vec3 cam_pos;
     float pad;
   };
+  glm::vec3 cam_pos_;
   std::vector<std::string> skybox_strings_ = {
       GET_TEXTURE_PATH("skybox2/right.jpg"), GET_TEXTURE_PATH("skybox2/left.jpg"),
       GET_TEXTURE_PATH("skybox2/top.jpg"),   GET_TEXTURE_PATH("skybox2/bottom.jpg"),
@@ -106,26 +109,50 @@ class Renderer {
   // uint32_t materials_buffer_;
   // std::unique_ptr<VertexArray> batch_vao_{nullptr};
   uint32_t batch_vao_{0};
-  uint32_t g_buffer_{0};
-  //  gfx::Texture2D* g_position_tex_{nullptr};
-  // gfx::Texture2D* g_normal_tex_{nullptr};
-  // gfx::Texture2D* g_albedo_tex_{nullptr};
 
+  struct Quad {
+    uint32_t vao{0};
+    std::unique_ptr<Buffer> buffer;
+    // clang-format off
+    // clang-format on 
+    const std::vector<float> kVertices ={
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    };
+  };
+  Quad quad_;
+
+  // g buffer
+  uint32_t g_buffer_{0};
   uint32_t g_albedo_tex_{0};
   uint32_t g_normal_tex_{0};
   uint32_t g_rma_tex_{0};
   uint32_t g_depth_tex_{0};
 
+  // shadows, for now
+  uint32_t depth_map_fbo_{0};
+  uint32_t depth_tex_{0};
+  constexpr static glm::vec2 kShadowMapDims{1024, 1024};
+
+  //  gfx::Texture2D* g_position_tex_{nullptr};
+  // gfx::Texture2D* g_normal_tex_{nullptr};
+  // gfx::Texture2D* g_albedo_tex_{nullptr};
+
   void InitBuffers();
   void InitVaos();
   void LoadShaders();
   void InitFrameBuffers();
-  void ResetFrameBuffers();
+  void ResetDepthMapFBO();
 
   // scene data
   glm::mat4 view_matrix_;
   glm::mat4 projection_matrix_;
   glm::mat4 vp_matrix_;
+  bool dir_light_on_;
+  
 
   std::vector<AssetHandle> draw_cmd_mesh_ids_;
 
@@ -140,13 +167,12 @@ class Renderer {
   // std::map<MeshID, DrawElementsIndirectCommand> mesh_buffer_info_;
   std::vector<DrawElementsIndirectCommand> draw_elements_indirect_cmds_;
   glm::ivec2 framebuffer_dims_{1, 1};
-
+  std::vector<DrawElementsIndirectCommand> per_frame_cmds_;
   void* batch_map_ptr_{nullptr};
 
   void DrawOpaqueHelper(AssetHandle material_id, std::vector<glm::mat4>& uniforms);
   RendererStats stats_{0};
-  DirectionalLight dir_light_;
-  bool dir_light_on_{false};
+
   bool normal_map_on_{true};
   bool roughness_map_on_{true};
   bool metallic_map_on_{true};
@@ -158,7 +184,7 @@ class Renderer {
     bool override_material{false};
   };
 
-  InternalSettings internal_settings_;
+  InternalSettings settings_;
 };
 
 }  // namespace engine::gfx

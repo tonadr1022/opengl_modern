@@ -48,24 +48,24 @@ void update_model_matrices(entt::registry& registry) {
   });
 }
 
-void GraphicsManager::DrawOpaque(entt::registry& registry) {
+void GraphicsManager::DrawOpaque(Scene& scene) {
   // auto par_group = registry.group<Transform>(entt::get<Parent>);
   // for (auto entity : par_group) {
   //   auto [world_transform, parent] = par_group.get<Transform, Parent>(entity);
   // }
 
   // TODO(tony): model matrix update in physics system along with scene graph
-  update_model_matrices(registry);
+  update_model_matrices(scene.registry);
   {
     ZoneScopedN("submit cmds");
-    auto draw_cmd_group = registry.view<ModelMatrix, Mesh>();
+    auto draw_cmd_group = scene.registry.view<ModelMatrix, Mesh>();
     auto& renderer = Renderer::Get();
     draw_cmd_group.each([this, &renderer](auto& model_matrix, auto& mesh) {
       renderer.SubmitDrawCommand(model_matrix.matrix, mesh.mesh_handle, mesh.material_handle);
     });
   }
 
-  Renderer::Get().RenderOpaqueObjects();
+  Renderer::Get().RenderOpaqueObjects(scene.render_view_info, scene.dir_light);
 }
 
 void GraphicsManager::EndFrame() { Renderer::Get().EndFrame(); }

@@ -6,6 +6,7 @@ layout(location = 0) in VS_OUT {
     vec3 posWorldSpace;
     vec3 normal;
     vec2 texCoords;
+    vec4 posLightSpace;
     flat uint materialIndex;
 } fs_in;
 
@@ -38,6 +39,8 @@ layout(binding = 2, std430) readonly buffer PointLights {
     PointLight pointLights[];
 };
 
+sampler2D shadowMap;
+
 struct Material {
     vec3 base_color;
     float pad1;
@@ -61,6 +64,30 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0);
 float DistributionGGX(vec3 normal, vec3 halfVector, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
+
+float CalculateShadow(vec4 posLightSpace, float bias) {
+    // must perform perspective division ourselves to get to clip space.
+    vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
+    // transform ndc from [-1,1] to [0,1]
+    projCoords = projCoords * 0.5 + 0.5;
+    float currentDepth = projCoords.z;
+    if (currentDepth > 1) return 0;
+    float shadow = 0;
+    if (true) {
+        vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                float pcfDepth = texture(shadowMap, projCoords.xy + texelSize * vec2(x, y)).r;
+                shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+            }
+        }
+        shadow /= 9.0;
+    } else {
+        float closestDepth = texture(shadowMap, projCoords.xy).r;
+        shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    }
+    return shadow;
+}
 
 const float PI = 3.14159265358979323846;
 
@@ -183,7 +210,7 @@ void main() {
 
     if (u_directionalOn) {
         // directional
-        vec3 L = normalize(u_directionalDirection);
+        vec3 L = normalize(-u_directionalDirection);
         vec3 H = normalize(V + L);
         vec3 radiance = u_directionalColor;
 
@@ -208,7 +235,12 @@ void main() {
         // scale light by NdotL
         float NdotL = max(dot(normal, L), 0.0);
         // add to outgoing radiance Lo
-        light_out += (kD * albedo.rgb / PI + specular) * radiance * NdotL; // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+        float bias = max(0.05 * (1.0 - dot(normal, u_directionalDirection)), 0.005);
+        float shadow = CalculateShadow(fs_in.posLightSpace, bias);
+        // o_color = vec4(shadow, shadow, shadow, 1.0);
+        // return;
+        vec3 directional_out = ((kD * albedo.rgb / PI + specular) * radiance * NdotL);
+        light_out += (1 - shadow) * directional_out;
     }
 
     // TODO: replace ambient with IBL
@@ -217,11 +249,7 @@ void main() {
     color = color / (color + vec3(1.0));
     // gamma correct
     color = pow(color, vec3(1.0 / 2.2));
-
     o_color = vec4(color, 1.0);
-
-    // // color = pow(color, vec3(1.0 / 2.2));
-    // o_color = vec4(color, 1.0);
 }
 
 // F0: surface reflection at zero incidence - how much surface reflects if looking directly at the surface.

@@ -20,7 +20,7 @@ struct GraphicsManager {
   void StartFrame(Scene& scene);
   void ResetOnSceneChange(Scene& scene);
   void UpdateTransforms(entt::registry& registry);
-  void DrawOpaque(entt::registry& registry);
+  void DrawOpaque(Scene& scene);
   void EndFrame();
 };
 }  // namespace engine

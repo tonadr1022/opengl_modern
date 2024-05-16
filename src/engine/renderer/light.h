@@ -5,8 +5,7 @@
 namespace engine {
 
 struct DirectionalLight {
-  glm::vec3 direction{0, 0, 0};
-
+  glm::vec3 direction{0, -1, 0};
   // incredibly janky, but this makes using an ssbo possible. I couldn't figure out another way to
   // align properly
  private:

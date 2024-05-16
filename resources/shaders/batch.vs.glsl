@@ -19,6 +19,7 @@ layout(location = 0) out VS_OUT {
     vec3 posWorldSpace;
     vec3 normal;
     vec2 texCoords;
+    vec4 posLightSpace;
     flat uint materialIndex;
 } vs_out;
 
@@ -42,6 +43,8 @@ struct Material {
     uvec2 normal_map_handle;
 };
 
+uniform mat4 u_lightSpaceMatrix;
+
 layout(std430, binding = 1) readonly buffer Materials {
     Material materials[];
 };
@@ -56,6 +59,8 @@ void main(void) {
     vs_out.texCoords = aTexCoords;
     vs_out.normal = mat3(uniformData.normalMatrix) * aNormal;
     vs_out.materialIndex = uniformData.materialIndex;
+    vs_out.posLightSpace = u_lightSpaceMatrix * vec4(vs_out.posWorldSpace, 1.0);
+
     Material material = materials[uniformData.materialIndex];
 
     // Gram-Schmidt process to calculate bitangent vector

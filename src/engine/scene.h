@@ -3,6 +3,7 @@
 #include <entt/entity/registry.hpp>
 
 #include "engine/core/base.h"
+#include "engine/renderer/light.h"
 #include "engine/renderer/renderer_types.h"
 
 namespace engine {
@@ -40,6 +41,11 @@ class Scene {
   // each scene contains state for how the renderer should render the scene
   // including camera matrices, renderer settings, etc
   gfx::RenderViewInfo render_view_info;
+  DirectionalLight dir_light;
+  struct DirLightSettings {
+    bool circular_rotate{true};
+    float rotate_speed{0.5};
+  } dir_light_settings;
 
  protected:
   // Helper function so scenes don't need to include engine

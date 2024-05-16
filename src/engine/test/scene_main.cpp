@@ -59,7 +59,7 @@ void SceneMain::LoadSponza() {
   for (auto& pos : light_positions) {
     auto ent = registry.create();
     light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
-    registry.emplace<engine::PointLight>(ent, light);
+    // registry.emplace<engine::PointLight>(ent, light);
   }
 }
 
@@ -113,8 +113,6 @@ void SceneMain::LoadSpheres() {
     registry.emplace<engine::component::Transform>(ent, t);
     registry.emplace<engine::component::ModelMatrix>(ent);
   }
-  engine::DirectionalLight dir_light;
-  dir_light.color = {1, 0, 0};
 }
 
 void SceneMain::LoadSpheres2() {
@@ -226,6 +224,7 @@ void SceneMain::OnEvent(const engine::Event& e) {
 }
 
 void SceneMain::OnUpdate(Timestep timestep) {
+  Scene::OnUpdate(timestep);
   camera_system.OnUpdate(timestep);
   auto v = registry.view<engine::PointLight, engine::component::Transform>();
   v.each([&](engine::PointLight& light, engine::component::Transform& transform) {

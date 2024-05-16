@@ -50,27 +50,39 @@ void Renderer::LoadShaders() {
   //          ->Id();
   // ubo_block_index = glGetUniformBlockIndex(id, "Matrices");
   // glUniformBlockBinding(id, ubo_block_index, 0);
+
+  manager.AddShader("depth", {{GET_SHADER_PATH("depth.vs.glsl"), ShaderType::Vertex},
+                              {GET_SHADER_PATH("depth.fs.glsl"), ShaderType::Fragment}});
+  manager.AddShader("depthquad", {{GET_SHADER_PATH("depthquad.vs.glsl"), ShaderType::Vertex},
+                                  {GET_SHADER_PATH("depthquad.fs.glsl"), ShaderType::Fragment}});
 }
 
 Renderer::~Renderer() = default;
 
 void Renderer::InitVaos() {
+  // batch
   glCreateVertexArrays(1, &batch_vao_);
   glEnableVertexArrayAttrib(batch_vao_, 0);
   glEnableVertexArrayAttrib(batch_vao_, 1);
   glEnableVertexArrayAttrib(batch_vao_, 2);
   glEnableVertexArrayAttrib(batch_vao_, 3);
-  // glEnableVertexArrayAttrib(batch_vao_, 4);
   glVertexArrayAttribFormat(batch_vao_, 0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
   glVertexArrayAttribFormat(batch_vao_, 1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
   glVertexArrayAttribFormat(batch_vao_, 2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, tex_coords));
   glVertexArrayAttribFormat(batch_vao_, 3, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, tangent));
-  // glVertexArrayAttribFormat(batch_vao_, 4, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, bitangent));
   glVertexArrayAttribBinding(batch_vao_, 0, 0);
   glVertexArrayAttribBinding(batch_vao_, 1, 0);
   glVertexArrayAttribBinding(batch_vao_, 2, 0);
   glVertexArrayAttribBinding(batch_vao_, 3, 0);
-  // glVertexArrayAttribBinding(batch_vao_, 4, 0);
+
+  // quad
+  glCreateVertexArrays(1, &quad_.vao);
+  glEnableVertexArrayAttrib(quad_.vao, 0);
+  glEnableVertexArrayAttrib(quad_.vao, 1);
+  glVertexArrayAttribFormat(quad_.vao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(VertexQuad, position));
+  glVertexArrayAttribFormat(quad_.vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(VertexQuad, tex_coords));
+  glVertexArrayAttribBinding(quad_.vao, 0, 0);
+  glVertexArrayAttribBinding(quad_.vao, 1, 0);
 }
 
 void Renderer::InitBuffers() {
@@ -79,17 +91,28 @@ void Renderer::InitBuffers() {
                                                   GL_DYNAMIC_STORAGE_BIT);
   batch_element_buffer_ =
       std::make_unique<Buffer>(sizeof(Index) * kIndexBufferArrayMaxLength, GL_DYNAMIC_STORAGE_BIT);
+  glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
+  glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
+
+  // stores draw indirect commands
   draw_indirect_buffer_ = std::make_unique<Buffer>(
       sizeof(DrawElementsIndirectCommand) * kMaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
+  // stores uniform data: model matrix, normal matrix, material index
   batch_uniform_ssbo_ =
       std::make_unique<Buffer>(sizeof(BatchUniform) * kMaxDrawCommands, GL_DYNAMIC_STORAGE_BIT);
+  // stores bindless handles and pbr data
   materials_buffer_ = std::make_unique<Buffer>(sizeof(BindlessMaterial) * kMaxMaterials,
                                                GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
-  // ubo for vp matrix for now. May add other matrices/uniforms
-  // TODO(tony): don't hardcode matrix
+
+  // stores camera vp_matrix and camera position
   shader_uniform_ubo_ = std::make_unique<Buffer>(sizeof(UBOUniforms), GL_DYNAMIC_STORAGE_BIT);
-  // lights
+  // stores all point lights
   light_ssbo_ = std::make_unique<Buffer>(sizeof(PointLight) * kMaxLights, GL_DYNAMIC_STORAGE_BIT);
+
+  // quad vbo
+  quad_.buffer = std::make_unique<Buffer>(sizeof(VertexQuad) * quad_.kVertices.size(), 0,
+                                          (void*)quad_.kVertices.data());
+  glVertexArrayVertexBuffer(quad_.vao, 0, quad_.buffer->Id(), 0, sizeof(VertexQuad));
 
   // glCreateBuffers(1, &materials_buffer_);
   // glNamedBufferStorage(materials_buffer_, sizeof(BindlessMaterial) * MaxMaterials, nullptr,
@@ -106,7 +129,7 @@ void Renderer::OnFrameBufferResize(uint32_t width, uint32_t height) {
   framebuffer_dims_.y = height;
   framebuffer_dims_.x = width;
   glViewport(0, 0, framebuffer_dims_.x, framebuffer_dims_.y);
-  ResetFrameBuffers();
+  ResetDepthMapFBO();
 }
 
 void Renderer::SetBatchedObjectCount(uint32_t count) {
@@ -120,11 +143,6 @@ void Renderer::SubmitDrawCommand(const glm::mat4& model, AssetHandle mesh_handle
   draw_cmd_mesh_ids_.emplace_back(mesh_handle);
   glm::mat3 normal_matrix = glm::transpose(glm::inverse(glm::mat3(model)));
   draw_cmd_uniforms_.emplace_back(model, normal_matrix, material_handle);
-  // user_draw_cmds_[user_draw_cmds_index_] = UserDrawCommand{
-  //     .mesh_id = mesh_id, .material_id = material_id, .model_matrix_index =
-  //     user_draw_cmds_index_};
-  // user_draw_cmd_model_matrices_[user_draw_cmds_index_] = model;
-  // user_draw_cmds_index_++;
 }
 
 const RendererStats& Renderer::GetStats() { return stats_; }
@@ -146,24 +164,20 @@ void Renderer::OnImGuiRender() {
   }
 
   if (ImGui::CollapsingHeader("PBR", ImGuiTreeNodeFlags_DefaultOpen)) {
-    ImGui::Checkbox("Override Material", &internal_settings_.override_material);
-    ImGui::ColorEdit3("Albedo Override", &internal_settings_.albedo_override.x);
-    ImGui::DragFloat("Metallic Override", &internal_settings_.metallic_override, .01, 0, 1);
-    ImGui::DragFloat("Roughness Override", &internal_settings_.roughness_override, .01, 0, 1);
+    ImGui::Checkbox("Override Material", &settings_.override_material);
+    ImGui::ColorEdit3("Albedo Override", &settings_.albedo_override.x);
+    ImGui::DragFloat("Metallic Override", &settings_.metallic_override, .01, 0, 1);
+    ImGui::DragFloat("Roughness Override", &settings_.roughness_override, .01, 0, 1);
   }
-
-  ImGui::Checkbox("directional", &dir_light_on_);
   ImGui::Checkbox("normal map on", &normal_map_on_);
   ImGui::Checkbox("roughness map on", &roughness_map_on_);
   ImGui::Checkbox("metallic map on", &metallic_map_on_);
-  ImGui::DragFloat3("directional dir", &dir_light_.direction.x, 0.01, -1, 1);
-  ImGui::DragFloat3("directional color", &dir_light_.color.x, 0.01, 0, 1);
   // if (ImGui::CollapsingHeader("Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
   // }
   ImGui::End();
 }
 
-void Renderer::ResetFrameBuffers() {
+void Renderer::TestGBufferReset() {
   // attach textures to the gbuffer FBO
   // albedo
   if (g_albedo_tex_) glDeleteTextures(1, &g_albedo_tex_);
@@ -199,9 +213,30 @@ void Renderer::ResetFrameBuffers() {
   glNamedFramebufferDrawBuffers(g_buffer_, 3, bufs);
 }
 
+void Renderer::ResetDepthMapFBO() {
+  if (depth_tex_) glDeleteTextures(1, &depth_tex_);
+  glCreateTextures(GL_TEXTURE_2D, 1, &depth_tex_);
+  glTextureStorage2D(depth_tex_, 1, GL_DEPTH_COMPONENT32F, kShadowMapDims.x, kShadowMapDims.y);
+  glTextureParameteri(depth_tex_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTextureParameteri(depth_tex_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTextureParameteri(depth_tex_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTextureParameteri(depth_tex_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  constexpr const float kBorderColor[] = {1, 1, 1, 1};
+  glNamedFramebufferTexture(depth_map_fbo_, GL_DEPTH_ATTACHMENT, depth_tex_, 0);
+  glTextureParameterfv(depth_tex_, GL_TEXTURE_BORDER_COLOR, kBorderColor);
+
+  // frame buffer is not complete without color, so must specify so.
+  glNamedFramebufferDrawBuffer(depth_map_fbo_, GL_NONE);
+  glNamedFramebufferReadBuffer(depth_map_fbo_, GL_NONE);
+  if (!glCheckNamedFramebufferStatus(depth_map_fbo_, GL_FRAMEBUFFER)) {
+    spdlog::error("depth map fbo incomplete.");
+  }
+}
+
 void Renderer::InitFrameBuffers() {
-  glCreateFramebuffers(1, &g_buffer_);
-  ResetFrameBuffers();
+  glCreateFramebuffers(1, &depth_map_fbo_);
+  // glCreateFramebuffers(1, &g_buffer_);
+  ResetDepthMapFBO();
 }
 
 void Renderer::Init(glm::ivec2 framebuffer_dims) {
@@ -210,12 +245,9 @@ void Renderer::Init(glm::ivec2 framebuffer_dims) {
   glEnable(GL_DEBUG_OUTPUT);
   glDebugMessageCallback(MessageCallback, nullptr);
   LoadShaders();
-  InitBuffers();
   InitVaos();
+  InitBuffers();
   InitFrameBuffers();
-
-  glVertexArrayVertexBuffer(batch_vao_, 0, batch_vertex_buffer_->Id(), 0, sizeof(Vertex));
-  glVertexArrayElementBuffer(batch_vao_, batch_element_buffer_->Id());
 }
 
 void Renderer::Shutdown() {}
@@ -239,6 +271,7 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   // spdlog::info("cam pos {} {} {}", view_info.cam_pos.x, view_info.cam_pos.y,
   // view_info.cam_pos.z);
 
+  dir_light_on_ = view_info.dir_light_on;
   glm::vec3 cam_pos = view_info.cam_pos;
   shader_uniform_ubo_->SubData(sizeof(glm::vec4), &cam_pos.x);
 
@@ -282,62 +315,109 @@ AssetHandle Renderer::AddBatchedMesh(std::vector<Vertex>& vertices, std::vector<
   return id;
 }
 
-void Renderer::RenderOpaqueObjects() {
-  ZoneScopedN("Render RenderOpaqueObjects");
-  auto shader = ShaderManager::Get().GetShader("batch");
-  shader->Bind();
-  shader->SetBool("u_overrideMaterial", internal_settings_.override_material);
-  if (internal_settings_.override_material) {
-    shader->SetVec2("u_metallicRoughnessOverride",
-                    {internal_settings_.metallic_override, internal_settings_.roughness_override});
-    shader->SetVec3("u_albedoOverride", internal_settings_.albedo_override);
+void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
+                                   const DirectionalLight& dir_light) {
+  {
+    ZoneScopedN("Setup draw commands");
+    glBindVertexArray(batch_vao_);
+    batch_uniform_ssbo_->ResetOffset();
+    batch_uniform_ssbo_->SubData(sizeof(BatchUniform) * draw_cmd_uniforms_.size(),
+                                 draw_cmd_uniforms_.data());
+    per_frame_cmds_.clear();
+    per_frame_cmds_.reserve(draw_cmd_uniforms_.size());
+    DrawElementsIndirectCommand cmd;
+    size_t base_instance{0};
+
+    EASSERT_MSG(draw_cmd_mesh_ids_.size() == draw_cmd_uniforms_.size(), "need same size");
+    for (auto draw_cmd_mesh_id : draw_cmd_mesh_ids_) {
+      auto& draw_cmd_info = draw_elements_indirect_cmds_[draw_cmd_mesh_id];
+      cmd.base_instance = base_instance;
+      cmd.base_vertex = draw_cmd_info.base_vertex;
+      cmd.instance_count = 1;
+      cmd.count = draw_cmd_info.count;
+      cmd.first_index = draw_cmd_info.first_index;
+      stats_.multi_draw_cmds_buffer_count++;
+      per_frame_cmds_.emplace_back(cmd);
+    }
+
+    draw_indirect_buffer_->ResetOffset();
+    draw_indirect_buffer_->SubData(sizeof(DrawElementsIndirectCommand) * per_frame_cmds_.size(),
+                                   per_frame_cmds_.data());
+    // std::memcpy(batch_map_ptr, uniforms.data(), sizeof(glm::mat4) * uniforms.size());
+    draw_indirect_buffer_->Bind(GL_DRAW_INDIRECT_BUFFER);
+    batch_uniform_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, 0);
   }
 
-  shader->SetVec3("u_directionalColor", dir_light_.color);
-  shader->SetBool("u_directionalOn", dir_light_on_);
-  shader->SetBool("u_normalMapOn", normal_map_on_);
-  shader->SetBool("u_roughnessMapOn", roughness_map_on_);
-  shader->SetBool("u_metallicMapOn", metallic_map_on_);
-  shader->SetBool("u_normalMapOn", normal_map_on_);
-  shader->SetVec3("u_directionalDirection", dir_light_.direction);
+  glm::mat4 light_space_matrix;
+  {
+    ZoneScopedN("Shadow pass");
+    glViewport(0, 0, kShadowMapDims.x, kShadowMapDims.y);
+    glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
+    // only depth is written to so only clear depth
+    glClear(GL_DEPTH_BUFFER_BIT);
+    // no perspective, all light rays same direction
+    static float near_plane = 0.1;
+    static float far_plane = 7.5;
+    static float length{10};
+    static float light_pos_mult{1.0f};
+    ImGui::Begin("Shadow map");
+    ImGui::DragFloat("near plane", &near_plane, 0.1, 0, 10);
+    ImGui::DragFloat("far plane", &far_plane, 0.1, 1, 1000);
+    ImGui::DragFloat("ortho length/2", &length, 0.1, 1, 1000);
+    ImGui::DragFloat("light_pos multiplier", &light_pos_mult, 0.1, 0.5, 1000);
+    const glm::mat4 light_projection =
+        glm::ortho(-length, length, -length, length, near_plane, far_plane);
+    // dir_light_.direction = {-2, 4, -1};
+    glm::vec3 light_pos = -glm::normalize(dir_light.direction) * light_pos_mult;
+    const glm::mat4 light_view =
+        // glm::lookAt(light_pos, light_pos + dir_light_.direction, glm::vec3(0, 1, 0));
+        glm::lookAt(light_pos, light_pos + glm::normalize(dir_light.direction), glm::vec3(0, 1, 0));
+    light_space_matrix = light_projection * light_view;
+    auto shader = ShaderManager::Get().GetShader("depth");
+    shader->Bind();
+    shader->SetMat4("u_lightSpaceMatrix", light_space_matrix);
+    glBindVertexArray(batch_vao_);
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, per_frame_cmds_.size(), 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-  glBindVertexArray(batch_vao_);
-  batch_uniform_ssbo_->ResetOffset();
-  batch_uniform_ssbo_->SubData(sizeof(BatchUniform) * draw_cmd_uniforms_.size(),
-                               draw_cmd_uniforms_.data());
-
-  std::vector<DrawElementsIndirectCommand> cmds;
-  cmds.reserve(draw_cmd_uniforms_.size());
-  DrawElementsIndirectCommand cmd;
-  size_t base_instance{0};
-
-  EASSERT_MSG(draw_cmd_mesh_ids_.size() == draw_cmd_uniforms_.size(), "need same size");
-  for (auto draw_cmd_mesh_id : draw_cmd_mesh_ids_) {
-    auto& draw_cmd_info = draw_elements_indirect_cmds_[draw_cmd_mesh_id];
-    cmd.base_instance = base_instance;
-    cmd.base_vertex = draw_cmd_info.base_vertex;
-    cmd.instance_count = 1;
-    cmd.count = draw_cmd_info.count;
-    cmd.first_index = draw_cmd_info.first_index;
-    stats_.multi_draw_cmds_buffer_count++;
-    cmds.emplace_back(cmd);
+    ImGui::Image((void*)static_cast<intptr_t>(depth_tex_),
+                 ImVec2(kShadowMapDims.x * .5, kShadowMapDims.y * .5), ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::End();
   }
 
-  draw_indirect_buffer_->ResetOffset();
-  draw_indirect_buffer_->SubData(sizeof(DrawElementsIndirectCommand) * cmds.size(), cmds.data());
+  {
+    ZoneScopedN("Render Opaque Objects");
+    // set viewport since depth viewport was different
+    glViewport(0, 0, framebuffer_dims_.x, framebuffer_dims_.y);
+    // bind depth map texture that was written to in the shadow map pass
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, depth_tex_);
 
-  // std::memcpy(batch_map_ptr, uniforms.data(), sizeof(glm::mat4) * uniforms.size());
+    auto shader = ShaderManager::Get().GetShader("batch");
+    shader->Bind();
+    shader->SetBool("u_overrideMaterial", settings_.override_material);
+    if (settings_.override_material) {
+      shader->SetVec2("u_metallicRoughnessOverride",
+                      {settings_.metallic_override, settings_.roughness_override});
+      shader->SetVec3("u_albedoOverride", settings_.albedo_override);
+    }
+    shader->SetMat4("u_lightSpaceMatrix", light_space_matrix);
 
-  draw_indirect_buffer_->Bind(GL_DRAW_INDIRECT_BUFFER);
-  batch_uniform_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, 0);
-  // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, materials_buffer_);
-  materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 1);
-  // TODO(tony): avoid subdata every frame?
-  light_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, 2);
-
-  // mode, type, offest ptr, command count, stride (0 since tightly packed)
-  glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, cmds.size(), 0);
-  stats_.multi_draw_calls++;
+    shader->SetVec3("u_directionalColor", dir_light.color);
+    shader->SetBool("u_directionalOn", dir_light_on_);
+    shader->SetBool("u_normalMapOn", normal_map_on_);
+    shader->SetBool("u_roughnessMapOn", roughness_map_on_);
+    shader->SetBool("u_metallicMapOn", metallic_map_on_);
+    shader->SetBool("u_normalMapOn", normal_map_on_);
+    shader->SetVec3("u_directionalDirection", dir_light.direction);
+    materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 1);
+    // TODO(tony): avoid subdata every frame?
+    light_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, 2);
+    // mode, type, offest ptr, command count, stride (0 since tightly packed)
+    glBindVertexArray(batch_vao_);
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, per_frame_cmds_.size(), 0);
+    stats_.multi_draw_calls++;
+  }
 }
 
 void Renderer::SubmitDynamicLights(std::vector<PointLight>& lights) {

@@ -92,7 +92,7 @@ void Engine::Run() {
       ZoneScopedN("Graphics Update");
       timestep = delta_time;
       graphics_system_->StartFrame(*active_scene_);
-      graphics_system_->DrawOpaque(active_scene_->registry);
+      graphics_system_->DrawOpaque(*active_scene_);
       graphics_system_->EndFrame();
     }
 

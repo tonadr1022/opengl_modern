@@ -28,24 +28,19 @@ std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
   int slash_idx = filepath.find_last_of("/\\");
   int dot_idx = filepath.find_last_of('.');
   std::string directory = filepath.substr(0, slash_idx + 1);
-
   spdlog::info("loading {}", filepath.substr(slash_idx + 1));
-
   uint32_t flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace;
   const aiScene* scene = importer_.ReadFile(filepath, flags);
-
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     spdlog::error("Path: {}\nAssimp error: {}", filepath, importer_.GetErrorString());
     return std::nullopt;
   }
-
   // in sync with scene materials, material manager has different ids.
   // each index contains the material id
   std::vector<AssetHandle> material_handles;
   material_handles.resize(scene->mNumMaterials);
   for (int ai_scene_mat_idx = 0; ai_scene_mat_idx < scene->mNumMaterials; ai_scene_mat_idx++) {
     auto* material = scene->mMaterials[ai_scene_mat_idx];
-
     // returns full path if texture exists.
     // TODO(tony): other texture meta data?
     auto get_texture_path = [&](aiTextureType type) -> std::optional<std::string> {
@@ -76,9 +71,8 @@ std::optional<ModelData> ModelLoader::LoadModel(const std::string& filepath) {
     }
     float roughness;
     if (AI_SUCCESS != aiGetMaterialFloat(material, AI_MATKEY_ROUGHNESS_FACTOR, &roughness)) {
-      roughness = 0;
+      roughness = 1;
     }
-    spdlog::info("roughness {} {}", roughness, m.roughness);
     // spdlog::info("\nroughness: {}\n metalness: {}\n ao: {}\n albedo: {}\n normal:{}\n",
     //              m.roughness_path.value_or("no roughnesspath"),
     //              m.metalness_path.value_or("no metalnesspath"), m.ao_path.value_or("no ao_path"),
