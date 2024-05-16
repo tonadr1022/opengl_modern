@@ -400,5 +400,4 @@ AssetHandle Renderer::AddMaterial(const MaterialData& material) {
   // materials_buffer_->Unmap();
   return handle;
 }
-
 }  // namespace engine::gfx
