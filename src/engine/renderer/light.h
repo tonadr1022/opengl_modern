@@ -28,7 +28,7 @@ struct PointLight {
 
  public:
   glm::vec3 color{1, 1, 1};
-  float intensity{100};
+  float intensity{10};
 };
 
 // static_assert(alignof(PointLight) == 16, "PointLight is not aligned to 16 bytes");

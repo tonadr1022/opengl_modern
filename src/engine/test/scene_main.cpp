@@ -24,15 +24,32 @@ void SceneMain::LoadSponza() {
       "/home/tony/dep/models/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf";
   AssetHandle model_handle = engine::ModelManager::Get().LoadModel({model_string});
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
-  auto scale = glm::vec3(.1);
-  for (auto m : model.meshes) {
-    engine::component::Transform t;
-    t.SetScale(scale);
-    auto ent = registry.create();
-    registry.emplace<engine::Mesh>(ent, m);
-    registry.emplace<engine::component::Transform>(ent, t);
-    registry.emplace<engine::component::ModelMatrix>(ent);
+  // stress test with extra sponzas
+  auto scale = glm::vec3(.01);
+  glm::vec3 iter{0, 0, 0};
+  int c = 0;
+  for (iter.x = -c; iter.x <= c; iter.x++) {
+    for (iter.z = -c; iter.z <= c; iter.z++) {
+      for (auto m : model.meshes) {
+        engine::component::Transform t;
+        t.SetScale(scale);
+        t.SetTranslation({iter.x * 50, iter.y, iter.z * 50});
+        auto ent = registry.create();
+        registry.emplace<engine::Mesh>(ent, m);
+        registry.emplace<engine::component::Transform>(ent, t);
+        registry.emplace<engine::component::ModelMatrix>(ent);
+      }
+    }
   }
+
+  // for (auto m : model.meshes) {
+  //   engine::component::Transform t;
+  //   t.SetScale(scale);
+  //   auto ent = registry.create();
+  //   registry.emplace<engine::Mesh>(ent, m);
+  //   registry.emplace<engine::component::Transform>(ent, t);
+  //   registry.emplace<engine::component::ModelMatrix>(ent);
+  // }
   glm::vec3 light_positions[] = {
       glm::vec3(0, 1.0f, 0), glm::vec3(1, 1.0f, 0), glm::vec3(-1, 1.0f, 0), glm::vec3(0, 1.0f, 1),
       // glm::vec3(0, 2, -1)

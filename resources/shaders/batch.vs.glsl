@@ -4,7 +4,7 @@ layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoords;
 layout(location = 3) in vec3 aTangent;
-layout(location = 4) in vec3 aBitangent;
+// layout(location = 4) in vec3 aBitangent;
 
 // std140 explicitly states the memory layout.
 // https://registry.khronos.org/OpenGL/extensions/ARB/ARB_uniform_buffer_object.txt
@@ -57,9 +57,15 @@ void main(void) {
     vs_out.normal = mat3(uniformData.normalMatrix) * aNormal;
     vs_out.materialIndex = uniformData.materialIndex;
     Material material = materials[uniformData.materialIndex];
+
+    // Gram-Schmidt process to calculate bitangent vector
     vec3 T = normalize(vec3(uniformData.model * vec4(aTangent, 0.0)));
-    vec3 B = normalize(vec3(uniformData.model * vec4(aBitangent, 0.0)));
     vec3 N = normalize(vec3(uniformData.model * vec4(aNormal, 0.0)));
+    // subtract projection of T onto N to make it orthogonal to N
+    T = normalize(T - dot(T, N) * N);
+    // bitangent is orthogonal to T and N
+    vec3 B = cross(T, N);
+    // TBN doesn't consider translation, so use mat3
     vs_out.TBN = mat3(T, B, N);
 
     gl_Position = vp_matrix * vec4(vs_out.posWorldSpace, 1.0);

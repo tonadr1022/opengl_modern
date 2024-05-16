@@ -67,6 +67,7 @@ const float PI = 3.14159265358979323846;
 void main() {
     // o_color = vec4(1.0);
     // return;
+
     vec4 albedo;
     float roughness;
     float metallic;
@@ -107,7 +108,7 @@ void main() {
             // o_color = vec4(metallic, metallic, metallic, 1.0);
             // return;
         } else {
-            // metallic = material.metallic;
+            metallic = material.metallic;
             // o_color = vec4(metallic, metallic, metallic, 1.0);
             // return;
         }
@@ -117,10 +118,14 @@ void main() {
             ao = 1.0;
         }
         if (u_normalMapOn && hasNormalMap) {
+            // sample normal texture
             normal = texture(sampler2D(material.normal_map_handle), fs_in.texCoords).rgb;
+            // transform it to [-1,1] range
             normal = normal * 2.0 - 1.0;
+            // apply tbn matrix to convert it from tangent space to world space
             normal = normalize(fs_in.TBN * normal);
         } else {
+            // use vertex interpolated normal
             normal = normalize(fs_in.normal);
         }
     }

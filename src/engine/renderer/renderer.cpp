@@ -60,17 +60,17 @@ void Renderer::InitVaos() {
   glEnableVertexArrayAttrib(batch_vao_, 1);
   glEnableVertexArrayAttrib(batch_vao_, 2);
   glEnableVertexArrayAttrib(batch_vao_, 3);
-  glEnableVertexArrayAttrib(batch_vao_, 4);
+  // glEnableVertexArrayAttrib(batch_vao_, 4);
   glVertexArrayAttribFormat(batch_vao_, 0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
   glVertexArrayAttribFormat(batch_vao_, 1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
   glVertexArrayAttribFormat(batch_vao_, 2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, tex_coords));
   glVertexArrayAttribFormat(batch_vao_, 3, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, tangent));
-  glVertexArrayAttribFormat(batch_vao_, 4, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, bitangent));
+  // glVertexArrayAttribFormat(batch_vao_, 4, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, bitangent));
   glVertexArrayAttribBinding(batch_vao_, 0, 0);
   glVertexArrayAttribBinding(batch_vao_, 1, 0);
   glVertexArrayAttribBinding(batch_vao_, 2, 0);
   glVertexArrayAttribBinding(batch_vao_, 3, 0);
-  glVertexArrayAttribBinding(batch_vao_, 4, 0);
+  // glVertexArrayAttribBinding(batch_vao_, 4, 0);
 }
 
 void Renderer::InitBuffers() {
