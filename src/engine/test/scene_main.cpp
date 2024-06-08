@@ -59,7 +59,7 @@ void SceneMain::LoadSponza() {
   for (auto& pos : light_positions) {
     auto ent = registry.create();
     light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
-    // registry.emplace<engine::PointLight>(ent, light);
+    /*registry.emplace<engine::PointLight>(ent, light);*/
   }
 }
 
@@ -103,7 +103,7 @@ void SceneMain::LoadSpheres() {
   for (auto& pos : light_positions) {
     auto ent = registry.create();
     light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
-    registry.emplace<engine::PointLight>(ent, light);
+    //*registry.emplace<engine::PointLight>(ent, light);*/
     engine::MaterialCreateInfo mat;
     mat.base_color = glm::vec4{light.color.x, light.color.y, light.color.z, 1};
     registry.emplace<engine::Mesh>(ent, m);
@@ -166,23 +166,8 @@ SceneMain::SceneMain() : camera_system(registry, render_view_info) {}
 
 void SceneMain::Init() {
   camera_system.camera_mode = engine::CameraMode::FPS;
-  // camera_system.InitDefaultCamera(player_entity_);
   LoadSponza();
   // LoadSpheres();
-
-  // for (iter.z = -c; iter.z <= c; iter.z++) {
-  //   for (iter.x = -c; iter.x <= c; iter.x++) {
-  //     for (auto m : model.meshes) {
-  //       engine::component::Transform t;
-  //       t.SetScale(scale);
-  //       auto ent = registry.create();
-  //       t.SetTranslation({iter.x * 50, iter.y, iter.z * 50});
-  //       registry.emplace<engine::Mesh>(ent, m);
-  //       registry.emplace<engine::component::Transform>(ent, t);
-  //       registry.emplace<engine::component::ModelMatrix>(ent);
-  //     }
-  //   }
-  // }
 }
 
 using engine::EventType;
@@ -298,52 +283,3 @@ void SceneMain::OnImGuiRender() {
 
   ImGui::End();
 }
-
-// SceneMain::SceneMain() {
-//   glm::vec3 iter{0, 0, 0};
-//   engine::MeshID mesh_id = mesh_manager_->LoadShape(engine::ShapeType::Cube);
-//   MaterialCreateInfo mat_create_info;
-//   mat_create_info.base_color = {1., 0., 1.};
-//   engine::MaterialID color_only_mat = material_manager_->AddMaterial(mat_create_info);
-//   component::Transform t;
-//   float r = 0;
-//
-//   std::vector<component::Material> data;
-//   int num_mats = 100;
-//   data.reserve(num_mats);
-//   MaterialCreateInfo d;
-//   for (int i = 0; i < num_mats; i++) {
-//     d.base_color = {rand() %/*  num_mats / static_cast<float>(num_mats), rand() % */ num_mats /
-//     num_mats,
-//                     rand() % num_mats / num_mats};
-//     engine::MaterialID itermat = material_manager_->AddMaterial(d);
-//     data.push_back({itermat});
-//   }
-//
-//   for (iter.x = -40; iter.x <= 40; iter.x++) {
-//     for (iter.y = -40; iter.y <= 40; iter.y++) {
-//       for (iter.z = 0; iter.z <= 0; iter.z++) {
-//         entt::entity tri{};
-//         if (static_cast<int>(iter.z + iter.x) % 2 == 0) {
-//           tri = MakeDynamicEntity();
-//         } else {
-//           tri = MakeStaticEntity();
-//         }
-//         t.SetTranslation({iter.x * 2, iter.y * 2, iter.z * 2});
-//         registry.emplace<component::Transform>(tri, t);
-//         registry.emplace<component::ModelMatrix>(tri);
-//         registry.emplace<component::Mesh>(tri, mesh_id);
-//         registry.emplace<component::Material>(tri, data[rand() % num_mats]);
-//       }
-//     }
-//   }
-//
-//   bool start_fps_focus = true;
-//   auto player = registry.create();
-//   registry.emplace<Player>(player).fps_focused = start_fps_focus;
-//   WindowSystem::Get().SetCursorVisible(!start_fps_focus);
-//
-//   component::FPSCamera fps_cam;
-//   fps_cam.position = {2, 1, 1};
-//   registry.emplace<component::FPSCamera>(player, fps_cam);
-// }

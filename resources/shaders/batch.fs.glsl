@@ -40,6 +40,8 @@ layout(binding = 2, std430) readonly buffer PointLights {
 };
 
 sampler2D shadowMap;
+samplerCube pointCubeMap;
+vec3 u_pointLightShadowPos;
 
 struct Material {
     vec3 base_color;
@@ -65,6 +67,14 @@ float DistributionGGX(vec3 normal, vec3 halfVector, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 
+float CalculatePointShadow(vec3 lightToPixel, float bias) {
+    float distance = length(lightToPixel);
+    // flip y since OpenGL cube map is left-handed
+    lightToPixel.y = -lightToPixel.y;
+    float sampledDistance = texture(pointCubeMap, lightToPixel).r;
+    return step(sampledDistance, distance);
+}
+
 float CalculateShadow(vec4 posLightSpace, float bias) {
     // must perform perspective division ourselves to get to clip space.
     vec3 projCoords = posLightSpace.xyz / posLightSpace.w;
@@ -74,17 +84,19 @@ float CalculateShadow(vec4 posLightSpace, float bias) {
     if (currentDepth > 1) return 0;
     float shadow = 0;
     if (true) {
+        // percentage closer filtering
+        // sample multiple times and take the average for softer shadows
         vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
         for (int x = -1; x <= 1; x++) {
             for (int y = -1; y <= 1; y++) {
                 float pcfDepth = texture(shadowMap, projCoords.xy + texelSize * vec2(x, y)).r;
-                shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+                shadow += step(pcfDepth, currentDepth - bias);
             }
         }
         shadow /= 9.0;
     } else {
         float closestDepth = texture(shadowMap, projCoords.xy).r;
-        shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+        shadow += step(closestDepth, currentDepth - bias);
     }
     return shadow;
 }
@@ -178,20 +190,17 @@ void main() {
         // float attenuation = 1.0 / (distToLight);
         float attenuation = 1.0 / (distToLight * distToLight);
         vec3 radiance = pointLights[i].color * pointLights[i].intensity * attenuation;
-
         float NDF = DistributionGGX(normal, H, roughness);
         float G = GeometrySmith(normal, V, L, roughness);
         // F: Fresnel-Schlick
         // ratio betwen specular and diffuse reflection.
         // clamp cosTheta to at least 0.
         vec3 F = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
-
         // Cook-Torrance specular BRDF: DFG/(4*(wo*n)(wi*n))
         vec3 numerator = NDF * G * F;
         // add epsilon to avoid divide by zero.
         float denominator = 4.0 * max(dot(normal, V), 0.0) * max(dot(normal, L), 0.0) + 0.0001;
         vec3 specular = numerator / denominator;
-
         // specular contribution is the same as the Fresnel value
         vec3 kS = F;
         // for energy conservation, diffuse and specular light mustn't exceed 1 unless emits light.
@@ -203,9 +212,47 @@ void main() {
 
         // scale the light by NdotL
         float NdotL = max(dot(normal, L), 0.0);
-
         // add to outgoing radiance
         light_out += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
+    }
+    ////////////////////////////////////// point shadow////////////////////////////////////////////
+    for (int i = 0; i < 1; i++) {
+        // per light radiance
+        vec3 L = normalize(u_pointLightShadowPos - fs_in.posWorldSpace);
+        vec3 H = normalize(V + L);
+        float distToLight = length(pointLights[i].position.xyz - fs_in.posWorldSpace);
+        // inverse square law, more physically correct than linear-quadratic
+        // float attenuation = 1.0 / (distToLight);
+        float attenuation = 1.0 / (distToLight * distToLight);
+        vec3 radiance = pointLights[i].color * pointLights[i].intensity * attenuation;
+        float NDF = DistributionGGX(normal, H, roughness);
+        float G = GeometrySmith(normal, V, L, roughness);
+        // F: Fresnel-Schlick
+        // ratio betwen specular and diffuse reflection.
+        // clamp cosTheta to at least 0.
+        vec3 F = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+        // Cook-Torrance specular BRDF: DFG/(4*(wo*n)(wi*n))
+        vec3 numerator = NDF * G * F;
+        // add epsilon to avoid divide by zero.
+        float denominator = 4.0 * max(dot(normal, V), 0.0) * max(dot(normal, L), 0.0) + 0.0001;
+        vec3 specular = numerator / denominator;
+        // specular contribution is the same as the Fresnel value
+        vec3 kS = F;
+        // for energy conservation, diffuse and specular light mustn't exceed 1 unless emits light.
+        // Thus, kD is the remains of kS.
+        vec3 kD = vec3(1.0) - kS;
+        // metallic surfaces don't refract light, thus don't have diffuse reflections, so nullify diffuse component
+        // the more metallic the surface. Linear blend
+        kD *= 1.0 - metallic;
+
+        // bias to reduce shadow acne (self shadowing), adjust it based on
+        // angle toward the light, since angles closer to 90 degrees need more bias
+        float bias = mix(0.005, 0.0, dot(normal, -L));
+        // directional shadow
+        float shadow = CalculatePointShadow(fs_in.posWorldSpace - u_pointLightShadowPos, bias);
+        float NdotL = max(dot(normal, L), 0.0);
+        vec3 point_out = (kD * albedo.rgb / PI + specular) * radiance * NdotL;
+        light_out += (1.0 - shadow) * point_out;
     }
 
     if (u_directionalOn) {
@@ -213,7 +260,6 @@ void main() {
         vec3 L = normalize(-u_directionalDirection);
         vec3 H = normalize(V + L);
         vec3 radiance = u_directionalColor;
-
         // Cook-Torrance BRDF
         float NDF = DistributionGGX(normal, H, roughness);
         float G = GeometrySmith(normal, V, L, roughness);
@@ -234,11 +280,13 @@ void main() {
         kD *= 1.0 - metallic;
         // scale light by NdotL
         float NdotL = max(dot(normal, L), 0.0);
-        // add to outgoing radiance Lo
-        float bias = max(0.05 * (1.0 - dot(normal, u_directionalDirection)), 0.005);
+
+        // bias to reduce shadow acne (self shadowing), adjust it based on
+        // angle toward the light, since angles closer to 90 degrees need more bias
+        float bias = mix(0.005, 0.0, dot(normal, -u_directionalDirection));
+        // directional shadow
         float shadow = CalculateShadow(fs_in.posLightSpace, bias);
-        // o_color = vec4(shadow, shadow, shadow, 1.0);
-        // return;
+
         vec3 directional_out = ((kD * albedo.rgb / PI + specular) * radiance * NdotL);
         light_out += (1 - shadow) * directional_out;
     }

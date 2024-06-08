@@ -54,7 +54,7 @@ void Scene::OnImGuiRender() {
     ImGui::DragFloat3("color", &dir_light.color.x, 0.01, 0, 1);
     ImGui::Checkbox("rotate circular", &dir_light_settings.circular_rotate);
     ImGui::DragFloat("rotate speed", &dir_light_settings.rotate_speed, 0.01, 0, 2);
-    ImGui::DragFloat("angle", &test, 0.01, 0.01, 2);
+    ImGui::DragFloat("angle", &test, 0.01, 0.01, 3.14);
   }
 }
 

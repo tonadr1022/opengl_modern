@@ -43,7 +43,7 @@ void Scene2::Init() {
   auto& model = engine::ModelManager::Get().GetModel(model_handle);
 
   auto scale = glm::vec3(.5);
-  std::vector<glm::vec3> positions = {{0, 1.5, 0}, {2, 0, 1}, {-1, 0, 2}};
+  std::vector<glm::vec3> positions = {{0, 2.5, 0}, {2, 0.6, 1}, {-1, 0.6, 2}};
   for (auto& pos : positions) {
     engine::component::Transform t;
     t.SetScale(scale);
@@ -57,7 +57,7 @@ void Scene2::Init() {
   // plane
   engine::component::Transform t;
   t.SetScale({25, 0.1, 25});
-  t.SetTranslation({0, -1, 0});
+  t.SetTranslation({0, 0, 0});
   auto ent = registry.create();
   registry.emplace<engine::Mesh>(ent, model.meshes[0]);
   registry.emplace<engine::component::Transform>(ent, t);

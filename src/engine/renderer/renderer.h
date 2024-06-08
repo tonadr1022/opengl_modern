@@ -135,6 +135,11 @@ class Renderer {
   // shadows, for now
   uint32_t depth_map_fbo_{0};
   uint32_t depth_tex_{0};
+
+
+  uint32_t point_depth_cube_map_tex_{0};
+  uint32_t point_depth_buffer_tex_{0};
+  uint32_t point_depth_fbo_{0};
   constexpr static glm::vec2 kShadowMapDims{1024, 1024};
 
   //  gfx::Texture2D* g_position_tex_{nullptr};
@@ -176,6 +181,7 @@ class Renderer {
   bool normal_map_on_{true};
   bool roughness_map_on_{true};
   bool metallic_map_on_{true};
+  bool front_cull_shadow_{true};
 
   struct InternalSettings {
     glm::vec3 albedo_override{1, 0, 0};
