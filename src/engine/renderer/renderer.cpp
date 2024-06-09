@@ -290,10 +290,10 @@ void Renderer::Init(glm::ivec2 framebuffer_dims) {
   const glm::ivec2 shadow_cube_map_dims{1024, 1024};
   glTextureStorage2D(point_depth_cube_map_tex_, 1, GL_R32F, shadow_cube_map_dims.x,
                      shadow_cube_map_dims.y);
-  for (unsigned int i = 0; i < 6; ++i) {
-    glTextureSubImage3D(point_depth_cube_map_tex_, 0, 0, 0, i, shadow_cube_map_dims.x,
-                        shadow_cube_map_dims.y, 0, GL_RED, GL_FLOAT, nullptr);
-  }
+  // for (unsigned int i = 0; i < 6; ++i) {
+  //   glTextureSubImage3D(point_depth_cube_map_tex_, 0, 0, 0, i, shadow_cube_map_dims.x,
+  //                       shadow_cube_map_dims.y, 0, GL_RED, GL_FLOAT, nullptr);
+  // }
   /*
    *GL_CLAMP_TO_EDGE: clamps texture coordinates at all mipmap levels such that the texture filter
    *never samples a border texel. The color returned when clamping is derived only from texels at
@@ -304,12 +304,6 @@ void Renderer::Init(glm::ivec2 framebuffer_dims) {
   glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  /*for (size_t i = 0; i < 6; i++) {*/
-  /*  glTextureSubImage3D(point_depth_cube_map_tex_,*/
-  /*                      0,  // 1 mip level*/
-  /*                      0, 0, 0, shadow_cube_map_dims.x, shadow_cube_map_dims.y, 1, GL_RED,*/
-  /*                      GL_FLOAT, nullptr);*/
-  /*}*/
 }
 
 void Renderer::Shutdown() {}
@@ -390,7 +384,6 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
     per_frame_cmds_.reserve(draw_cmd_uniforms_.size());
     DrawElementsIndirectCommand cmd;
     size_t base_instance{0};
-
     EASSERT_MSG(draw_cmd_mesh_ids_.size() == draw_cmd_uniforms_.size(), "need same size");
     for (auto draw_cmd_mesh_id : draw_cmd_mesh_ids_) {
       auto& draw_cmd_info = draw_elements_indirect_cmds_[draw_cmd_mesh_id];
@@ -426,19 +419,19 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
     static float light_pos_mult{1.0f};
 
     // slope scale depth bias. Increases bias written to depth buffer based on delta z
-    static bool polygonoffset{false};
-    static glm::vec2 polygonoffsetfactors{1, 1};
+    // static bool polygonoffset{false};
+    // static glm::vec2 polygonoffsetfactors{1, 1};
 
     ImGui::Begin("Shadow map");
-    ImGui::DragFloat2("polygon offset", &polygonoffsetfactors.x, 0.1, 0, 10);
-    if (ImGui::Checkbox("Polygon offset", &polygonoffset)) {
-      if (polygonoffset) {
-        glEnable(GL_POLYGON_OFFSET_FILL);
-      } else {
-        glDisable(GL_POLYGON_OFFSET_FILL);
-      }
-    }
-    glPolygonOffset(polygonoffsetfactors.x, polygonoffsetfactors.y);
+    // ImGui::DragFloat2("polygon offset", &polygonoffsetfactors.x, 0.1, 0, 10);
+    // if (ImGui::Checkbox("Polygon offset", &polygonoffset)) {
+    //   if (polygonoffset) {
+    //     glEnable(GL_POLYGON_OFFSET_FILL);
+    //   } else {
+    //     glDisable(GL_POLYGON_OFFSET_FILL);
+    //   }
+    // }
+    // glPolygonOffset(polygonoffsetfactors.x, polygonoffsetfactors.y);
 
     ImGui::DragFloat("near plane", &near_plane, 0.1, 0, 10);
     ImGui::DragFloat("far plane", &far_plane, 0.1, 1, 1000);
@@ -473,7 +466,8 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
     ///////////////////////////////   Point light //////////////////////////////////////////////
     glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
     // TODO(tony): no magic number
-    glBindFramebuffer(GL_FRAMEBUFFER, point_depth_fbo_);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, point_depth_fbo_);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glViewport(0, 0, 1024, 1024);
     auto point_depth_shader = ShaderManager::Get().GetShader("point_depth");
     point_depth_shader->Bind();
@@ -487,13 +481,15 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
       glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
       glm::mat4 view_matrix = glm::lookAt(light_world_pos, cam_dir_param.target, cam_dir_param.up);
       point_depth_shader->SetMat4("vp_matrix", proj_matrix * view_matrix);
-      glNamedFramebufferTexture(point_depth_fbo_, GL_COLOR_ATTACHMENT0, point_depth_cube_map_tex_,
-                                0);
+      // glNamedFramebufferTexture(point_depth_fbo_, GL_COLOR_ATTACHMENT0,
+      // point_depth_cube_map_tex_,
+      //                           0);
       glNamedFramebufferTextureLayer(point_depth_fbo_, GL_COLOR_ATTACHMENT0,
                                      point_depth_cube_map_tex_, 0, i);
       glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, per_frame_cmds_.size(),
                                   0);
     }
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   }
 
   ///////////////////////////////////////////////  Final pass ////////////////////////
@@ -515,7 +511,6 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
       shader->SetVec3("u_albedoOverride", settings_.albedo_override);
     }
     shader->SetMat4("u_lightSpaceMatrix", light_space_matrix);
-
     shader->SetVec3("u_directionalColor", dir_light.color);
     shader->SetBool("u_directionalOn", dir_light_on_);
     shader->SetBool("u_normalMapOn", normal_map_on_);
@@ -577,24 +572,12 @@ AssetHandle Renderer::AddMaterial(const MaterialData& material) {
     bindless_mat.ao_map_handle = material.ao_texture->BindlessHandle();
   if (material.roughness_texture != nullptr)
     bindless_mat.roughness_map_handle = material.roughness_texture->BindlessHandle();
-  // spdlog::info("{} {} {} {} {}", bindless_mat.albedo_map_handle,
-  // bindless_mat.roughness_map_handle,
-  //              bindless_mat.metalness_map_handle, bindless_mat.ao_map_handle, count);
-
   bindless_mat.albedo = material.albedo;
   bindless_mat.roughness = material.roughness;
   bindless_mat.metallic = material.metallic;
 
   // id is the index into the material buffer.
   AssetHandle handle = materials_buffer_->SubData(sizeof(BindlessMaterial), &bindless_mat);
-
-  // auto* ptr = static_cast<BindlessMaterial*>(materials_buffer_->Map(GL_READ_ONLY));
-  // for (int i = 0; i < materials_buffer_->NumAllocs(); i++) {
-  //   spdlog::info("handle: {}", ptr->albedo_map_handle);
-  //   ptr++;
-  // }
-  // spdlog::warn("done");
-  // materials_buffer_->Unmap();
   return handle;
 }
 }  // namespace engine::gfx

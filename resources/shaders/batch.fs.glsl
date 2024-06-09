@@ -39,9 +39,9 @@ layout(binding = 2, std430) readonly buffer PointLights {
     PointLight pointLights[];
 };
 
-sampler2D shadowMap;
-samplerCube pointCubeMap;
-vec3 u_pointLightShadowPos;
+uniform sampler2D shadowMap;
+uniform samplerCube pointCubeMap;
+uniform vec3 u_pointLightShadowPos;
 
 struct Material {
     vec3 base_color;
@@ -72,7 +72,11 @@ float CalculatePointShadow(vec3 lightToPixel, float bias) {
     // flip y since OpenGL cube map is left-handed
     lightToPixel.y = -lightToPixel.y;
     float sampledDistance = texture(pointCubeMap, lightToPixel).r;
-    return step(sampledDistance, distance);
+    if (sampledDistance + bias < distance) {
+        return 1.0;
+    } else {
+        return 0.0;
+    }
 }
 
 float CalculateShadow(vec4 posLightSpace, float bias) {
@@ -220,11 +224,11 @@ void main() {
         // per light radiance
         vec3 L = normalize(u_pointLightShadowPos - fs_in.posWorldSpace);
         vec3 H = normalize(V + L);
-        float distToLight = length(pointLights[i].position.xyz - fs_in.posWorldSpace);
+        float distToLight = length(u_pointLightShadowPos - fs_in.posWorldSpace);
         // inverse square law, more physically correct than linear-quadratic
         // float attenuation = 1.0 / (distToLight);
         float attenuation = 1.0 / (distToLight * distToLight);
-        vec3 radiance = pointLights[i].color * pointLights[i].intensity * attenuation;
+        vec3 radiance = vec3(1.0) * 10 * attenuation;
         float NDF = DistributionGGX(normal, H, roughness);
         float G = GeometrySmith(normal, V, L, roughness);
         // F: Fresnel-Schlick
@@ -244,7 +248,6 @@ void main() {
         // metallic surfaces don't refract light, thus don't have diffuse reflections, so nullify diffuse component
         // the more metallic the surface. Linear blend
         kD *= 1.0 - metallic;
-
         // bias to reduce shadow acne (self shadowing), adjust it based on
         // angle toward the light, since angles closer to 90 degrees need more bias
         float bias = mix(0.005, 0.0, dot(normal, -L));
@@ -252,6 +255,7 @@ void main() {
         float shadow = CalculatePointShadow(fs_in.posWorldSpace - u_pointLightShadowPos, bias);
         float NdotL = max(dot(normal, L), 0.0);
         vec3 point_out = (kD * albedo.rgb / PI + specular) * radiance * NdotL;
+        //        light_out += shadow * point_out;
         light_out += (1.0 - shadow) * point_out;
     }
 
