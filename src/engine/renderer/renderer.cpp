@@ -25,6 +25,12 @@ struct CameraDirection {
   glm::vec3 target;
   glm::vec3 up;
 };
+
+const int kMaterialsSSBOIdx{1};
+const int kLightSSBOIdx{2};
+const int kPointLightCubeMapIdx{1};
+const GLenum kPointLightCubeMapTexSlot{GL_TEXTURE1};
+
 constexpr CameraDirection kCameraDirections[6] = {
     {GL_TEXTURE_CUBE_MAP_POSITIVE_X, {1, 0, 0}, {0, 1, 0}},
     {GL_TEXTURE_CUBE_MAP_NEGATIVE_X, {-1, 0, 0}, {0, 1, 0}},
@@ -35,7 +41,9 @@ constexpr CameraDirection kCameraDirections[6] = {
 }  // namespace
 
 Renderer* Renderer::instance_{nullptr};
+
 Renderer& Renderer::Get() { return *instance_; }
+
 Renderer::Renderer() {
   EASSERT_MSG(instance_ == nullptr, "Cannot create two renderers .");
   instance_ = this;
@@ -268,42 +276,77 @@ void Renderer::Init(glm::ivec2 framebuffer_dims) {
   InitBuffers();
   InitFrameBuffers();
 
-  // point light depth buffer attachment
-  glCreateTextures(GL_TEXTURE_2D, 1, &point_depth_buffer_tex_);
-  glTextureStorage2D(point_depth_buffer_tex_, 1, GL_DEPTH_COMPONENT32F, 1024, 1024);
-  glTextureParameteri(point_depth_buffer_tex_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(point_depth_buffer_tex_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTextureParameteri(point_depth_buffer_tex_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTextureParameteri(point_depth_buffer_tex_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // old style point light shadow
 
-  // point light depth FBO
-  glCreateFramebuffers(1, &point_depth_fbo_);
-  glNamedFramebufferTexture(point_depth_fbo_, GL_DEPTH_ATTACHMENT, point_depth_buffer_tex_, 0);
-  // no read/write to draw buffer
-  glNamedFramebufferDrawBuffer(point_depth_fbo_, GL_NONE);
-  glNamedFramebufferReadBuffer(point_depth_fbo_, GL_NONE);
-  if (!glCheckNamedFramebufferStatus(point_depth_fbo_, GL_FRAMEBUFFER)) {
-    spdlog::error("point light depth map fbo incomplete.");
+  // depth buffer for point light shadow
+  glGenTextures(1, &point_depth_buffer_tex_);
+  glBindTexture(GL_TEXTURE_2D, point_depth_buffer_tex_);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT,
+               nullptr);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  // create cube map
+  glGenTextures(1, &point_depth_cube_map_tex_);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, point_depth_cube_map_tex_);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  for (int i = 0; i < 6; i++) {
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_R32F, 1024, 1024, 0, GL_RED, GL_FLOAT,
+                 nullptr);
   }
-  // point cube map texture
-  glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &point_depth_cube_map_tex_);
-  const glm::ivec2 shadow_cube_map_dims{1024, 1024};
-  glTextureStorage2D(point_depth_cube_map_tex_, 1, GL_R32F, shadow_cube_map_dims.x,
-                     shadow_cube_map_dims.y);
-  // for (unsigned int i = 0; i < 6; ++i) {
-  //   glTextureSubImage3D(point_depth_cube_map_tex_, 0, 0, 0, i, shadow_cube_map_dims.x,
-  //                       shadow_cube_map_dims.y, 0, GL_RED, GL_FLOAT, nullptr);
+
+  // create fbo
+  glGenFramebuffers(1, &point_depth_fbo_);
+  glBindFramebuffer(GL_FRAMEBUFFER, point_depth_fbo_);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                         point_depth_buffer_tex_, 0);
+  // disable write and read to color buffer
+  glDrawBuffer(GL_NONE);
+  glReadBuffer(GL_NONE);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  // // point light depth buffer attachment
+  // glCreateTextures(GL_TEXTURE_2D, 1, &point_depth_buffer_tex_);
+  // glTextureStorage2D(point_depth_buffer_tex_, 1, GL_DEPTH_COMPONENT32F, 1024, 1024);
+  // glTextureParameteri(point_depth_buffer_tex_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // glTextureParameteri(point_depth_buffer_tex_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTextureParameteri(point_depth_buffer_tex_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTextureParameteri(point_depth_buffer_tex_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  //
+  // // point light depth FBO
+  // glCreateFramebuffers(1, &point_depth_fbo_);
+  // glNamedFramebufferTexture(point_depth_fbo_, GL_DEPTH_ATTACHMENT, point_depth_buffer_tex_, 0);
+  // // no read/write to draw buffer
+  // glNamedFramebufferDrawBuffer(point_depth_fbo_, GL_NONE);
+  // glNamedFramebufferReadBuffer(point_depth_fbo_, GL_NONE);
+  // if (!glCheckNamedFramebufferStatus(point_depth_fbo_, GL_FRAMEBUFFER)) {
+  //   spdlog::error("point light depth map fbo incomplete.");
   // }
-  /*
-   *GL_CLAMP_TO_EDGE: clamps texture coordinates at all mipmap levels such that the texture filter
-   *never samples a border texel. The color returned when clamping is derived only from texels at
-   *the edge of the texture image
-   */
-  glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // // point cube map texture
+  // glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &point_depth_cube_map_tex_);
+  // const glm::ivec2 shadow_cube_map_dims{1024, 1024};
+  // glTextureStorage2D(point_depth_cube_map_tex_, 1, GL_R32F, shadow_cube_map_dims.x,
+  //                    shadow_cube_map_dims.y);
+  // // for (unsigned int i = 0; i < 6; ++i) {
+  // //   glTextureSubImage3D(point_depth_cube_map_tex_, 0, 0, 0, i, shadow_cube_map_dims.x,
+  // //                       shadow_cube_map_dims.y, 0, GL_RED, GL_FLOAT, nullptr);
+  // // }
+  // /*
+  //  *GL_CLAMP_TO_EDGE: clamps texture coordinates at all mipmap levels such that the texture
+  //  filter *never samples a border texel. The color returned when clamping is derived only from
+  //  texels at *the edge of the texture image
+  //  */
+  // glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  // glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // glTextureParameteri(point_depth_cube_map_tex_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 void Renderer::Shutdown() {}
@@ -327,7 +370,7 @@ void Renderer::StartFrame(const RenderViewInfo& view_info) {
   // spdlog::info("cam pos {} {} {}", view_info.cam_pos.x, view_info.cam_pos.y,
   // view_info.cam_pos.z);
 
-  dir_light_on_ = view_info.dir_light_on;
+  // dir_light_on_ = view_info.dir_light_on;
   glm::vec3 cam_pos = view_info.cam_pos;
   shader_uniform_ubo_->SubData(sizeof(glm::vec4), &cam_pos.x);
 
@@ -418,20 +461,7 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
     static float length{10};
     static float light_pos_mult{1.0f};
 
-    // slope scale depth bias. Increases bias written to depth buffer based on delta z
-    // static bool polygonoffset{false};
-    // static glm::vec2 polygonoffsetfactors{1, 1};
-
     ImGui::Begin("Shadow map");
-    // ImGui::DragFloat2("polygon offset", &polygonoffsetfactors.x, 0.1, 0, 10);
-    // if (ImGui::Checkbox("Polygon offset", &polygonoffset)) {
-    //   if (polygonoffset) {
-    //     glEnable(GL_POLYGON_OFFSET_FILL);
-    //   } else {
-    //     glDisable(GL_POLYGON_OFFSET_FILL);
-    //   }
-    // }
-    // glPolygonOffset(polygonoffsetfactors.x, polygonoffsetfactors.y);
 
     ImGui::DragFloat("near plane", &near_plane, 0.1, 0, 10);
     ImGui::DragFloat("far plane", &far_plane, 0.1, 1, 1000);
@@ -451,8 +481,6 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
     shader->Bind();
     shader->SetMat4("u_lightSpaceMatrix", light_space_matrix);
 
-    glBindVertexArray(batch_vao_);
-
     // MAYBE TEMPORARY? front cull objects to prevent peter panning
     if (front_cull_shadow_) glCullFace(GL_FRONT);
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, per_frame_cmds_.size(), 0);
@@ -464,32 +492,39 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
     ImGui::End();
 
     ///////////////////////////////   Point light //////////////////////////////////////////////
-    glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
-    // TODO(tony): no magic number
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, point_depth_fbo_);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glViewport(0, 0, 1024, 1024);
-    auto point_depth_shader = ShaderManager::Get().GetShader("point_depth");
-    point_depth_shader->Bind();
-    point_depth_shader->SetVec3("u_lightWorldPos", light_world_pos);
-    // 90 degree projection matrix for each direction of the cube map.
-    glm::mat4 proj_matrix = glm::perspective(90.f, 1.f, 0.1f, 100.f);
-    // render to the cube map from each direction.
-    for (int i = 0; i < 6; i++) {
-      const auto& cam_dir_param = kCameraDirections[i];
-      // using color buffer
-      glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-      glm::mat4 view_matrix = glm::lookAt(light_world_pos, cam_dir_param.target, cam_dir_param.up);
-      point_depth_shader->SetMat4("vp_matrix", proj_matrix * view_matrix);
-      // glNamedFramebufferTexture(point_depth_fbo_, GL_COLOR_ATTACHMENT0,
-      // point_depth_cube_map_tex_,
-      //                           0);
-      glNamedFramebufferTextureLayer(point_depth_fbo_, GL_COLOR_ATTACHMENT0,
-                                     point_depth_cube_map_tex_, 0, i);
-      glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, per_frame_cmds_.size(),
-                                  0);
+    if (view_info.point_light_shadows_on) {
+      glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
+      auto point_depth_shader = ShaderManager::Get().GetShader("point_depth");
+      point_depth_shader->Bind();
+      point_depth_shader->SetVec3("u_lightWorldPos", light_world_pos);
+
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, point_depth_fbo_);
+      // TODO(tony): no magic number
+      glViewport(0, 0, 1024, 1024);
+      // 90 degree projection matrix for each direction of the cube map.
+      glm::mat4 proj_matrix = glm::perspective(90.f, 1.f, 0.001f, 1000.f);
+      // render to the cube map from each direction.
+      for (int i = 0; i < 6; i++) {
+        const auto& cam_dir_param = kCameraDirections[i];
+        // using color buffer
+        glm::mat4 view_matrix =
+            glm::lookAt(light_world_pos, cam_dir_param.target, cam_dir_param.up);
+        point_depth_shader->SetMat4("vp_matrix", proj_matrix * view_matrix);
+        // old style
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, point_depth_cube_map_tex_, 0);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        // glNamedFramebufferTexture(point_depth_fbo_, GL_COLOR_ATTACHMENT0,
+        // point_depth_cube_map_tex_,
+        //                           0);
+        // glNamedFramebufferTextureLayer(point_depth_fbo_, GL_COLOR_ATTACHMENT0,
+        //                                point_depth_cube_map_tex_, 0, i);
+        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, per_frame_cmds_.size(),
+                                    0);
+      }
+      glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   }
 
   ///////////////////////////////////////////////  Final pass ////////////////////////
@@ -512,21 +547,24 @@ void Renderer::RenderOpaqueObjects(const RenderViewInfo& view_info,
     }
     shader->SetMat4("u_lightSpaceMatrix", light_space_matrix);
     shader->SetVec3("u_directionalColor", dir_light.color);
-    shader->SetBool("u_directionalOn", dir_light_on_);
+    shader->SetBool("u_directionalOn", view_info.dir_light_shadows_on);
+    shader->SetBool("u_pointLightShadowOn", view_info.point_light_shadows_on);
     shader->SetBool("u_normalMapOn", normal_map_on_);
     shader->SetBool("u_roughnessMapOn", roughness_map_on_);
     shader->SetBool("u_metallicMapOn", metallic_map_on_);
     shader->SetBool("u_normalMapOn", normal_map_on_);
     shader->SetVec3("u_directionalDirection", dir_light.direction);
     shader->SetVec3("u_pointLightShadowPos", light_world_pos);
-    glActiveTexture(GL_TEXTURE1);
+
+    // old style
+    glActiveTexture(kPointLightCubeMapTexSlot);
+    shader->SetInt("pointCubeMap", kPointLightCubeMapIdx);
     glBindTexture(GL_TEXTURE_CUBE_MAP, point_depth_cube_map_tex_);
 
-    materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, 1);
+    materials_buffer_->BindBase(GL_SHADER_STORAGE_BUFFER, kMaterialsSSBOIdx);
     // TODO(tony): avoid subdata every frame?
-    light_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, 2);
+    light_ssbo_->BindBase(GL_SHADER_STORAGE_BUFFER, kLightSSBOIdx);
     // mode, type, offest ptr, command count, stride (0 since tightly packed)
-    glBindVertexArray(batch_vao_);
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, per_frame_cmds_.size(), 0);
     stats_.multi_draw_calls++;
   }

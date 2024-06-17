@@ -37,19 +37,19 @@ void Scene::OnFixedUpdate(Timestep timestep) {}
 void Scene::OnImGuiRender() {
   // ImGui::ShowDemoWindow();
   if (ImGui::CollapsingHeader("Point Lights", ImGuiTreeNodeFlags_DefaultOpen)) {
-    auto lights = registry.view<PointLight>();
     int i = 0;
-    lights.each([&](PointLight& light) {
+    ImGui::Checkbox("enabled##point_light_enabled", &render_view_info.point_light_shadows_on);
+    for (auto& light : point_lights) {
       std::string id = "point_light_" + std::to_string(i++);
       ImGui::PushID(id.c_str());
-      ImGui::DragFloat3("Position##", &light.position.x, 0.1);
-      ImGui::DragFloat3("Color", &light.color.x, 0.01, 0, 1);
-      ImGui::DragFloat("Intensity", &light.intensity, 1, 0, 1000);
+      if (ImGui::DragFloat3("Position##", &light.position.x, 0.1)) point_lights_dirty = true;
+      if (ImGui::DragFloat3("Color", &light.color.x, 0.01, 0, 1)) point_lights_dirty = true;
+      if (ImGui::DragFloat("Intensity", &light.intensity, 1, 0, 1000)) point_lights_dirty = true;
       ImGui::PopID();
-    });
+    }
   };
   if (ImGui::CollapsingHeader("Directional Light", ImGuiTreeNodeFlags_DefaultOpen)) {
-    ImGui::Checkbox("enabled", &render_view_info.dir_light_on);
+    ImGui::Checkbox("enabled##dir_light_enabled", &render_view_info.dir_light_shadows_on);
     ImGui::DragFloat3("direction", &dir_light.direction.x, 0.01, -1, 1);
     ImGui::DragFloat3("color", &dir_light.color.x, 0.01, 0, 1);
     ImGui::Checkbox("rotate circular", &dir_light_settings.circular_rotate);

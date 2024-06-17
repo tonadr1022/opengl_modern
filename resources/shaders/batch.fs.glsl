@@ -23,6 +23,7 @@ uniform bool u_overrideMaterial;
 uniform vec2 u_metallicRoughnessOverride;
 uniform vec3 u_albedoOverride;
 uniform bool u_directionalOn;
+uniform bool u_pointLightShadowOn;
 uniform vec3 u_directionalDirection;
 uniform vec3 u_directionalColor;
 
@@ -72,10 +73,10 @@ float CalculatePointShadow(vec3 lightToPixel, float bias) {
     // flip y since OpenGL cube map is left-handed
     lightToPixel.y = -lightToPixel.y;
     float sampledDistance = texture(pointCubeMap, lightToPixel).r;
-    if (sampledDistance + bias < distance) {
-        return 1.0;
-    } else {
+    if (sampledDistance < distance) {
         return 0.0;
+    } else {
+        return 1.0;
     }
 }
 
@@ -106,6 +107,37 @@ float CalculateShadow(vec4 posLightSpace, float bias) {
 }
 
 const float PI = 3.14159265358979323846;
+
+vec3 calcLight(vec3 F0, vec3 normal, vec3 L, vec3 V, float distToLight, float roughness, vec4 albedo, float metallic) {
+    // per light radiance
+    vec3 H = normalize(V + L);
+    // inverse square law, more physically correct than linear-quadratic
+    // float attenuation = 1.0 / (distToLight);
+    float attenuation = 1.0 / (distToLight * distToLight);
+    vec3 radiance = vec3(1.0) * 10 * attenuation;
+    float NDF = DistributionGGX(normal, H, roughness);
+    float G = GeometrySmith(normal, V, L, roughness);
+    // F: Fresnel-Schlick
+    // ratio betwen specular and diffuse reflection.
+    // clamp cosTheta to at least 0.
+    vec3 F = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+    // Cook-Torrance specular BRDF: DFG/(4*(wo*n)(wi*n))
+    vec3 numerator = NDF * G * F;
+    // add epsilon to avoid divide by zero.
+    float denominator = 4.0 * max(dot(normal, V), 0.0) * max(dot(normal, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
+    // specular contribution is the same as the Fresnel value
+    vec3 kS = F;
+    // for energy conservation, diffuse and specular light mustn't exceed 1 unless emits light.
+    // Thus, kD is the remains of kS.
+    vec3 kD = vec3(1.0) - kS;
+    // metallic surfaces don't refract light, thus don't have diffuse reflections, so nullify diffuse component
+    // the more metallic the surface. Linear blend
+    kD *= 1.0 - metallic;
+    float NdotL = max(dot(normal, L), 0.0);
+    vec3 point_out = (kD * albedo.rgb / PI + specular) * radiance * NdotL;
+    return point_out;
+}
 
 void main() {
     // o_color = vec4(1.0);
@@ -185,7 +217,7 @@ void main() {
     F0 = mix(F0, albedo.rgb, metallic);
 
     vec3 light_out = vec3(0.0);
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 0; i++) {
         // per light radiance
         vec3 L = normalize(pointLights[i].position.xyz - fs_in.posWorldSpace);
         vec3 H = normalize(V + L);
@@ -219,44 +251,19 @@ void main() {
         // add to outgoing radiance
         light_out += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
     }
+
     ////////////////////////////////////// point shadow////////////////////////////////////////////
-    for (int i = 0; i < 1; i++) {
-        // per light radiance
+    if (false) {
         vec3 L = normalize(u_pointLightShadowPos - fs_in.posWorldSpace);
         vec3 H = normalize(V + L);
         float distToLight = length(u_pointLightShadowPos - fs_in.posWorldSpace);
-        // inverse square law, more physically correct than linear-quadratic
-        // float attenuation = 1.0 / (distToLight);
-        float attenuation = 1.0 / (distToLight * distToLight);
-        vec3 radiance = vec3(1.0) * 10 * attenuation;
-        float NDF = DistributionGGX(normal, H, roughness);
-        float G = GeometrySmith(normal, V, L, roughness);
-        // F: Fresnel-Schlick
-        // ratio betwen specular and diffuse reflection.
-        // clamp cosTheta to at least 0.
-        vec3 F = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
-        // Cook-Torrance specular BRDF: DFG/(4*(wo*n)(wi*n))
-        vec3 numerator = NDF * G * F;
-        // add epsilon to avoid divide by zero.
-        float denominator = 4.0 * max(dot(normal, V), 0.0) * max(dot(normal, L), 0.0) + 0.0001;
-        vec3 specular = numerator / denominator;
-        // specular contribution is the same as the Fresnel value
-        vec3 kS = F;
-        // for energy conservation, diffuse and specular light mustn't exceed 1 unless emits light.
-        // Thus, kD is the remains of kS.
-        vec3 kD = vec3(1.0) - kS;
-        // metallic surfaces don't refract light, thus don't have diffuse reflections, so nullify diffuse component
-        // the more metallic the surface. Linear blend
-        kD *= 1.0 - metallic;
+        vec3 point_out = calcLight(F0, normal, L, V, distToLight, roughness, albedo, metallic);
         // bias to reduce shadow acne (self shadowing), adjust it based on
         // angle toward the light, since angles closer to 90 degrees need more bias
         float bias = mix(0.005, 0.0, dot(normal, -L));
-        // directional shadow
+        // point shadow
         float shadow = CalculatePointShadow(fs_in.posWorldSpace - u_pointLightShadowPos, bias);
-        float NdotL = max(dot(normal, L), 0.0);
-        vec3 point_out = (kD * albedo.rgb / PI + specular) * radiance * NdotL;
-        //        light_out += shadow * point_out;
-        light_out += (1.0 - shadow) * point_out;
+        light_out += shadow * point_out;
     }
 
     if (u_directionalOn) {

@@ -50,16 +50,19 @@ void SceneMain::LoadSponza() {
   //   registry.emplace<engine::component::Transform>(ent, t);
   //   registry.emplace<engine::component::ModelMatrix>(ent);
   // }
+
   glm::vec3 light_positions[] = {
-      glm::vec3(0, 1.0f, 0), glm::vec3(1, 1.0f, 0), glm::vec3(-1, 1.0f, 0), glm::vec3(0, 1.0f, 1),
-      // glm::vec3(0, 2, -1)
+      glm::vec3(0, 1.0f, 0),
+      glm::vec3(1, 1.0f, 0),
+      glm::vec3(-1, 1.0f, 0),
+      glm::vec3(0, 1.0f, 1),
   };
+
   engine::PointLight light;
   light.color = {1, 1, 1};
   for (auto& pos : light_positions) {
-    auto ent = registry.create();
-    light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
-    /*registry.emplace<engine::PointLight>(ent, light);*/
+    light.position = pos;
+    point_lights.emplace_back(light);
   }
 }
 
@@ -91,6 +94,7 @@ void SceneMain::LoadSpheres() {
       registry.emplace<engine::component::ModelMatrix>(ent);
     }
   }
+
   glm::vec3 light_positions[] = {
       glm::vec3(-10.0f, 10.0f, 0.0f),
       glm::vec3(10.0f, 10.0f, 10.0f),
@@ -101,18 +105,25 @@ void SceneMain::LoadSpheres() {
   engine::PointLight light;
   light.color = {1, 1, 1};
   for (auto& pos : light_positions) {
-    auto ent = registry.create();
-    light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
-    //*registry.emplace<engine::PointLight>(ent, light);*/
-    engine::MaterialCreateInfo mat;
-    mat.base_color = glm::vec4{light.color.x, light.color.y, light.color.z, 1};
-    registry.emplace<engine::Mesh>(ent, m);
-    engine::component::Transform t;
-    t.SetScale({0.005, 0.005, 0.005});
-    t.SetTranslation(light.position);
-    registry.emplace<engine::component::Transform>(ent, t);
-    registry.emplace<engine::component::ModelMatrix>(ent);
+    light.position = pos;
+    point_lights.emplace_back(light);
   }
+
+  // objects to represent the point lights.
+
+  // for (auto& pos : light_positions) {
+  //   auto ent = registry.create();
+  //   light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
+  //   //*registry.emplace<engine::PointLight>(ent, light);*/
+  //   engine::MaterialCreateInfo mat;
+  //   mat.base_color = glm::vec4{light.color.x, light.color.y, light.color.z, 1};
+  //   registry.emplace<engine::Mesh>(ent, m);
+  //   engine::component::Transform t;
+  //   t.SetScale({0.005, 0.005, 0.005});
+  //   t.SetTranslation(light.position);
+  //   registry.emplace<engine::component::Transform>(ent, t);
+  //   registry.emplace<engine::component::ModelMatrix>(ent);
+  // }
 }
 
 void SceneMain::LoadSpheres2() {
@@ -137,30 +148,6 @@ void SceneMain::LoadSpheres2() {
     registry.emplace<engine::component::ModelMatrix>(ent);
   }
 }
-// glm::vec3 light_positions[] = {
-//     glm::vec3(-10.0f, 10.0f, 0.0f),
-//     glm::vec3(10.0f, 10.0f, 10.0f),
-//     glm::vec3(-10.0f, -10.0f, 10.0f),
-//     glm::vec3(10.0f, -10.0f, 10.0f),
-// };
-//
-// engine::PointLight light;
-// light.color = {1, 1, 1};
-// for (auto& pos : light_positions) {
-//   auto ent = registry.create();
-//   light.position = glm::vec4{pos.x, pos.y, pos.z, 0};
-//   registry.emplace<engine::PointLight>(ent, light);
-//   engine::MaterialCreateInfo mat;
-//   mat.base_color = light.color;
-//   registry.emplace<engine::Mesh>(ent, m);
-//   engine::component::Transform t;
-//   t.SetScale({0.005, 0.005, 0.005});
-//   t.SetTranslation(light.position);
-//   registry.emplace<engine::component::Transform>(ent, t);
-//   registry.emplace<engine::component::ModelMatrix>(ent);
-// }
-// engine::DirectionalLight dir_light;
-// dir_light.color = {1, 0, 0};
 
 SceneMain::SceneMain() : camera_system(registry, render_view_info) {}
 

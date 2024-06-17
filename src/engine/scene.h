@@ -47,6 +47,9 @@ class Scene {
     float rotate_speed{0.5};
   } dir_light_settings;
 
+  std::vector<PointLight> point_lights;
+  bool point_lights_dirty{false};
+
  protected:
   // Helper function so scenes don't need to include engine
   void LoadScene(std::unique_ptr<Scene> scene);

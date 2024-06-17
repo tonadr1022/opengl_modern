@@ -69,6 +69,7 @@ class Renderer {
                                            std::vector<Index>& indices);
   void RenderOpaqueObjects(const RenderViewInfo& view_info, const DirectionalLight& dir_light);
   void SetMaterials(const std::vector<MaterialData>& materials);
+  void OnImGuiRender();
   [[nodiscard]] AssetHandle AddMaterial(const MaterialData& material_data);
   [[nodiscard]] const RendererStats& GetStats();
 
@@ -78,9 +79,9 @@ class Renderer {
   static constexpr uint32_t kMaxDrawCommands{10'000'000};
   static constexpr uint32_t kMaxLights{100};
 
-  void OnImGuiRender();
-
  private:
+  friend class engine::Engine;
+
   void TestGBufferReset();
   struct alignas(16) UBOUniforms {
     glm::mat4 vp_matrix;
@@ -93,7 +94,6 @@ class Renderer {
       GET_TEXTURE_PATH("skybox2/top.jpg"),   GET_TEXTURE_PATH("skybox2/bottom.jpg"),
       GET_TEXTURE_PATH("skybox2/front.jpg"), GET_TEXTURE_PATH("skybox2/back.jpg"),
   };
-  friend class engine::Engine;
   Renderer();
   static Renderer* instance_;
 
@@ -156,7 +156,6 @@ class Renderer {
   glm::mat4 view_matrix_;
   glm::mat4 projection_matrix_;
   glm::mat4 vp_matrix_;
-  bool dir_light_on_;
   
 
   std::vector<AssetHandle> draw_cmd_mesh_ids_;
