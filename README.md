@@ -54,3 +54,5 @@ random notes:
   pointer when amplacing into unordered map.
 - normal mapping: avoid sending bitangents to the vertex shader reduces sponza
   memory cost
+
+test

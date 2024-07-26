@@ -292,7 +292,7 @@ void main() {
         float shadow = CalculateShadow(fs_in.posLightSpace, bias);
 
         vec3 directional_out = ((kD * albedo.rgb / PI + specular) * radiance * NdotL);
-        light_out += (1 - shadow) * directional_out;
+        light_out += (1) * directional_out;
     }
 
     // TODO: replace ambient with IBL
